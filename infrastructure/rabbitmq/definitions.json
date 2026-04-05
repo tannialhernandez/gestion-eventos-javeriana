@@ -1,0 +1,145 @@
+{
+  "vhosts": [
+    { "name": "eventos" }
+  ],
+  "exchanges": [
+    {
+      "name": "eventos.topic",
+      "vhost": "eventos",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false
+    },
+    {
+      "name": "eventos.dlx",
+      "vhost": "eventos",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false
+    }
+  ],
+  "queues": [
+    {
+      "name": "inscripcion.confirmada",
+      "vhost": "eventos",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "eventos.dlx",
+        "x-dead-letter-routing-key": "dlq.inscripcion.confirmada",
+        "x-message-ttl": 86400000
+      }
+    },
+    {
+      "name": "pago.confirmado",
+      "vhost": "eventos",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "eventos.dlx",
+        "x-dead-letter-routing-key": "dlq.pago.confirmado",
+        "x-message-ttl": 86400000
+      }
+    },
+    {
+      "name": "pago.reembolsado",
+      "vhost": "eventos",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "eventos.dlx",
+        "x-dead-letter-routing-key": "dlq.pago.reembolsado",
+        "x-message-ttl": 86400000
+      }
+    },
+    {
+      "name": "certificado.solicitado",
+      "vhost": "eventos",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "eventos.dlx",
+        "x-dead-letter-routing-key": "dlq.certificado.solicitado",
+        "x-message-ttl": 86400000
+      }
+    },
+    {
+      "name": "dlq.inscripcion.confirmada",
+      "vhost": "eventos",
+      "durable": true,
+      "arguments": {}
+    },
+    {
+      "name": "dlq.pago.confirmado",
+      "vhost": "eventos",
+      "durable": true,
+      "arguments": {}
+    },
+    {
+      "name": "dlq.pago.reembolsado",
+      "vhost": "eventos",
+      "durable": true,
+      "arguments": {}
+    },
+    {
+      "name": "dlq.certificado.solicitado",
+      "vhost": "eventos",
+      "durable": true,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "eventos.topic",
+      "vhost": "eventos",
+      "destination": "inscripcion.confirmada",
+      "destination_type": "queue",
+      "routing_key": "inscripcion.confirmada"
+    },
+    {
+      "source": "eventos.topic",
+      "vhost": "eventos",
+      "destination": "pago.confirmado",
+      "destination_type": "queue",
+      "routing_key": "pago.confirmado"
+    },
+    {
+      "source": "eventos.topic",
+      "vhost": "eventos",
+      "destination": "pago.reembolsado",
+      "destination_type": "queue",
+      "routing_key": "pago.reembolsado"
+    },
+    {
+      "source": "eventos.topic",
+      "vhost": "eventos",
+      "destination": "certificado.solicitado",
+      "destination_type": "queue",
+      "routing_key": "certificado.solicitado"
+    },
+    {
+      "source": "eventos.dlx",
+      "vhost": "eventos",
+      "destination": "dlq.inscripcion.confirmada",
+      "destination_type": "queue",
+      "routing_key": "dlq.inscripcion.confirmada"
+    },
+    {
+      "source": "eventos.dlx",
+      "vhost": "eventos",
+      "destination": "dlq.pago.confirmado",
+      "destination_type": "queue",
+      "routing_key": "dlq.pago.confirmado"
+    },
+    {
+      "source": "eventos.dlx",
+      "vhost": "eventos",
+      "destination": "dlq.pago.reembolsado",
+      "destination_type": "queue",
+      "routing_key": "dlq.pago.reembolsado"
+    },
+    {
+      "source": "eventos.dlx",
+      "vhost": "eventos",
+      "destination": "dlq.certificado.solicitado",
+      "destination_type": "queue",
+      "routing_key": "dlq.certificado.solicitado"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+version: '3.9'
+
+services:
+
+  # ─────────────────────────────────────────
+  # PostgreSQL — una base de datos por servicio
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: eventos-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-eventos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventos_pass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eventos_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # Redis — cache de catálogo de eventos
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: eventos-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # RabbitMQ — mensajería asíncrona + DLQ
+  # ─────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: eventos-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-eventos_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-eventos_pass}
+      RABBITMQ_DEFAULT_VHOST: eventos
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./infrastructure/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+      - ./infrastructure/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # MailHog — trampa de emails (desarrollo)
+  # ─────────────────────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: eventos-mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
