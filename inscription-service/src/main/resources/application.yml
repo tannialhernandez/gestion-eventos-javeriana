@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: inscription-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eventos_inscription
+    username: ${POSTGRES_USER:eventos_user}
+    password: ${POSTGRES_PASSWORD:eventos_pass}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+    username: ${RABBITMQ_USER:eventos_user}
+    password: ${RABBITMQ_PASSWORD:eventos_pass}
+    virtual-host: eventos
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 3s
+          max-attempts: 3
+          multiplier: 2
+
+server:
+  port: 8083
+
+# URLs de otros microservicios (Feign clients)
+services:
+  event-service:
+    url: ${EVENT_SERVICE_URL:http://localhost:8082}
+  payment-service:
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
