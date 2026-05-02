@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: payment-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eventos_payment
+    username: ${POSTGRES_USER:eventos_user}
+    password: ${POSTGRES_PASSWORD:eventos_pass}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+    username: ${RABBITMQ_USER:eventos_user}
+    password: ${RABBITMQ_PASSWORD:eventos_pass}
+    virtual-host: eventos
+
+server:
+  port: 8084
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
