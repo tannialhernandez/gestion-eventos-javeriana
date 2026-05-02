@@ -22,3 +22,6 @@ application-local.yml
 # Logs
 *.log
 logs/
+
+# Superpowers brainstorming companion
+.superpowers/
