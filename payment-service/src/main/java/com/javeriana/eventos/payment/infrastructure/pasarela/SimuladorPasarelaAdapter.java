@@ -3,26 +3,21 @@ package com.javeriana.eventos.payment.infrastructure.pasarela;
 import com.javeriana.eventos.payment.domain.port.out.PasarelaPagoPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
-
 import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * Adaptador Simulador — activo en profile "default" (desarrollo/demo).
+ * Adaptador Simulador — instanciado por DefaultPasarelaPagoFactory cuando
+ * payment.gateway.provider=simulador (desarrollo/demo/tests).
  *
  * Implementa PasarelaPagoPort con respuestas predecibles y sin llamadas HTTP.
  * El Circuit Breaker lo envuelve igual que al adaptador real, demostrando
- * que el patrón es agnóstico al proveedor.
+ * que el patrón Factory Method es agnóstico al proveedor.
  *
  * Para la demo:
- * - crearPreferencia() retorna una URL de checkout interna (/pagos/{id}/aprobar)
- * - El instructor puede "aprobar" el pago llamando a ese endpoint
- * - Esto dispara el mismo flujo de webhook que MercadoPago usaría en producción
+ * - crearPreferencia() retorna una URL de checkout interna (/simulador/pagos/{id}/aprobar)
+ * - Disparar POST /api/v1/webhooks/pagos con estado "approved" simula el pago exitoso
  */
-@Component
-@Profile("!mercadopago")  // Activo cuando NO se usa el profile mercadopago
 public class SimuladorPasarelaAdapter implements PasarelaPagoPort {
 
     private static final Logger log = LoggerFactory.getLogger(SimuladorPasarelaAdapter.class);

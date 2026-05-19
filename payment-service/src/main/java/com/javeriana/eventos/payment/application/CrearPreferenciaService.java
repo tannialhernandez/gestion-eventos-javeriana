@@ -3,6 +3,7 @@ package com.javeriana.eventos.payment.application;
 import com.javeriana.eventos.payment.domain.model.Pago;
 import com.javeriana.eventos.payment.domain.port.in.CrearPreferenciaUseCase;
 import com.javeriana.eventos.payment.domain.port.out.PagoRepository;
+import com.javeriana.eventos.payment.domain.port.out.PasarelaPagoFactory;
 import com.javeriana.eventos.payment.domain.port.out.PasarelaPagoPort;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
@@ -31,17 +32,21 @@ public class CrearPreferenciaService implements CrearPreferenciaUseCase {
     private static final Logger log = LoggerFactory.getLogger(CrearPreferenciaService.class);
 
     private final PagoRepository pagoRepository;
-    private final PasarelaPagoPort pasarela;
+    private final PasarelaPagoFactory pasarelaFactory;
 
-    public CrearPreferenciaService(PagoRepository pagoRepository, PasarelaPagoPort pasarela) {
+    public CrearPreferenciaService(PagoRepository pagoRepository,
+                                   PasarelaPagoFactory pasarelaFactory) {
         this.pagoRepository = pagoRepository;
-        this.pasarela = pasarela;
+        this.pasarelaFactory = pasarelaFactory;
     }
 
     @Override
     @Transactional
     @CircuitBreaker(name = "pasarela-pago", fallbackMethod = "fallbackCrearPreferencia")
     public Result crear(Command command) {
+        // Factory Method: el adaptador concreto se resuelve según la config (ADR-18)
+        PasarelaPagoPort pasarela = pasarelaFactory.crearPasarela();
+
         // Crear el agregado Pago en estado INICIADO
         Pago pago = new Pago(
             UUID.randomUUID(),
