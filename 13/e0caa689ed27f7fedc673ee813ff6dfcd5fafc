@@ -1,0 +1,29 @@
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/pasarela/SimuladorPasarelaAdapter.java
+  s_9b02cbd117a20e::t_8ef8b1b142a3c4 10-11,15,18-19
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/pasarela/DefaultPasarelaPagoFactory.java
+  s_9b02cbd117a20e::t_013f908b757b6b 1-50
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/pasarela/MercadoPagoAdapter.java
+  s_9b02cbd117a20e::t_b4ac884e9a6c27 31
+  s_9b02cbd117a20e::t_76a788dcff2398 13-14,20
+payment-service/src/main/java/com/javeriana/eventos/payment/application/CrearPreferenciaService.java
+  s_9b02cbd117a20e::t_18c1eb9f77154c 6
+  s_9b02cbd117a20e::t_8989ad21cd1421 35,37-38,40,47-49
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/port/out/PasarelaPagoFactory.java
+  s_9b02cbd117a20e::t_a49b6535396f3a 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "13e0caa689ed27f7fedc673ee813ff6dfcd5fafc",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
