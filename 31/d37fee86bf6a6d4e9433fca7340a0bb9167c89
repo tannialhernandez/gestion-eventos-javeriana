@@ -1,0 +1,27 @@
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/dto/CrearPreferenciaRequest.java
+  s_9b02cbd117a20e::t_38d9b335880a33 1-14
+payment-service/src/test/java/com/javeriana/eventos/payment/PagoFlowEndToEndIT.java
+  s_9b02cbd117a20e::t_52582ac68ce125 1-185
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/dto/PreferenciaResponse.java
+  s_9b02cbd117a20e::t_82997a2165141b 1-9
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/PagoController.java
+  s_9b02cbd117a20e::t_041be14541c361 1-68
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/WebhookController.java
+  s_9b02cbd117a20e::t_3b98a6affb1211 1-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "31d37fee86bf6a6d4e9433fca7340a0bb9167c89",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
