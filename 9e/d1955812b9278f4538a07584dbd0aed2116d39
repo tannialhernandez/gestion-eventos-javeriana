@@ -1,0 +1,28 @@
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/outbox/OutboxRelayService.java
+  s_9b02cbd117a20e::t_2d5fdb0efa92d6 1-85
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/outbox/OutboxEventEntity.java
+  s_9b02cbd117a20e::t_4d75a14d42837a 43-45
+  s_9b02cbd117a20e::t_51c313c8cafdbe 60-61
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/JpaPagoRepository.java
+  s_9b02cbd117a20e::t_04c5e5856387c2 1-76
+payment-service/src/main/java/com/javeriana/eventos/payment/PaymentApplication.java
+  s_9b02cbd117a20e::t_bd82a772ae5f8f 5,8
+payment-service/src/main/resources/application.yml
+  s_9b02cbd117a20e::t_7518a20120d8ca 28-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "9ed1955812b9278f4538a07584dbd0aed2116d39",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
