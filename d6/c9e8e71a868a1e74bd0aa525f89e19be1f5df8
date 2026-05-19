@@ -1,0 +1,32 @@
+docs/adrs/ADR-020-certificate-timeout-retry.md
+  s_9b02cbd117a20e::t_ce436082d1cf41 1-88
+docs/adrs/ADR-021-hmac-sha256-qr-asistencia.md
+  s_9b02cbd117a20e::t_eb4f3dd0e883df 1-76
+docs/adrs/ADR-023-s3-storage-lifecycle-pdfs.md
+  s_9b02cbd117a20e::t_ef7cc10c345126 1-108
+docs/adrs/README.md
+  s_9b02cbd117a20e::t_f0a23fd31f5a38 30-33
+docs/srs-casos-uso-pendientes.md
+  s_9b02cbd117a20e::t_5b2455f8d9b863 280
+  s_9b02cbd117a20e::t_7891ea437e8eb5 353
+  s_9b02cbd117a20e::t_f27e3efd72d38f 18
+  s_9b02cbd117a20e::t_58256bc9c23b2e 562-563,565-566
+docs/adrs/ADR-022-api-gateway-policies.md
+  s_9b02cbd117a20e::t_5512f3a0cb2938 1-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "d6c9e8e71a868a1e74bd0aa525f89e19be1f5df8",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
