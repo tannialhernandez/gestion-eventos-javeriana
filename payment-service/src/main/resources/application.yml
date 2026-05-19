@@ -28,6 +28,14 @@ server:
 payment:
   gateway:
     provider: ${PAYMENT_GATEWAY_PROVIDER:simulador}
+  expiration:
+    # RN-10 (SRS §9.3.3, srs-seccion9-modelo-datos-seccion10-trazabilidad.md):
+    # "fecha_expiracion_pago = fecha_inscripcion + 15 minutos"
+    window-seconds: 900
+    # Margen de 60s para tolerar la latencia entre el job de expiración de
+    # inscription-service (corre cada 60s) y la llegada del webhook a payment-service.
+    # Race condition documentada en docs/follow-ups/payment-refund-async.md.
+    grace-period-seconds: 60
 
 resilience4j:
   circuitbreaker:

@@ -121,13 +121,40 @@ public class Pago extends AggregateRoot {
     }
 
     /**
-     * Emite reembolso (pago tardío sobre inscripción ya expirada).
+     * Emite reembolso (cancelación posterior a un pago ya CONFIRMADO).
+     * Para pago tardío post-expiración usar reembolsarPorExpiracion().
      */
     public void reembolsar() {
         if (this.estado != EstadoPago.CONFIRMADO) {
             throw new BusinessRuleViolationException(
                 "RN-PAGO-04",
                 "Solo se puede reembolsar un pago CONFIRMADO. Estado actual: " + this.estado
+            );
+        }
+        this.estado = EstadoPago.REEMBOLSADO;
+        this.fechaReembolso = Instant.now();
+
+        registerEvent(new PagoReembolsadoEvent(this.id, this.inscripcionId));
+    }
+
+    /**
+     * Reembolsa un pago aprobado por la pasarela cuya inscripción ya expiró.
+     *
+     * RN-10 (SRS §9.3.3, docs/srs-seccion9-modelo-datos-seccion10-trazabilidad.md):
+     * El deadline de pago es fecha_inscripcion + 15 min. Si el webhook llega
+     * después, la inscripción fue expirada por inscription-service; el pago debe
+     * reembolsarse sin pasar por CONFIRMADO.
+     *
+     * RN-PAGO-05 (propuesta — docs/srs-casos-uso-pendientes.md §11):
+     * Un pago en estado final no puede ser reembolsado por expiración.
+     *
+     * Diferencia con reembolsar(): válido desde INICIADO/PROCESANDO (no-finales).
+     */
+    public void reembolsarPorExpiracion() {
+        if (this.estado.esFinal()) {
+            throw new BusinessRuleViolationException(
+                "RN-PAGO-05",
+                "No se puede reembolsar por expiración un pago en estado final: " + this.estado
             );
         }
         this.estado = EstadoPago.REEMBOLSADO;
