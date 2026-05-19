@@ -175,7 +175,7 @@ import java.util.UUID;
 /**
  * Entidad JPA para la tabla outbox_events de payment-service.
  *
- * Outbox Pattern (ADR-11 del SAD): los eventos de dominio (PagoConfirmado,
+ * Outbox Pattern (ADR-008 del SAD): los eventos de dominio (PagoConfirmado,
  * PagoReembolsado) se persisten aquí dentro de la misma transacción de
  * negocio. El OutboxRelayService los publica a RabbitMQ asíncronamente.
  */
@@ -446,7 +446,7 @@ import java.util.List;
 /**
  * Outbox Relay — publica eventos pendientes a RabbitMQ cada 5 segundos.
  *
- * Outbox Pattern (ADR-11): los eventos de dominio se persisten en
+ * Outbox Pattern (ADR-008): los eventos de dominio se persisten en
  * outbox_events dentro de la misma transacción de negocio (en
  * ProcesarWebhookService). Este relay los lee y publica en RabbitMQ
  * asíncronamente, garantizando que:

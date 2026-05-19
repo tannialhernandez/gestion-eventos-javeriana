@@ -11,7 +11,7 @@
 
 El SAD declara Outbox Pattern como decisión arquitectónica clave (ADR documentado, patrón referenciado en sec 4.5 del SAD v2.0). En `inscription-service` está implementado completo. En `payment-service` solo existe el **puerto** (`OutboxEventRepository`) — falta la implementación JPA, el relay con scheduler, la config de RabbitMQ y el script SQL. En runtime, `ProcesarWebhookService` falla silenciosamente o no publica nada → el flujo end-to-end está roto.
 
-Adicionalmente, el WIP en `EventoController.java` inyecta `EventoRepository` directamente, violando el principio de arquitectura hexagonal que el SAD declara como ADR-01.
+Adicionalmente, el WIP en `EventoController.java` inyecta `EventoRepository` directamente, violando el principio de arquitectura hexagonal que el SAD declara como ADR-005.
 
 Cerrar ambos gaps:
 1. Hace que el código respalde lo que el SAD afirma (cierra el gap explícito que el profe señaló: *"mecanismos como colas y bloqueo... no siempre queda con la claridad suficiente cómo se sostienen de forma coherente"*).
@@ -64,7 +64,7 @@ Cerrar ambos gaps:
 ### 3.5 Fix del controller — usar caso de uso, no repositorio
 **Decisión:** Si el WIP del `EventoController` necesita un endpoint que consulta un evento por ID, se crea un nuevo caso de uso (`ConsultarEventoPorIdUseCase` con su `ConsultarEventoPorIdService`) o se extiende `ConsultarCatalogoUseCase`. El controller NO inyecta `EventoRepository`.
 
-**Razón:** ADR-01 del SAD declara arquitectura hexagonal pura. El profe ya señaló inconsistencias documentales — agregar inconsistencias código↔documento sería peor.
+**Razón:** ADR-005 del SAD declara arquitectura hexagonal pura. El profe ya señaló inconsistencias documentales — agregar inconsistencias código↔documento sería peor.
 
 ## 4. Criterios de aceptación
 

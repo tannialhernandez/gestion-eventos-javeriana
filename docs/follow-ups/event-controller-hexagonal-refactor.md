@@ -9,8 +9,11 @@ Stash `stash@{1}: "payment-outbox wip"` rescatado y respaldado en
 
 ## Problema
 `EventoController` inyecta directamente `EventoRepository` (puerto de salida),
-violando ADR-01 (Arquitectura Hexagonal pura). El stash añade 4 endpoints
+violando ADR-005 (Desacoplamiento Hexagonal — Ports & Adapters). El stash añade 4 endpoints
 admin que mantienen y profundizan esta violación.
+
+> **Nota:** Refiere a ADR-005 (Desacoplamiento Hexagonal) que opera en conjunto con ADR-001
+> (Arquitectura de microservicios). Ambos están definidos en `docs/adrs/README.md`.
 
 ## Endpoints involucrados
 
@@ -54,7 +57,7 @@ Una vez creados los casos de uso, refactorizar `EventoController`:
 
 ## Trazabilidad
 
-- ADR-01: Arquitectura Hexagonal pura.
+- ADR-005: Desacoplamiento de proveedores externos (Hexagonal), operando junto con ADR-001.
 - ADR-013: Patrón State en agregado `Evento`.
 - RF-001: Crear y configurar evento académico.
 - RF-010: Catálogo de eventos.

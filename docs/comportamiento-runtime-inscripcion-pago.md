@@ -322,7 +322,7 @@ COMMIT;  ← cupo = 0 ahora
 - Sin retry, sin UX ambigua.
 - Costo: mayor tiempo de espera en contención alta, pero aceptable porque el bloqueo se libera en < 50ms (INSERT + UPDATE son rápidos).
 
-**Decisión (ADR-07):** Para eventos de alta demanda (lanzamiento simultáneo), el bloqueo pesimista da garantías más simples y predecibles. En carga normal (< 200 usuarios concurrentes según RNF-03), el wait time es imperceptible.
+**Decisión (ADR-012):** Para eventos de alta demanda (lanzamiento simultáneo), el bloqueo pesimista da garantías más simples y predecibles. En carga normal (< 200 usuarios concurrentes según RNF-03), el wait time es imperceptible.
 
 ---
 
@@ -459,12 +459,17 @@ Acción:
 
 | Escenario | Mecanismo | Garantía |
 |---|---|---|
-| Dos usuarios intentan el último cupo simultáneamente | `SELECT FOR UPDATE` (ADR-07) | Exactamente uno obtiene el cupo; el otro recibe 409 |
+| Dos usuarios intentan el último cupo simultáneamente | `SELECT FOR UPDATE` (ADR-012) | Exactamente uno obtiene el cupo; el otro recibe 409 |
 | Usuario no paga en 15 minutos | Job scheduler + transacción atómica | Cupo liberado; inscripción expirada |
-| Webhook de confirmación llega dos veces | Check de `referencia_externa` UNIQUE (ADR-09) | Pago confirmado una sola vez; sin doble inscripción |
+| Webhook de confirmación llega dos veces | Check de `referencia_externa` UNIQUE (ADR-008) | Pago confirmado una sola vez; sin doble inscripción |
 | Webhook llega después de que expiró | Verificación de estado antes de confirmar | Pago rechazado + reembolso automático |
 | Servidor cae antes de ACK al webhook | Retry automático de MercadoPago + idempotencia | Procesamiento exitoso en el reintento |
-| Notification Service caído | Outbox Pattern + cola de mensajes (ADR-11) | Notificación enviada cuando el servicio se recupera |
-| MercadoPago no disponible | Circuit Breaker Resilience4j (ADR-18) | Fail-fast; usuario informado; cupo reservado por 15 min |
-| Correo de notificación falla 3 veces | DLQ (ADR-17) | Mensaje preservado; operador puede reintentar |
+| Notification Service caído | Outbox Pattern + cola de mensajes (ADR-008) | Notificación enviada cuando el servicio se recupera |
+| MercadoPago no disponible | Circuit Breaker Resilience4j (ADR-009) | Fail-fast; usuario informado; cupo reservado por 15 min |
+| Correo de notificación falla 3 veces | DLQ (ADR-019) | Mensaje preservado; operador puede reintentar |
 | Desfase estado BD vs. pasarela | Job de reconciliación (operación manual) | Corrección con trazabilidad de auditoría |
+
+> **Nota (ADR-008 e idempotencia):** La unicidad de `referencia_externa` materializa la garantía de
+> idempotencia que ADR-008 (Outbox Pattern) presupone en sus consumers. Tratamos ambas como un combo
+> unificado siguiendo la convención del SAD original. Ver `docs/adrs/ADR-018-distributed-locking-outbox-relay.md`
+> para el complemento de coordinación distribuida en multi-instancia.

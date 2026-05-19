@@ -20,7 +20,7 @@ El `pom.xml` raíz actúa como BOM (Bill of Materials) del proyecto. Define:
 |---|---|---|
 | Spring Boot (parent) | 3.2.4 | BOM principal — gestiona todas las deps de Spring |
 | Spring Cloud | 2023.0.1 | OpenFeign, Config Server, Gateway |
-| Resilience4j | 2.1.0 | Circuit Breaker (ADR-18) |
+| Resilience4j | 2.1.0 | Circuit Breaker (ADR-009) |
 | JWT (jjwt) | 0.12.5 | Autenticación OAuth2/OIDC |
 | MapStruct | 1.5.5.Final | Mapeo de DTOs |
 | TestContainers | 1.19.7 | Tests de integración con infraestructura real |

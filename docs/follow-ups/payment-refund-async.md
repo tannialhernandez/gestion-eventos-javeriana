@@ -4,7 +4,7 @@
 **Archivo con deuda:** `ProcesarWebhookService.procesarPagoTardio()`  
 **Creado:** 2026-05-18  
 **Estado:** Pendiente de implementar  
-**Relacionado con:** RN-10, ADR-11 (Outbox Pattern), docs/comportamiento-runtime-inscripcion-pago.md §4
+**Relacionado con:** RN-10, ADR-008 (Outbox Pattern), docs/comportamiento-runtime-inscripcion-pago.md §4
 
 ---
 
@@ -53,7 +53,7 @@ La deuda técnica está marcada con `TODO[DEUDA-TÉCNICA]` en el código.
 
 ---
 
-## 3. Solución propuesta (alineada con ADR-11 — Outbox Pattern)
+## 3. Solución propuesta (alineada con ADR-008 — Outbox Pattern)
 
 El principio correcto es: **ninguna llamada a sistemas externos debe ocurrir antes del COMMIT de la transacción local**.
 

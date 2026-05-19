@@ -14,7 +14,7 @@ OutboxRelayService con un @Scheduled que lee periódicamente la tabla
 outbox_events y publica los mensajes pendientes a RabbitMQ.
 
 El RNF-02 (Escalabilidad Horizontal) y la proyección de despliegue en AWS 
-ECS/Fargate (ADR-04) contemplan ejecutar múltiples réplicas de cada 
+ECS/Fargate (ADR-004) contemplan ejecutar múltiples réplicas de cada 
 microservicio para soportar los picos de 5,000 usuarios concurrentes 
 declarados en RNF-04.
 
