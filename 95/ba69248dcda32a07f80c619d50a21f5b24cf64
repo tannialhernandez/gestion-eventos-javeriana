@@ -1,0 +1,19 @@
+scripts/README.md
+  s_3c2b4a404c0e4b::t_22d7b7861e0c36 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "95ba69248dcda32a07f80c619d50a21f5b24cf64",
+  "prompts": {},
+  "sessions": {
+    "s_3c2b4a404c0e4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9977ca2-d7dd-4d19-ac2f-940d182d0992",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
