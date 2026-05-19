@@ -181,3 +181,48 @@ El profesor señaló que la elección de microservicios no está suficientemente
 | **Total estimado** | | **~$93/mes** (margen hasta $200) |
 
 Este costo está dentro del presupuesto declarado de $200/mes y deja margen para crecer.
+
+---
+
+## 8. Nuevas Decisiones Arquitectónicas — Entrega 3
+
+> **⚠️ Nota de reconciliación (Commit 2.5 pendiente):**  
+> Las secciones 3-5 de este documento usan numeración ADR heredada (ADR-01..ADR-20, sin padding).  
+> El índice maestro `docs/adrs/README.md` usa schema MADR estándar (ADR-NNN, 3 dígitos).  
+> Hay colisiones: ADR-18 en secciones anteriores = Circuit Breaker; ADR-018 en el índice = ShedLock.  
+> La reconciliación completa se documenta en `docs/srs-sad-gap-analysis.md` Gap 001 y Gap 007,  
+> y se aplicará en Commit 2.5. Hasta entonces, las secciones 3-5 mantienen su numeración original.
+
+### 8.1 ADR-018 — Distributed Locking con ShedLock (escalabilidad horizontal)
+
+| Motivado por | RF/RNF/RN | Alternativas rechazadas | Componentes afectados |
+|---|---|---|---|
+| ADR-018 (ShedLock 5.13.0) | RNF-02 (disponibilidad ≥99.5%), RNF-04 (concurrencia 5000 usuarios) | SELECT FOR UPDATE SKIP LOCKED (acopla coord. al SQL del repositorio), Zookeeper (infraestructura adicional) | `OutboxRelayService` en payment-service, inscription-service |
+
+**Cadena de trazabilidad:**  
+Necesidad: múltiples réplicas del servicio ejecutan `@Scheduled` simultáneamente → duplican eventos en RabbitMQ → rompen idempotencia (RN-13)  
+→ Driver: DA-01 (concurrencia masiva, ver `docs/trazabilidad-driver-decision.md` §2)  
+→ Decisión: ShedLock con provider JDBC — lock por servicio en tabla `shedlock`  
+→ Componente: `@SchedulerLock(name="payment-outbox-relay", lockAtMostFor="30s")`  
+→ Validación: test de concurrencia con 2 instancias simultáneas del relay (pendiente Commit 5)
+
+### 8.2 ADR-019 — Dead Letter Queue Strategy (resiliencia de mensajes)
+
+| Motivado por | RF/RNF/RN | Alternativas rechazadas | Componentes afectados |
+|---|---|---|---|
+| ADR-019 (DLQ centralizada) | RNF-08 (disponibilidad y resiliencia), RF-51 (reenvío de notificaciones fallidas), RN-13 (idempotencia) | DLQ por servicio (fragmentación operativa), Sin DLQ (pierde mensajes), Discard puro (violación auditoría) | `eventos.dlq` en RabbitMQ, `OutboxRelayService` (envía a DLQ tras 5 intentos) |
+
+**Cadena de trazabilidad:**  
+Necesidad: mensajes fallidos bloquean la cola o se pierden sin trazabilidad  
+→ Driver: DA-02 (10,000 correos/evento, 5,000 PDFs — ninguno puede perderse)  
+→ Decisión: DLQ centralizada `eventos.dlq` con retry exponencial (1s, 4s, 16s)  
+→ Componente: `OutboxRelayService.publicarEventosPendientes()` con contador de `attempts`  
+→ Validación: test que verifica que evento con 5 fallos llega a DLQ (pendiente Commit 5)
+
+### 8.3 Resumen de trazabilidad de nuevos ADRs
+
+| ADR | Motivado por | Componente en código | Estado de implementación |
+|---|---|---|---|
+| ADR-013 (Factory Method pasarela) | OCP, ADR-005, RF-22 | `PasarelaPagoFactory`, `DefaultPasarelaPagoFactory` | ✅ Implementado (Commit 4) |
+| ADR-018 (ShedLock OutboxRelay) | RNF-02, RNF-04, RN-13 | `OutboxRelayService` + `@SchedulerLock` | 🔄 Dependencia declarada (Commit 5) |
+| ADR-019 (DLQ Strategy) | RNF-08, RF-51, RN-13 | `OutboxRelayService` attempts + DLQ routing | 🔄 Infraestructura declarada (Commit 3) |
