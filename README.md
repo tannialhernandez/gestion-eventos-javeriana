@@ -145,6 +145,51 @@ Diagrama completo: [docs/sad-vista-componentes-patrones.md](docs/sad-vista-compo
 
 ---
 
+## Build & Quality
+
+### Comandos principales
+
+```bash
+# Build completo con tests unitarios y cobertura JaCoCo
+mvn clean verify
+
+# Build de un módulo específico
+mvn -pl payment-service clean verify
+
+# Solo tests unitarios (excluye E2E que requieren Docker)
+mvn -pl payment-service test -Dsurefire.excludes="**/*IT.java"
+```
+
+### Reporte de cobertura JaCoCo
+
+```bash
+mvn -pl payment-service clean verify
+open payment-service/target/site/jacoco/index.html
+```
+
+Thresholds por capa de arquitectura hexagonal (modo soft — reporta sin fallar el build):
+
+| Capa | Líneas | Ramas |
+|---|---|---|
+| `domain` | 90% | 85% |
+| `application` | 85% | 75% |
+| `infrastructure` | 60% | — |
+
+Ver [docs/build-conventions.md](docs/build-conventions.md) para la política completa.
+
+### API Documentation (Swagger UI)
+
+Una vez levantado `payment-service` (puerto 8084):
+
+```
+http://localhost:8084/swagger-ui.html   ← UI interactiva
+http://localhost:8084/api-docs          ← OpenAPI spec JSON
+```
+
+> Disponible desde el Commit 7 (OpenAPI) — placeholder hasta entonces.
+
+---
+
 ## Contribución
 
 Rama activa de código: `feat/payment-outbox-e2e`  

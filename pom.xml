@@ -29,6 +29,7 @@
     </modules>
 
     <properties>
+        <!-- Core runtime -->
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <resilience4j.version>2.1.0</resilience4j.version>
@@ -37,6 +38,16 @@
         <testcontainers.version>1.19.7</testcontainers.version>
         <itext.version>8.0.3</itext.version>
         <aws-sdk.version>2.25.10</aws-sdk.version>
+
+        <!-- Quality & Documentation — pinned versions, not ranges -->
+        <!-- ShedLock 5.13.0: compatible con Spring Boot 3.x + JdbcTemplate provider -->
+        <!-- Justificación: ADR-018 (escalabilidad horizontal del OutboxRelayService) -->
+        <shedlock.version>5.13.0</shedlock.version>
+        <!-- SpringDoc OpenAPI 2.3.0: compatible con Spring Boot 3.x + OpenAPI 3.1 -->
+        <!-- Justificación: SRS §11.3 (documentación de APIs entre equipos) -->
+        <springdoc.version>2.3.0</springdoc.version>
+        <!-- JaCoCo 0.8.11: última versión estable con soporte para Java 17/21/25 -->
+        <jacoco.version>0.8.11</jacoco.version>
     </properties>
 
     <dependencyManagement>
@@ -119,6 +130,28 @@
                 <artifactId>shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- ShedLock — distributed lock para @Scheduled en multi-instancia -->
+            <!-- ADR-018: previene ejecución concurrente de OutboxRelayService -->
+            <dependency>
+                <groupId>net.javacrumbs.shedlock</groupId>
+                <artifactId>shedlock-spring</artifactId>
+                <version>${shedlock.version}</version>
+            </dependency>
+            <!-- Provider JDBC: usa la misma BD del servicio, sin infra adicional -->
+            <dependency>
+                <groupId>net.javacrumbs.shedlock</groupId>
+                <artifactId>shedlock-provider-jdbc-template</artifactId>
+                <version>${shedlock.version}</version>
+            </dependency>
+
+            <!-- SpringDoc OpenAPI — generación automática de spec OpenAPI 3.1 -->
+            <!-- SRS §11.3: documentación de APIs pública y entre microservicios -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -139,6 +172,136 @@
                             </path>
                         </annotationProcessorPaths>
                     </configuration>
+                </plugin>
+
+                <!--
+                  JaCoCo — cobertura de código por capa de arquitectura hexagonal.
+
+                  Uso: mvn clean verify
+                  Reporte: target/site/jacoco/index.html
+
+                  Thresholds aspiracionales por capa:
+                    domain         : 90% líneas, 85% ramas  (lógica de negocio pura)
+                    application    : 85% líneas, 75% ramas  (casos de uso y orquestación)
+                    infrastructure : 60% líneas             (adaptadores, controllers, JPA)
+
+                  TODO[JACOCO-SOFT-MODE]: haltOnFailure=false hasta que los tests de
+                  Commit 5 (OutboxRelay) y Commit 6 (E2E) estén en su lugar.
+                  Cambiar a true en el commit de activación de thresholds estrictos.
+                -->
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                    <configuration>
+                        <!-- Clases excluidas del análisis en todos los módulos -->
+                        <excludes>
+                            <!-- Clase main de Spring Boot: sin lógica de negocio -->
+                            <exclude>**/*Application.class</exclude>
+                            <!-- Configuraciones Spring: no testables sin contexto completo -->
+                            <exclude>**/config/**/*.class</exclude>
+                            <!-- DTOs: clases de transferencia sin lógica -->
+                            <exclude>**/dto/**/*.class</exclude>
+                            <!-- Entidades JPA: mapeos sin lógica de negocio -->
+                            <exclude>**/entity/**/*.class</exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <!-- Fase initialize: instrumenta bytecode para cobertura -->
+                        <execution>
+                            <id>prepare-agent</id>
+                            <phase>initialize</phase>
+                            <goals><goal>prepare-agent</goal></goals>
+                        </execution>
+                        <!-- Fase test: genera reporte HTML + XML en target/site/jacoco/ -->
+                        <execution>
+                            <id>report</id>
+                            <phase>test</phase>
+                            <goals><goal>report</goal></goals>
+                        </execution>
+                        <!-- Umbral capa domain (90% líneas, 85% ramas) -->
+                        <execution>
+                            <id>check-domain</id>
+                            <phase>verify</phase>
+                            <goals><goal>check</goal></goals>
+                            <configuration>
+                                <haltOnFailure>false</haltOnFailure>
+                                <includes>
+                                    <include>**/domain/**</include>
+                                </includes>
+                                <rules>
+                                    <rule>
+                                        <element>BUNDLE</element>
+                                        <limits>
+                                            <limit>
+                                                <counter>LINE</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>0.90</minimum>
+                                            </limit>
+                                            <limit>
+                                                <counter>BRANCH</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>0.85</minimum>
+                                            </limit>
+                                        </limits>
+                                    </rule>
+                                </rules>
+                            </configuration>
+                        </execution>
+                        <!-- Umbral capa application (85% líneas, 75% ramas) -->
+                        <execution>
+                            <id>check-application</id>
+                            <phase>verify</phase>
+                            <goals><goal>check</goal></goals>
+                            <configuration>
+                                <haltOnFailure>false</haltOnFailure>
+                                <includes>
+                                    <include>**/application/**</include>
+                                </includes>
+                                <rules>
+                                    <rule>
+                                        <element>BUNDLE</element>
+                                        <limits>
+                                            <limit>
+                                                <counter>LINE</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>0.85</minimum>
+                                            </limit>
+                                            <limit>
+                                                <counter>BRANCH</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>0.75</minimum>
+                                            </limit>
+                                        </limits>
+                                    </rule>
+                                </rules>
+                            </configuration>
+                        </execution>
+                        <!-- Umbral capa infrastructure (60% líneas) — excluido del fail -->
+                        <execution>
+                            <id>check-infrastructure</id>
+                            <phase>verify</phase>
+                            <goals><goal>check</goal></goals>
+                            <configuration>
+                                <haltOnFailure>false</haltOnFailure>
+                                <includes>
+                                    <include>**/infrastructure/**</include>
+                                </includes>
+                                <rules>
+                                    <rule>
+                                        <element>BUNDLE</element>
+                                        <limits>
+                                            <limit>
+                                                <counter>LINE</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>0.60</minimum>
+                                            </limit>
+                                        </limits>
+                                    </rule>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

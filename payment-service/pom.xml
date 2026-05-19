@@ -92,6 +92,25 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- ShedLock — distributed lock para OutboxRelayService en multi-instancia -->
+        <!-- Configuración del bean LockProvider: Commit 5 (OutboxRelay refactor) -->
+        <!-- ADR-018: evita que múltiples réplicas procesen el mismo evento -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+        </dependency>
+
+        <!-- SpringDoc OpenAPI — /swagger-ui.html y /api-docs -->
+        <!-- Anotaciones @Operation/@Tag en controllers: Commit 7 (OpenAPI) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -99,6 +118,12 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- JaCoCo: hereda toda la configuración del parent pluginManagement -->
+            <!-- Ver parent pom.xml: thresholds por capa, exclusiones, haltOnFailure=false -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
