@@ -1,0 +1,55 @@
+docs/adrs/ADR-002-base-datos-postgresql.md
+  s_3c2b4a404c0e4b::t_1e58ad6ba76e7d 1-68
+docs/adrs/ADR-008-cqrs-catalogo.md
+  s_3c2b4a404c0e4b::t_3f80e9bdd566e1 1-77
+docs/adrs/README.md
+  s_3c2b4a404c0e4b::t_5089ce729d4782 1-55
+docs/adrs/ADR-007-oauth-google-workspace.md
+  s_3c2b4a404c0e4b::t_09c73a579bbec6 1-73
+docs/adrs/ADR-006-procesamiento-asincrono.md
+  s_3c2b4a404c0e4b::t_5cf191c40ede8d 1-68
+docs/adrs/ADR-011-arquitectura-hexagonal.md
+  s_3c2b4a404c0e4b::t_ac8ee30998aaa6 1-79
+docs/adrs/ADR-018-distributed-locking-outbox-relay.md
+  s_9b02cbd117a20e::t_a08dc4976db927 1-104
+docs/adrs/ADR-012-control-concurrencia-pesimista.md
+  s_3c2b4a404c0e4b::t_de0faad5883218 1-86
+docs/adrs/ADR-009-idempotencia.md
+  s_3c2b4a404c0e4b::t_f2adaf3989c30a 1-75
+docs/adrs/ADR-004-despliegue-contenedorizado.md
+  s_3c2b4a404c0e4b::t_180f5a39a0580b 1-65
+docs/adrs/ADR-010-outbox-pattern.md
+  s_3c2b4a404c0e4b::t_9a9a91b889ab2f 1-87
+docs/adrs/ADR-019-dead-letter-strategy.md
+  s_3c2b4a404c0e4b::t_aed84c4737cd47 1-75
+docs/adrs/ADR-001-arquitectura-microservicios.md
+  s_3c2b4a404c0e4b::t_9723c588d8c8b1 1-63
+docs/adrs/ADR-003-cache-redis.md
+  s_3c2b4a404c0e4b::t_bb82278ce5a38a 1-64
+docs/adrs/ADR-005-desacoplamiento-proveedores.md
+  s_3c2b4a404c0e4b::t_17e949e5f4f8d0 1-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "bfcc894d849b5bc37485942a20409095df746139",
+  "prompts": {},
+  "sessions": {
+    "s_3c2b4a404c0e4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b9977ca2-d7dd-4d19-ac2f-940d182d0992",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    },
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
