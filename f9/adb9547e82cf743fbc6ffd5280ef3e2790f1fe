@@ -1,0 +1,25 @@
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/model/Pago.java
+  s_9b02cbd117a20e::t_1c14100a4e609d 124-125,140-157
+payment-service/src/main/java/com/javeriana/eventos/payment/application/ProcesarWebhookService.java
+  s_9b02cbd117a20e::t_d3df7373917063 8,14,18,26,28-29,31-33,35-39,47-56,58,63,67,75-78,84-85,89,95,97,100-101,107-118,129,135-164,169,178-182
+docs/srs-casos-uso-pendientes.md
+  s_9b02cbd117a20e::t_175f5a677929e1 567-595
+payment-service/src/main/resources/application.yml
+  s_9b02cbd117a20e::t_0c367e46a8583d 31-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "f9adb9547e82cf743fbc6ffd5280ef3e2790f1fe",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
