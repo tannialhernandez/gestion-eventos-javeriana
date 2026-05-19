@@ -25,6 +25,27 @@ spring:
 server:
   port: 8084
 
+payment:
+  gateway:
+    provider: ${PAYMENT_GATEWAY_PROVIDER:simulador}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      pasarela-pago:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-calls-in-half-open-state: 3
+        record-exceptions:
+          - java.net.ConnectException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+  timelimiter:
+    instances:
+      pasarela-pago:
+        timeout-duration: 5s
+
 management:
   endpoints:
     web:

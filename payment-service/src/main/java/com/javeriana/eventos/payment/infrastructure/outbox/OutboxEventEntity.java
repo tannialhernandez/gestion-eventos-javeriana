@@ -40,6 +40,9 @@ public class OutboxEventEntity {
     @Column(name = "published_at")
     private Instant publishedAt;
 
+    @Column(name = "attempts", nullable = false)
+    private int attempts = 0;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public UUID getAggregateId() { return aggregateId; }
@@ -54,4 +57,6 @@ public class OutboxEventEntity {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getPublishedAt() { return publishedAt; }
     public void setPublishedAt(Instant publishedAt) { this.publishedAt = publishedAt; }
+    public int getAttempts() { return attempts; }
+    public void setAttempts(int attempts) { this.attempts = attempts; }
 }
