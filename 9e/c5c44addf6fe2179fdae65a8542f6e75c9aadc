@@ -1,0 +1,21 @@
+docs/follow-ups/event-controller-admin-endpoints.patch
+  s_9b02cbd117a20e::t_58126df2ac32cc 1-70
+docs/follow-ups/event-controller-hexagonal-refactor.md
+  s_9b02cbd117a20e::t_0f2b193184a502 1-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "9ec5c44addf6fe2179fdae65a8542f6e75c9aadc",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
