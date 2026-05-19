@@ -1,0 +1,27 @@
+docs/build-conventions.md
+  s_9b02cbd117a20e::t_0ddb3d0c56855a 1-164
+pom.xml
+  s_9b02cbd117a20e::t_1e2b3bd0bd419e 133-154
+  s_9b02cbd117a20e::t_a46e645e64f02c 32,41-50
+  s_9b02cbd117a20e::t_b7ff9d1c8eaabd 176-305
+README.md
+  s_9b02cbd117a20e::t_c2419e8b79878f 148-192
+payment-service/pom.xml
+  s_9b02cbd117a20e::t_049749961b9ee7 95-113,122-126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "dda1fbbf89faeb5c7f6f517a844df9235b6f5d0f",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
