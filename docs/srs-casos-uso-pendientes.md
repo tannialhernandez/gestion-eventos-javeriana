@@ -15,7 +15,7 @@ Este documento cierra los gaps identificados en la Matriz de Trazabilidad v1.0 (
 | Gap (de la matriz) | Sección que lo resuelve |
 |---|---|
 | RF-32: Registro de asistencia por scan QR — falta CU-32 detallado | §3 de este documento |
-| RNF-07: Certificado < 30s — sin ADR de timeout y retry | §4 (complementa ADR-21 del SAD v2.0) |
+| RNF-07: Certificado < 30s — sin ADR de timeout y retry | §4 (complementa ADR-020 — timeout y retry Certificate Service) |
 | RF-60: Reportes para organizadores — sin diseño de dominio | §5 de este documento |
 | Flujo de Call for Papers (CU-40 a CU-42) sin secuencias de runtime | §6 de este documento |
 | Flujo de generación y verificación de certificados (CU-30/31) | §7 de este documento |
@@ -277,7 +277,7 @@ Certificate Service consume INSCRIPCION_ASISTENCIA_REGISTRADA
     └── 7. Publicar evento CertificadoDisponibleEvent → Notification Service envía email
 ```
 
-**Manejo de errores (ADR-21):**
+**Manejo de errores (ADR-020):**
 
 ```
 Si cualquier paso falla:
@@ -350,7 +350,7 @@ Código de verificación: [uuid]
 ### 6.2 CU-41 — Evaluar Propuesta con Rúbrica (Doble Ciego)
 
 **Actor:** Evaluador (usuario con rol EVALUADOR asignado al evento)  
-**Precondición:** La propuesta está en estado `EN_REVISION`. El evaluador tiene acceso pero NO ve el nombre del ponente (ADR-22).
+**Precondición:** La propuesta está en estado `EN_REVISION`. El evaluador tiene acceso pero NO ve el nombre del ponente (anonimización; ver ADR-021 para la firma de tokens y mecanismos de seguridad asociados).
 
 **Flujo principal:**
 
@@ -559,11 +559,11 @@ Entonces el certificado debe estar en estado DISPONIBLE en ≤ 30 segundos (p95)
 
 | Req. | Descripción | ADR nuevo | Justificación |
 |---|---|---|---|
-| RNF-07 | Certificado < 30s | ADR-21 (SAD v2.0 §7) | Timeout + retry policy para iText + S3 |
-| RF-32 | QR scan de asistencia | ADR-22 (SAD v2.0 §7) | HMAC-SHA256 para firma del token QR; previene falsificaciones |
+| RNF-07 | Certificado < 30s | ADR-020 (timeout y retry Certificate Service) | Timeout 25s + retry exponencial 3 intentos + circuit breaker S3 |
+| RF-32 | QR scan de asistencia | ADR-021 (HMAC-SHA256 firma QR) | HMAC-SHA256 para firma de tokens; previene falsificación sin consulta a BD |
 | RF-60 | Reportes organizadores | Ninguno nuevo | Queries SQL sobre BD existente; no requiere decisión arquitectónica separada |
-| RNF-08 | Resistencia a enumeración de verificación | ADR-05 (rate limiting en Gateway) | Complemento del ADR existente de API Gateway |
-| RNF-09 | Retención de certificados 5 años | ADR-14 (S3, extensión) | Política de Lifecycle de S3 añadida como extensión de ADR-14 |
+| RNF-08 | Resistencia a enumeración de verificación | ADR-022 (API Gateway rate limiting) | Rate limiting 50 req/s por IP en endpoints públicos; protege espacio de tokens |
+| RNF-09 | Retención de certificados 5 años | ADR-023 (S3 lifecycle y ciclo de vida PDFs) | Lifecycle: Standard→Standard-IA (30d)→Glacier-IR (1yr)→expiración (5yr) |
 
 ---
 

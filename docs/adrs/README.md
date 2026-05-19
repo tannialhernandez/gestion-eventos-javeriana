@@ -27,6 +27,10 @@ Javeriana.
 | ADR-017 | Estrategia de generación de certificados | Pendiente | TBD | RF-008 |
 | ADR-018 | Distributed Locking para Outbox Relay (ShedLock) | Aceptada | 2026-05-18 | RNF-02, RN-13 |
 | ADR-019 | Estrategia de Dead Letter Queue | Aceptada | 2026-05-18 | RNF-04, RNF-08 |
+| ADR-020 | Estrategia de timeout y retry en Certificate Service | Propuesta | 2026-05-18 | RF-008, RNF-07, RNF-08 |
+| ADR-021 | Firma HMAC-SHA256 para tokens QR de asistencia | Propuesta | 2026-05-18 | RF-032, RNF-05, RNF-08 |
+| ADR-022 | API Gateway — rate limiting, routing y políticas transversales | Propuesta | 2026-05-18 | RNF-04, RNF-06, RNF-08 |
+| ADR-023 | Política de almacenamiento S3 y ciclo de vida de PDFs | Propuesta | 2026-05-18 | RNF-09, RF-008, RF-031 |
 
 ## Convenciones
 
