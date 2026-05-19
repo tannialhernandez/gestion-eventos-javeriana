@@ -1,0 +1,70 @@
+diff --git a/event-service/src/main/java/com/javeriana/eventos/event/infrastructure/web/EventoController.java b/event-service/src/main/java/com/javeriana/eventos/event/infrastructure/web/EventoController.java
+index b361495..2191e78 100644
+--- a/event-service/src/main/java/com/javeriana/eventos/event/infrastructure/web/EventoController.java
++++ b/event-service/src/main/java/com/javeriana/eventos/event/infrastructure/web/EventoController.java
+@@ -1,11 +1,13 @@
+ package com.javeriana.eventos.event.infrastructure.web;
+ 
++import com.javeriana.eventos.event.domain.model.EstadoEvento;
+ import com.javeriana.eventos.event.domain.model.Evento;
+ import com.javeriana.eventos.event.domain.model.ModalidadEvento;
+ import com.javeriana.eventos.event.domain.model.TipoEvento;
+ import com.javeriana.eventos.event.domain.port.in.ConsultarCatalogoUseCase;
+ import com.javeriana.eventos.event.domain.port.in.CrearEventoUseCase;
+ import com.javeriana.eventos.event.domain.port.in.PublicarEventoUseCase;
++import com.javeriana.eventos.event.domain.port.out.EventoRepository;
+ import com.javeriana.eventos.event.infrastructure.web.dto.CrearEventoRequest;
+ import com.javeriana.eventos.event.infrastructure.web.dto.EventoResponse;
+ import jakarta.validation.Valid;
+@@ -23,13 +25,16 @@ public class EventoController {
+     private final CrearEventoUseCase crearEvento;
+     private final PublicarEventoUseCase publicarEvento;
+     private final ConsultarCatalogoUseCase consultarCatalogo;
++    private final EventoRepository eventoRepository;
+ 
+     public EventoController(CrearEventoUseCase crearEvento,
+                             PublicarEventoUseCase publicarEvento,
+-                            ConsultarCatalogoUseCase consultarCatalogo) {
++                            ConsultarCatalogoUseCase consultarCatalogo,
++                            EventoRepository eventoRepository) {
+         this.crearEvento = crearEvento;
+         this.publicarEvento = publicarEvento;
+         this.consultarCatalogo = consultarCatalogo;
++        this.eventoRepository = eventoRepository;
+     }
+ 
+     @PostMapping
+@@ -85,4 +90,33 @@ public class EventoController {
+             .map(e -> ResponseEntity.ok(EventoResponse.from(e)))
+             .orElse(ResponseEntity.notFound().build());
+     }
++
++    @GetMapping("/admin/todos")
++    public List<EventoResponse> listarTodos() {
++        return eventoRepository.buscarPorEstado(EstadoEvento.BORRADOR).stream()
++            .map(EventoResponse::from)
++            .toList();
++    }
++
++    @GetMapping("/admin/pendientes")
++    public List<EventoResponse> listarPendientes() {
++        return eventoRepository.buscarPorEstado(EstadoEvento.PENDIENTE_PUBLICACION).stream()
++            .map(EventoResponse::from)
++            .toList();
++    }
++
++    @PostMapping("/{id}/enviar-revision")
++    @ResponseStatus(HttpStatus.NO_CONTENT)
++    public void enviarARevision(@PathVariable UUID id) {
++        eventoRepository.buscarPorId(id).ifPresent(evento -> {
++            evento.enviarARevision();
++            eventoRepository.guardar(evento);
++        });
++    }
++
++    @DeleteMapping("/{id}")
++    @ResponseStatus(HttpStatus.NO_CONTENT)
++    public void eliminar(@PathVariable UUID id) {
++        eventoRepository.eliminar(id);
++    }
+ }
