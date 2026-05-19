@@ -1,0 +1,23 @@
+docs/matriz-trazabilidad.md
+  s_9b02cbd117a20e::t_09ad58f8e9f1d2 184-228
+docs/srs-sad-gap-analysis.md
+  s_9b02cbd117a20e::t_3b0d18175e99f0 1-180
+docs/trazabilidad-driver-decision.md
+  s_9b02cbd117a20e::t_6551ab348ddba2 1-313
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "bbad8920e02f7c41b9aaa4082397e8bd98229187",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
