@@ -1,0 +1,19 @@
+infrastructure/postgres/init/04-payment-outbox.sql
+  s_9b02cbd117a20e::t_6940df439fc8c5 1-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "7edc68df7eb21410701249026739e231de896deb",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
