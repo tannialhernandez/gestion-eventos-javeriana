@@ -1,0 +1,31 @@
+infrastructure/postgres/init/04-payment-outbox.sql
+  s_9b02cbd117a20e::t_619bfe772aad6c 1-21,25-32,34-41,44-45,50-52,54-57,59,61-80
+infrastructure/rabbitmq/README.md
+  s_9b02cbd117a20e::t_5d61377b8d966d 1-102
+infrastructure/rabbitmq/definitions.json
+  s_9b02cbd117a20e::t_d68447a212a694 19-25
+  s_9b02cbd117a20e::t_278eaa29584bde 92-97
+  s_9b02cbd117a20e::t_a7291a259a7209 156-162
+docs/adrs/ADR-019-dead-letter-strategy.md
+  s_9b02cbd117a20e::t_be0b674fdb3c08 28-60
+docs/follow-ups/dlx-unification.md
+  s_9b02cbd117a20e::t_5a530c67390425 1-108
+docs/follow-ups/incidents.md
+  s_9b02cbd117a20e::t_39fdf4830682ce 87-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "f4283d4231582be2467d6235a8bf84d5400c891b",
+  "prompts": {},
+  "sessions": {
+    "s_9b02cbd117a20e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd37e7e0-a40f-4303-9651-ef21c8281847",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tanhernandez <tannia.hernandez@mercadolibre.com.co>"
+    }
+  }
+}
