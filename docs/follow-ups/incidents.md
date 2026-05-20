@@ -84,3 +84,41 @@ Normalización de todas las referencias con mapeo limpio (6 archivos):
 **Acción preventiva**  
 Política creada: `docs/policies/adr-naming-policy.md`. Cualquier referencia a ADR
 debe usar el ID literal del índice maestro `docs/adrs/README.md`.
+
+---
+
+## Incidente 003 — Discrepancia entre ADR-019 y realidad de DLX en RabbitMQ
+
+**Fecha:** 2026-05-19  
+**Severidad:** Baja (detectado y corregido en el mismo commit)  
+**Branch:** feat/payment-outbox-e2e
+
+**Contexto**  
+ADR-019 fue redactado en el Commit 2 describiendo una topología ideal con un
+único exchange Dead Letter (`eventos.dlq.exchange`). Al ejecutar la fase de
+investigación previa al Commit 3, se descubrió que `definitions.json` ya tenía
+`eventos.dlx` (direct) configurado como DLX en todas las colas productivas
+existentes, con colas per-queue (`dlq.pago.confirmado`, etc.) y sus bindings.
+
+**Impacto**  
+Si se hubiera aplicado el Commit 3 sin investigación previa, se habría
+cambiado `x-dead-letter-exchange` en todas las colas productivas de `eventos.dlx`
+a `eventos.dlq.exchange`, rompiendo los bindings per-queue existentes.
+
+**Causa raíz**  
+ADR-019 fue redactado sin inspeccionar el estado real de `definitions.json`.
+El proceso de redacción de ADRs de infraestructura omitió la fase de
+"verificación del estado actual" que aplica el resto del proyecto.
+
+**Acción correctiva**  
+- `ADR-019` modificado para reflejar honestamente la coexistencia de dos DLX.
+- `definitions.json` actualizado para añadir `eventos.dlq.exchange` y la cola
+  `eventos.dlq` como catch-all, SIN modificar los arguments de colas existentes.
+- `infrastructure/rabbitmq/README.md` creado documentando la topología completa.
+- `docs/follow-ups/dlx-unification.md` creado con el plan de unificación futura.
+
+**Acción preventiva**  
+A partir de ahora, todo ADR que describa infraestructura existente debe
+estar precedido por una fase de inspección del estado actual — el mismo
+principio aplicado al Commit 4 (Pago.reembolsar()), al Commit 3 anterior
+(investigación del schema) y en general a cualquier "diseñar sobre la realidad".

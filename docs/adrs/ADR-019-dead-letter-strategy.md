@@ -25,20 +25,39 @@ consumer). Sin una estrategia de Dead Lettering:
   docs/comportamiento-runtime-inscripcion-pago.md.
 
 ## Decisión
-Implementar una estrategia de Dead Letter Queue genérica a nivel de 
-infraestructura RabbitMQ:
+Implementar una estrategia de Dead Letter Queue en infraestructura RabbitMQ.
 
-1. Exchange Dead Letter: eventos.dlq.exchange (tipo topic, durable).
-2. Cola Dead Letter: eventos.dlq (durable), bindeada con routing key # 
-   para capturar todos los mensajes fallidos.
-3. Configuración DLX en colas productivas: cada cola consumidora declara:
-   - x-dead-letter-exchange: eventos.dlq.exchange
-   - x-dead-letter-routing-key: <routing-key-original>.dlq
-4. Política de reintento: máximo 3 reintentos con backoff exponencial 
-   (1s, 4s, 16s) vía Spring AMQP RetryTemplate. Tras agotar reintentos, 
-   el mensaje se publica al DLX automáticamente.
-5. Header de trazabilidad: cada mensaje incluye headers x-correlation-id, 
-   x-original-routing-key, x-failure-reason, x-attempt-count.
+El sistema mantiene **dos Dead Letter Exchanges coexistiendo** durante la fase
+de evolución incremental (deuda técnica documentada en
+`docs/follow-ups/dlx-unification.md`):
+
+**1. `eventos.dlx` (existente, tipo direct) — DLX per-queue productivo:**
+   - Configurado como `x-dead-letter-exchange` en todas las colas consumidoras
+     existentes (`pago.confirmado`, `pago.reembolsado`, `inscripcion.confirmada`,
+     `certificado.solicitado`).
+   - Cada cola tiene `x-dead-letter-routing-key: dlq.{routing-key-original}`.
+   - `eventos.dlx` enruta a colas DLQ específicas (`dlq.pago.confirmado`, etc.)
+     para aislamiento por tipo de mensaje.
+   - Sin TTL en colas DLQ — mensajes conservados hasta intervención manual.
+
+**2. `eventos.dlq.exchange` (nuevo, tipo topic) — red de seguridad catch-all:**
+   - Binding `#` → cola `eventos.dlq` (captura cualquier routing key).
+   - Usado por `OutboxRelayService` como destino explícito cuando un evento
+     supera el umbral de reintentos (attempts >= 5).
+   - Facilita el monitoreo central: una sola cola a vigilar para mensajes
+     que no pudieron ser procesados por el relay.
+
+**3. Política de reintento en OutboxRelayService:**
+   - Cada tick (2 segundos, protegido por ShedLock ADR-018) intenta publicar.
+   - Si falla: incrementa `attempts` en `outbox_events`.
+   - Si `attempts >= 5`: publica a `eventos.dlq.exchange` con routing key
+     `dlq.{tipo-evento}` y marca el evento como `published=true`.
+
+**4. Header de trazabilidad:** cada mensaje incluye `messageId` = event UUID
+   (garantía de idempotencia en consumers, ADR-008).
+
+> **Nota:** La unificación de ambos DLX bajo `eventos.dlq.exchange` está agendada
+> como trabajo futuro. Ver `docs/follow-ups/dlx-unification.md`.
 
 ## Alternativas descartadas
 - DLQ por servicio (payment.dlq, inscription.dlq): descartada por 
