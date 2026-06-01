@@ -101,6 +101,7 @@ public abstract class E2ETestBase {
         DB_INSCRIPTION.start();
         DB_PAYMENT.start();
         REDIS.start();
+        esperarRedisListo();
         RABBITMQ.start();
 
         // 2. Microservicios en orden (event → payment → inscription)
@@ -114,6 +115,7 @@ public abstract class E2ETestBase {
                 "SPRING_DATASOURCE_URL=jdbc:postgresql://db-event:5432/eventos_event",
                 "SPRING_DATASOURCE_USERNAME=e2e", "SPRING_DATASOURCE_PASSWORD=e2e",
                 "REDIS_HOST=redis-e2e", "REDIS_PORT=6379",
+                "SPRING_DATA_REDIS_HOST=redis-e2e", "SPRING_DATA_REDIS_PORT=6379",
                 "RABBITMQ_HOST=rabbitmq-e2e", "RABBITMQ_USER=guest", "RABBITMQ_PASSWORD=guest",
                 "JWT_PUBLIC_KEY=" + JWT_PUBLIC_KEY,
                 "RETENTION_ENABLED=false"
@@ -216,6 +218,20 @@ public abstract class E2ETestBase {
                 "No se encontró JAR en " + targetDir.getAbsolutePath());
         }
         return jars[0];
+    }
+
+    private static void esperarRedisListo() {
+        Awaitility.await("redis acepta PING")
+            .atMost(Duration.ofSeconds(30))
+            .pollInterval(Duration.ofMillis(500))
+            .until(() -> {
+                try {
+                    Container.ExecResult result = REDIS.execInContainer("redis-cli", "ping");
+                    return result.getStdout() != null && result.getStdout().contains("PONG");
+                } catch (Exception e) {
+                    return false;
+                }
+            });
     }
 
     private static java.util.Map<String, String> construirEnvMap(String[] envVars) {
