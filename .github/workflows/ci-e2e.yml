@@ -38,7 +38,7 @@ jobs:
           mvn -U -f auth-service-stub/pom.xml -B package -DskipTests -Dmaven.test.skip=true
 
       - name: Backend smoke E2E with Testcontainers
-        run: mvn -U -f e2e-tests/pom.xml -B verify
+        run: mvn -U -f e2e-tests/pom.xml -B verify -Dit.test=FlujoFelizE2EIT
 
       - name: Start docker-compose E2E stack
         run: docker compose -f docker-compose.e2e.yml up -d --build --wait --wait-timeout 180
@@ -81,6 +81,7 @@ jobs:
         with:
           name: e2e-logs
           path: |
+            e2e-tests/target/failsafe-reports/
             docker-compose-e2e.log
             /tmp/frontend-vite.log
           retention-days: 30
