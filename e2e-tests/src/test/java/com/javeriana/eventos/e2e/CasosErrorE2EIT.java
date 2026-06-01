@@ -9,6 +9,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.UUID;
 
@@ -73,6 +77,7 @@ class CasosErrorE2EIT extends E2ETestBase {
         ));
 
         var resp = paymentClient.post().uri("/api/v1/webhooks/pagos")
+            .header("X-Signature", calcularHmacSha256(body, "e2e-secret"))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(body)
             .exchange()
@@ -87,10 +92,13 @@ class CasosErrorE2EIT extends E2ETestBase {
 
     @Test
     @DisplayName("Webhook con JSON malformado → HTTP 400 (no 500)")
-    void webhookJsonMalformado_retorna400() {
+    void webhookJsonMalformado_retorna400() throws Exception {
+        String body = "{ esto no es JSON }";
+
         var resp = paymentClient.post().uri("/api/v1/webhooks/pagos")
+            .header("X-Signature", calcularHmacSha256(body, "e2e-secret"))
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue("{ esto no es JSON }")
+            .bodyValue(body)
             .exchange()
             .block();
 
@@ -140,5 +148,11 @@ class CasosErrorE2EIT extends E2ETestBase {
         assertThat(inscriptionHealth).contains("UP");
 
         log.info("[e2e] ✅ Los 3 microservicios están UP");
+    }
+
+    private String calcularHmacSha256(String body, String secret) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        return HexFormat.of().formatHex(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
     }
 }

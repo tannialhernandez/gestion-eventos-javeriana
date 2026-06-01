@@ -10,6 +10,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.UUID;
 
@@ -79,14 +83,32 @@ class TrazabilidadE2EIT extends E2ETestBase {
     @Test
     @DisplayName("Header x-schema-version: v1 en eventos AMQP (C-03 / ADR-020 cerrado)")
     void headerSchemaVersionPreseneEnMensajesAmqp() throws Exception {
+        UUID inscripcionId = UUID.randomUUID();
+        String preferenciaBody = mapper.writeValueAsString(Map.of(
+            "inscripcionId", inscripcionId,
+            "monto", "150000",
+            "moneda", "COP"
+        ));
+
+        ClientResponse preferenciaResp = paymentClient.post()
+            .uri("/api/v1/pagos/preferencias")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(preferenciaBody)
+            .exchange()
+            .block();
+
+        assertThat(preferenciaResp).isNotNull();
+        assertThat(preferenciaResp.statusCode().is2xxSuccessful()).isTrue();
+
         // Enviar webhook para generar un PAGO_CONFIRMADO
         String body = mapper.writeValueAsString(Map.of(
             "referencia_externa", "E2E-SCHEMA-" + System.currentTimeMillis(),
-            "inscripcion_id",     UUID.randomUUID().toString(),
+            "inscripcion_id",     inscripcionId.toString(),
             "estado",             "approved"
         ));
 
         paymentClient.post().uri("/api/v1/webhooks/pagos")
+            .header("X-Signature", calcularHmacSha256(body, "e2e-secret"))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(body)
             .retrieve().toBodilessEntity().block();
@@ -122,5 +144,11 @@ class TrazabilidadE2EIT extends E2ETestBase {
         } else {
             log.info("[e2e] Cola vacía — ejecutar FlujoFelizE2EIT primero para poblar");
         }
+    }
+
+    private String calcularHmacSha256(String body, String secret) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        return HexFormat.of().formatHex(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
     }
 }
