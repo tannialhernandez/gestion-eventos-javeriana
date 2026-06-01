@@ -1,0 +1,107 @@
+name: CI Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "event-service/**"
+      - "inscription-service/**"
+      - "payment-service/**"
+      - "auth-service-stub/**"
+      - "shared/**"
+      - "pom.xml"
+      - ".github/workflows/ci-backend.yml"
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - event-service
+          - inscription-service
+          - payment-service
+          - auth-service-stub
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Install parent POM
+        run: mvn -N -B install
+
+      - name: Install shared module
+        if: matrix.service != 'auth-service-stub'
+        run: mvn -f shared/pom.xml -B install -DskipTests
+
+      - name: Run tests
+        run: mvn -f ${{ matrix.service }}/pom.xml -B test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/surefire-reports/
+          retention-days: 30
+
+  build-docker:
+    name: Build and publish ${{ matrix.service }}
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - event-service
+          - inscription-service
+          - payment-service
+          - auth-service-stub
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Package service JAR
+        run: |
+          mvn -N -B install
+          if [ "${{ matrix.service }}" != "auth-service-stub" ]; then
+            mvn -f shared/pom.xml -B install -DskipTests
+          fi
+          mvn -f ${{ matrix.service }}/pom.xml -B package -DskipTests
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

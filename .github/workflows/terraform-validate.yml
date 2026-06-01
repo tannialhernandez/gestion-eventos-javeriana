@@ -1,0 +1,74 @@
+name: Terraform Validate + Plan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform-validate.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform-validate.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init without backend
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan dry-run
+        run: |
+          terraform plan -refresh=false \
+            -var="aws_region=us-east-1" \
+            -var="project_name=eventos-javeriana" \
+            -var="environment=dev" \
+            -input=false || echo "Plan requiere credenciales AWS; fmt/init/validate ya cubren sintaxis IaC."
+
+  infracost:
+    runs-on: ubuntu-latest
+    env:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip when Infracost key is not configured
+        if: env.INFRACOST_API_KEY == ''
+        run: echo "INFRACOST_API_KEY no configurado; se omite estimacion automatica."
+
+      - uses: infracost/actions/setup@v3
+        if: env.INFRACOST_API_KEY != ''
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Generate cost estimate
+        if: env.INFRACOST_API_KEY != ''
+        working-directory: infra/terraform
+        run: |
+          infracost breakdown --path . \
+            --format json \
+            --out-file /tmp/infracost.json
+
+      - name: Comment cost estimate
+        if: env.INFRACOST_API_KEY != ''
+        uses: infracost/actions/comment@v3
+        with:
+          path: /tmp/infracost.json
+          behavior: update

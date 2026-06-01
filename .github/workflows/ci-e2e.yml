@@ -1,0 +1,87 @@
+name: CI E2E Smoke
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Package backend services
+        run: |
+          mvn -N -B install
+          mvn -f shared/pom.xml -B install -DskipTests
+          mvn -f event-service/pom.xml -B package -DskipTests
+          mvn -f inscription-service/pom.xml -B package -DskipTests
+          mvn -f payment-service/pom.xml -B package -DskipTests
+          mvn -f auth-service-stub/pom.xml -B package -DskipTests
+
+      - name: Backend smoke E2E with Testcontainers
+        run: mvn -f e2e-tests/pom.xml -B verify
+
+      - name: Start docker-compose E2E stack
+        run: docker compose -f docker-compose.e2e.yml up -d --build --wait --wait-timeout 180
+
+      - name: Verify services
+        run: docker compose -f docker-compose.e2e.yml ps
+
+      - name: Configure npm registry mirror
+        working-directory: frontend
+        run: echo "registry=https://registry.yarnpkg.com/" > .npmrc
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Start frontend dev server
+        working-directory: frontend
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/frontend-vite.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000 >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/frontend-vite.log
+          exit 1
+
+      - name: Smoke E2E frontend
+        working-directory: frontend
+        run: npm run smoke:e2e
+
+      - name: Upload compose logs
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml logs --no-color > docker-compose-e2e.log
+
+      - name: Upload E2E logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: |
+            docker-compose-e2e.log
+            /tmp/frontend-vite.log
+          retention-days: 30
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v

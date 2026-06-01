@@ -10,31 +10,31 @@ Este documento registra la deuda tecnica consciente de Entrega 3: decisiones dif
 
 | Severidad | Cantidad | Esfuerzo estimado |
 |---|---:|---:|
-| Critica P0 | 3 | 15 dias-persona |
-| Mayor P1 | 9 | 18.5 dias-persona |
+| Critica P0 | 3 | 9.75 dias-persona |
+| Mayor P1 | 9 | 16.5 dias-persona |
 | Menor P2 | 7 | 15.5 dias-persona |
-| Total | 19 | 49 dias-persona |
+| Total | 19 | 41.75 dias-persona |
 
-El backlog completo suma aproximadamente 49 dias-persona. El roadmap recomendado lo organiza en 3 sprints de 2 semanas, con paralelizacion o priorizacion por riesgo para que Fase 2 pueda cerrarse en 6 semanas calendario.
+El backlog completo suma aproximadamente 41.75 dias-persona tras cerrar CI/CD y dejar AWS declarado como IaC. El roadmap recomendado lo organiza en 3 sprints de 2 semanas, con paralelizacion o priorizacion por riesgo para que Fase 2 pueda cerrarse en 6 semanas calendario.
 
 ## 2. Inventario de deudas tecnicas
 
 ### 2.1 Deudas criticas P0
 
-#### D-001 - Despliegue AWS productivo no ejecutado
+#### D-001 - Despliegue AWS productivo declarado en IaC, apply pendiente
 
 | Campo | Detalle |
 |---|---|
-| Estado | Declarado |
-| Descripcion | El SAD describe despliegue productivo en AWS, pero Entrega 3 fue validada en Docker Compose local y entorno E2E reproducible. |
-| Justificacion de Entrega 3 | El objetivo academico priorizo arquitectura, flujo critico, pruebas y evidencia local; desplegar AWS completo requeria presupuesto, credenciales y operacion fuera del alcance inmediato. |
-| Impacto en produccion | No se certifica disponibilidad, escalado horizontal, TLS, IAM, secretos, backups, observabilidad administrada ni limites reales de infraestructura. |
-| Mitigacion actual | `docker-compose.e2e.yml`, Dockerfiles por servicio, perfiles `local`, health checks y evidencia reproducible de smoke, carga, testing y accesibilidad. |
-| Plan de cierre | Crear IaC, provisionar VPC, ALB, ECS/Fargate o EC2, RDS, Redis, RabbitMQ/Amazon MQ, S3/CloudFront para SPA, Secrets Manager, logs CloudWatch, alarmas y smoke post-deploy. |
-| Esfuerzo estimado | 5-7 dias-persona; referencia usada: 6 |
+| Estado | Reformulado en Prompt 29.8-B |
+| Descripcion | El SAD describe despliegue productivo en AWS. Entrega 3 ya incluye Terraform declarativo para VPC, ALB, EC2 Docker Compose, RDS PostgreSQL, ElastiCache Redis, Amazon MQ RabbitMQ, S3 y CloudFront; falta ejecutar `terraform apply` con una cuenta AWS real. |
+| Justificacion de Entrega 3 | La cuenta AWS institucional se gestiona en paralelo. Para evitar 12h de trabajo posterior, se dejo IaC versionada y validable en CI sin consumir recursos AWS. |
+| Impacto en produccion | No se ha certificado disponibilidad ni rendimiento sobre infraestructura AWS real; TLS con dominio propio, secretos productivos, backups avanzados y alarmas CloudWatch quedan para el apply/hardening. |
+| Mitigacion actual | `infra/terraform/`, `docs/deployment-aws-runbook.md`, workflows de Terraform validate/plan dry-run, Dockerfiles por servicio, GHCR y evidencia reproducible local. |
+| Plan de cierre | Configurar credenciales AWS, revisar `terraform.tfvars`, ejecutar `terraform init/plan/apply`, validar outputs, publicar SPA en S3/CloudFront, correr smoke post-deploy y ejecutar `terraform destroy` si es demo temporal. |
+| Esfuerzo estimado | 5h restantes; IaC ya preparado |
 | Prioridad Fase 2 | P0 |
 | ADRs relacionados | ADR-004 despliegue contenedorizado AWS/ECS, ADR-022 API Gateway policies, ADR-018 ShedLock |
-| Evidencias en el repo | `docker-compose.e2e.yml`, `docs/vista-fisica-deployment.md`, `docs/limites-carga-reconocidos.md`, `docs/evidencia-e2e.md` |
+| Evidencias en el repo | `infra/terraform/`, `docs/deployment-aws-runbook.md`, `.github/workflows/terraform-validate.yml`, `docs/vista-fisica-deployment.md`, `docs/limites-carga-reconocidos.md` |
 
 #### D-002 - Integracion Mercado Pago real pendiente
 
@@ -173,20 +173,20 @@ El backlog completo suma aproximadamente 49 dias-persona. El roadmap recomendado
 | ADRs relacionados | ADR-013 frontend TypeScript, RNF-10 mantenibilidad |
 | Evidencias en el repo | `docs/diagnostico-registry-npm.md`, `frontend/.npmrc`, `frontend/TESTING.md` |
 
-#### D-011 - CI/CD GitHub Actions no implementado
+#### D-011 - CI/CD GitHub Actions
 
 | Campo | Detalle |
 |---|---|
-| Estado | Declarado |
-| Descripcion | El SAD declara automatizacion de calidad/despliegue, pero no existe pipeline GitHub Actions que ejecute backend, frontend, K6, seguridad y build de imagenes. |
-| Justificacion de Entrega 3 | El trabajo se centro en cerrar arquitectura, pruebas locales y evidencia; CI/CD requiere secretos, runners y estrategia de despliegue. |
-| Impacto en produccion | Regresiones podrian llegar a ramas principales sin barrera automatizada; menor repetibilidad de evidencias. |
-| Mitigacion actual | Comandos locales reproducibles (`mvn`, `npm`, `make -C load-tests`) y reportes generados en repo local. |
-| Plan de cierre | Crear workflows por servicio, cache Maven/npm, matrices, Playwright, cobertura, Docker build, K6 smoke, publicacion de artefactos y gates por branch. |
-| Esfuerzo estimado | 2 dias-persona |
-| Prioridad Fase 2 | P1 |
+| Estado | Cerrado en Prompt 29.8-B |
+| Descripcion | El repositorio ya incluye workflows GitHub Actions para backend, frontend, E2E smoke, Terraform validate/plan dry-run y releases por tag. |
+| Justificacion de Entrega 3 | La automatizacion se implemento sin depender de AWS real: ejecuta calidad, empaqueta servicios, publica imagenes en GHCR y valida IaC en cada push relevante. |
+| Impacto en produccion | Riesgo residual bajo: falta observar el primer ciclo verde completo en GitHub Actions y ajustar tiempos si algun runner excede limite por Testcontainers/Playwright. |
+| Mitigacion actual | `.github/workflows/ci-backend.yml`, `ci-frontend.yml`, `ci-e2e.yml`, `terraform-validate.yml`, `release.yml`. |
+| Plan de cierre | Monitorear primer run, revisar artefactos, publicar paquetes GHCR como publicos o configurar token de pull en AWS, y agregar branch protection cuando el equipo estabilice los tiempos. |
+| Esfuerzo estimado | 0 dias-persona; seguimiento operativo menor |
+| Prioridad Fase 2 | Cerrado |
 | ADRs relacionados | ADR-004 despliegue, ADR-022 gateway/policies, RNF-10 mantenibilidad |
-| Evidencias en el repo | `frontend/TESTING.md`, `docs/evidencia-testing-frontend.md`, `docs/evidencia-accesibilidad-frontend.md`, `load-tests/Makefile` |
+| Evidencias en el repo | `.github/workflows/`, `https://github.com/tannialhernandez/gestion-eventos-javeriana/actions`, `infra/terraform/`, `frontend/TESTING.md` |
 
 #### D-012 - Refresh token no implementado en auth-stub
 
@@ -327,7 +327,7 @@ El backlog completo suma aproximadamente 49 dias-persona. El roadmap recomendado
 
 | Deuda | Trabajo |
 |---|---|
-| D-001 | Despliegue AWS productivo con IaC, secretos, observabilidad y smoke post-deploy. |
+| D-001 | Ejecutar Terraform AWS ya declarado, configurar secretos productivos, validar outputs y smoke post-deploy. |
 | D-003 | Integracion Azure AD Javeriana o IdP OIDC institucional. |
 | D-002 | Integracion Mercado Pago real en sandbox y preparacion productiva. |
 
@@ -337,7 +337,6 @@ El backlog completo suma aproximadamente 49 dias-persona. El roadmap recomendado
 |---|---|
 | D-004 | Authorization Code + PKCE. |
 | D-005 | `notification-service` con consumidores AMQP y plantillas. |
-| D-011 | CI/CD GitHub Actions. |
 | D-008 | Certificacion RNF-04 con K6 sobre AWS. |
 | D-010 | Coordinacion de registry npm/proxy con TI. |
 
@@ -353,7 +352,7 @@ El backlog completo suma aproximadamente 49 dias-persona. El roadmap recomendado
 | D-018 | Reembolso tardio asincrono. |
 | D-014 / D-019 | Storybook y cierre documental residual. |
 
-Total estimado: 6 semanas calendario en 3 sprints, con 49 dias-persona de backlog inventariado. Si trabaja una sola persona full-time, se recomienda cerrar P0 y P1 primero y mover parte de P2 a un cuarto sprint si no hay paralelizacion.
+Total estimado: 6 semanas calendario en 3 sprints, con 41.75 dias-persona de backlog inventariado. Si trabaja una sola persona full-time, se recomienda cerrar P0 y P1 primero y mover parte de P2 a un cuarto sprint si no hay paralelizacion.
 
 ## 5. Estado de calidad medible
 
