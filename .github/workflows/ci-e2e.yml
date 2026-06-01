@@ -12,6 +12,7 @@ jobs:
     timeout-minutes: 40
     env:
       MAVEN_OPTS: -Djdk.attach.allowAttachSelf=true
+      JAVA_TOOL_OPTIONS: -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading
     steps:
       - uses: actions/checkout@v4
 
@@ -29,15 +30,15 @@ jobs:
 
       - name: Package backend services
         run: |
-          mvn -N -B install
-          mvn -f shared/pom.xml -B install -DskipTests
-          mvn -f event-service/pom.xml -B package -DskipTests -Dmaven.test.skip=true
-          mvn -f inscription-service/pom.xml -B package -DskipTests -Dmaven.test.skip=true
-          mvn -f payment-service/pom.xml -B package -DskipTests -Dmaven.test.skip=true
-          mvn -f auth-service-stub/pom.xml -B package -DskipTests -Dmaven.test.skip=true
+          mvn -U -N -B install
+          mvn -U -f shared/pom.xml -B install -DskipTests
+          mvn -U -f event-service/pom.xml -B package -DskipTests -Dmaven.test.skip=true
+          mvn -U -f inscription-service/pom.xml -B package -DskipTests -Dmaven.test.skip=true
+          mvn -U -f payment-service/pom.xml -B package -DskipTests -Dmaven.test.skip=true
+          mvn -U -f auth-service-stub/pom.xml -B package -DskipTests -Dmaven.test.skip=true
 
       - name: Backend smoke E2E with Testcontainers
-        run: mvn -f e2e-tests/pom.xml -B verify
+        run: mvn -U -f e2e-tests/pom.xml -B verify
 
       - name: Start docker-compose E2E stack
         run: docker compose -f docker-compose.e2e.yml up -d --build --wait --wait-timeout 180

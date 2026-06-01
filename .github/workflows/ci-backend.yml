@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MAVEN_OPTS: -Djdk.attach.allowAttachSelf=true
+      JAVA_TOOL_OPTIONS: -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading
     strategy:
       fail-fast: false
       matrix:
@@ -38,14 +39,14 @@ jobs:
           cache: maven
 
       - name: Install parent POM
-        run: mvn -N -B install
+        run: mvn -U -N -B install
 
       - name: Install shared module
         if: matrix.service != 'auth-service-stub'
-        run: mvn -f shared/pom.xml -B install -DskipTests
+        run: mvn -U -f shared/pom.xml -B install -DskipTests
 
       - name: Run tests
-        run: mvn -f ${{ matrix.service }}/pom.xml -B test
+        run: mvn -U -f ${{ matrix.service }}/pom.xml -B test
 
       - name: Upload test results
         if: always()
@@ -61,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MAVEN_OPTS: -Djdk.attach.allowAttachSelf=true
+      JAVA_TOOL_OPTIONS: -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -84,11 +86,11 @@ jobs:
 
       - name: Package service JAR
         run: |
-          mvn -N -B install
+          mvn -U -N -B install
           if [ "${{ matrix.service }}" != "auth-service-stub" ]; then
-            mvn -f shared/pom.xml -B install -DskipTests
+            mvn -U -f shared/pom.xml -B install -DskipTests
           fi
-          mvn -f ${{ matrix.service }}/pom.xml -B package -DskipTests -Dmaven.test.skip=true
+          mvn -U -f ${{ matrix.service }}/pom.xml -B package -DskipTests -Dmaven.test.skip=true
 
       - uses: docker/setup-buildx-action@v3
 
