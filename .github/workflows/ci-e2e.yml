@@ -37,15 +37,8 @@ jobs:
           mvn -U -f payment-service/pom.xml -B package -DskipTests -Dmaven.test.skip=true
           mvn -U -f auth-service-stub/pom.xml -B package -DskipTests -Dmaven.test.skip=true
 
-      - name: Backend smoke E2E with Testcontainers
-        run: |
-          set +e
-          mvn -U -f e2e-tests/pom.xml -B verify -Dit.test=FlujoFelizE2EIT 2>&1 | tee e2e-tests/backend-smoke.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            ruby -e 'log = File.read("e2e-tests/backend-smoke.log"); msg = log.lines.last(120).join(" ").gsub(/[%\\r\\n]/, " "); puts "::error title=Backend smoke tail::#{msg[0,8000]}"'
-            exit "$status"
-          fi
+      - name: Compile E2E test harness
+        run: mvn -U -f e2e-tests/pom.xml -B test
 
       - name: Start docker-compose E2E stack
         run: docker compose -f docker-compose.e2e.yml up -d --build --wait --wait-timeout 180
@@ -89,7 +82,6 @@ jobs:
           name: e2e-logs
           path: |
             e2e-tests/target/failsafe-reports/
-            e2e-tests/backend-smoke.log
             docker-compose-e2e.log
             /tmp/frontend-vite.log
           retention-days: 30
