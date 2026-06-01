@@ -41,7 +41,7 @@ jobs:
         run: mvn -U -f e2e-tests/pom.xml -B test
 
       - name: Start docker-compose E2E stack
-        run: docker compose -f docker-compose.e2e.yml up -d --build --wait --wait-timeout 180
+        run: docker compose -f docker-compose.e2e.yml up -d --build --wait --wait-timeout 420
 
       - name: Verify services
         run: docker compose -f docker-compose.e2e.yml ps
