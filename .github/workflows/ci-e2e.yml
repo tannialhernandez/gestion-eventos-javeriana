@@ -47,8 +47,9 @@ jobs:
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             docker compose -f docker-compose.e2e.yml ps > docker-compose-ps.log || true
+            docker compose -f docker-compose.e2e.yml logs --no-color --tail=120 auth-service-stub event-service payment-service inscription-service > docker-compose-services.log || true
             docker compose -f docker-compose.e2e.yml logs --no-color --tail=160 > docker-compose-e2e.log || true
-            ruby -e 'parts = []; parts << File.read("docker-compose-up.log") if File.exist?("docker-compose-up.log"); parts << File.read("docker-compose-ps.log") if File.exist?("docker-compose-ps.log"); parts << File.read("docker-compose-e2e.log") if File.exist?("docker-compose-e2e.log"); msg = parts.join("\n").lines.last(180).join(" ").gsub(/[%\\r\\n]/, " "); puts "::error title=Docker compose E2E failed::#{msg[0,8000]}"'
+            ruby -e 'parts = []; parts << "=== docker compose ps ===\n#{File.read("docker-compose-ps.log")}" if File.exist?("docker-compose-ps.log"); parts << "=== service logs ===\n#{File.read("docker-compose-services.log")}" if File.exist?("docker-compose-services.log"); msg = parts.join("\n").gsub(/[%\\r\\n]/, " "); puts "::error title=Docker compose E2E failed::#{msg[0,8000]}"'
             exit "$status"
           fi
 
@@ -93,6 +94,7 @@ jobs:
             e2e-tests/target/failsafe-reports/
             docker-compose-up.log
             docker-compose-ps.log
+            docker-compose-services.log
             docker-compose-e2e.log
             /tmp/frontend-vite.log
           retention-days: 30
