@@ -43,7 +43,7 @@ jobs:
       - name: Start docker-compose E2E stack
         run: |
           set +e
-          docker compose -f docker-compose.e2e.yml up -d --build --wait --wait-timeout 420 2>&1 | tee docker-compose-up.log
+          docker compose -f docker-compose.e2e.yml up -d --build 2>&1 | tee docker-compose-up.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             docker compose -f docker-compose.e2e.yml ps > docker-compose-ps.log || true
@@ -52,6 +52,30 @@ jobs:
             ruby -e 'parts = []; parts << "=== docker compose ps ===\n#{File.read("docker-compose-ps.log")}" if File.exist?("docker-compose-ps.log"); parts << "=== service logs ===\n#{File.read("docker-compose-services.log")}" if File.exist?("docker-compose-services.log"); msg = parts.join("\n").gsub(/[%\\r\\n]/, " "); puts "::error title=Docker compose E2E failed::#{msg[0,8000]}"'
             exit "$status"
           fi
+          for service in \
+            auth-service-stub:http://localhost:8081/actuator/health \
+            event-service:http://localhost:8082/actuator/health \
+            inscription-service:http://localhost:8083/actuator/health \
+            payment-service:http://localhost:8084/actuator/health
+          do
+            name="${service%%:*}"
+            url="${service#*:}"
+            echo "Waiting for ${name} at ${url}"
+            ready=false
+            for attempt in {1..90}; do
+              if curl -fsS "${url}" | grep -q UP; then
+                ready=true
+                break
+              fi
+              sleep 5
+            done
+            if [ "${ready}" != "true" ]; then
+              docker compose -f docker-compose.e2e.yml ps > docker-compose-ps.log || true
+              docker compose -f docker-compose.e2e.yml logs --no-color --tail=160 "${name}" > docker-compose-services.log || true
+              ruby -e 'parts = []; parts << "=== docker compose ps ===\n#{File.read("docker-compose-ps.log")}" if File.exist?("docker-compose-ps.log"); parts << "=== service logs ===\n#{File.read("docker-compose-services.log")}" if File.exist?("docker-compose-services.log"); msg = parts.join("\n").gsub(/[%\\r\\n]/, " "); puts "::error title=Service healthcheck failed::#{msg[0,8000]}"'
+              exit 1
+            fi
+          done
 
       - name: Verify services
         run: docker compose -f docker-compose.e2e.yml ps
