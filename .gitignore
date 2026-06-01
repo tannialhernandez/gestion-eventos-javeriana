@@ -34,7 +34,7 @@ load-tests/.generated/
 
 # Local assistant/session artifacts
 .claude/
-out/
+/out/
 
 # Superpowers brainstorming companion
 .superpowers/
