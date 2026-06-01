@@ -43,7 +43,7 @@ jobs:
           mvn -U -f e2e-tests/pom.xml -B verify -Dit.test=FlujoFelizE2EIT 2>&1 | tee e2e-tests/backend-smoke.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            ruby -e 'log = File.read("e2e-tests/backend-smoke.log"); lines = log.lines.select { |l| l.match?(/\\[ERROR\\]|Exception|AssertionFailed|Caused by|ContainerLaunchException|TimeoutException|BUILD FAILURE/) }.last(40); msg = lines.join(" ").gsub(/[%\\r\\n]/, " "); puts "::error title=Backend smoke failed::#{msg[0,8000]}"'
+            ruby -e 'log = File.read("e2e-tests/backend-smoke.log"); msg = log.lines.last(120).join(" ").gsub(/[%\\r\\n]/, " "); puts "::error title=Backend smoke tail::#{msg[0,8000]}"'
             exit "$status"
           fi
 
