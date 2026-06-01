@@ -1,0 +1,1199 @@
+frontend/src/shared/ui/StatusBadge.tsx
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-17
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/retention/RetentionConfig.java
+  s_d371ad073063c8::t_a2e21f8123da7c 1-31
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/idempotencia/SpringDataMensajeProcesadoRepository.java
+  s_d371ad073063c8::t_a14f948614f35d 1-9
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/outbox/OutboxEventEntity.java
+  s_d371ad073063c8::t_5c0f7ceeecc03c 3,12-14,18-19,26-28,38-68
+docs/evidencia-diseno-completo-frontend.md
+  s_e975fa25d919d9::t_b31e0aef702883 1-100
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/outbox/OutboxEventMapper.java
+  s_d371ad073063c8::t_7006f89b20cdd4 1-36
+docs/diagramas/vista-desarrollo-dependency-rule.puml
+  s_feae4534e259a7::t_c20cf88e6a17c0 1-114
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/security/JwtAuthFilter.java
+  s_d371ad073063c8::t_58b7c804f80ef3 1-80
+frontend/src/features/catalog/CatalogPage.test.tsx
+  s_e975fa25d919d9::t_ee95774f2d03cb 1-57
+frontend/src/test/mocks/server.ts
+  s_e975fa25d919d9::t_45f3790390f07f 1-4
+inscription-service/src/main/java/com/javeriana/eventos/inscription/InscriptionApplication.java
+  s_d371ad073063c8::t_237a625e1a8101 3-5,9-10,16,22-30
+inscription-service/src/test/java/com/javeriana/eventos/inscription/infrastructure/security/JwtTestHelper.java
+  s_d371ad073063c8::t_7dfb4d78d7f439 1-59
+payment-service/src/main/resources/application-test.yml
+  s_e975fa25d919d9::t_27e02e4b96426f 32-37
+  s_d371ad073063c8::t_90ee54d46e4c47 29-31
+  s_d371ad073063c8::t_42a92787d29d27 21-28
+  s_d371ad073063c8::t_b9d3723f3a1aec 1-20
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/serialization/JacksonEventoSerializador.java
+  s_d371ad073063c8::t_4cad1169504cc4 1-26
+docs/diagramas/vp-escenario-b-pago.puml
+  s_b67dd46a9e3df2::t_e3b7f0c875640d 1-132
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/retention/RetentionMetrics.java
+  s_d371ad073063c8::t_1609d8f42fb779 1-49
+payment-service/src/test/java/com/javeriana/eventos/payment/retention/RetentionIT.java
+  s_d371ad073063c8::t_afd36feb4c2f31 1-3,6-46,49-82,84-93,95-182,185-188,199-201,203-216,239-240
+  s_e975fa25d919d9::t_0c01232e2963a7 94,227-238
+  s_e975fa25d919d9::t_df7d1423579a7d 4-5,47-48,83,189-198,202,217-226
+  s_e975fa25d919d9::t_5f9203c97e9125 183-184
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/messaging/PagoConfirmadoConsumer.java
+  s_d371ad073063c8::t_d8956d4e204fcf 69-79
+  s_d371ad073063c8::t_28d69b90cd38da 7
+  s_d371ad073063c8::t_3f36dfa546a380 85-86
+  s_d371ad073063c8::t_fb0b004a1c20d8 6,10-11,13-14,16,21,23,25-27,29-43,50-52,54-55,58,60-62,65-68,80,82-84,87-108,110-111,114-128,130-132,134-148
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/WebhookController.java
+  s_d371ad073063c8::t_43e35d4afd077f 3,7-9,12-13,18,20-35,42-44,47,49-51,57-58,60,65,70-72,74-80,83-89,91-99,101-109,111-112,114-117,119-122,124-131
+docs/evidencia-frontend.md
+  s_e975fa25d919d9::t_2eacc53b509f50 106-107
+  s_e975fa25d919d9::t_470dbb3c648ab2 2-11,13-21,26-37,42-47,49-67,69-72,74,76-83,109-116,120-121,128-143,146-150
+  s_e975fa25d919d9::t_93f1ff161770e1 117
+  s_e975fa25d919d9::t_e4fce7e15ae750 12,75
+  s_e975fa25d919d9::t_b59adc647f7a3b 22-23,73,84-105,108,123-127
+  s_e975fa25d919d9::t_fffba9453e1c1c 1,24-25,38,48,68,118-119,122,144-145,151
+  s_e975fa25d919d9::t_6ee2c8ba7975dc 39-41
+docs/alcance-y-decisiones-de-mocks.md
+  s_e975fa25d919d9::t_6591577d8cd5e0 19-48,78,86
+  s_e975fa25d919d9::t_fffba9453e1c1c 1-18,49-77,79-85,87-98
+frontend/e2e/01-login-flow.spec.ts
+  s_e975fa25d919d9::t_8f56ee55babceb 1,3-20,22-23,44-54
+  s_e975fa25d919d9::t_285bb385d70ed4 21
+  s_e975fa25d919d9::t_14b6eb86bb4dae 2,24-43
+auth-service-stub/src/main/java/com/javeriana/eventos/authstub/JwtIssuer.java
+  s_e975fa25d919d9::t_3675915ff82b91 1-52,61-92,99-103
+  s_e975fa25d919d9::t_e30eaa6fc632ec 53-60,93-98
+frontend/.env.example
+  s_e975fa25d919d9::t_bb7bc9b50fe20d 1
+  s_e975fa25d919d9::t_58ed44b435d2a8 2-5
+e2e-tests/pom.xml
+  s_d371ad073063c8::t_457513a920cefe 1-136
+docs/diagramas/vista-logica-kruchten.puml
+  s_b67dd46a9e3df2::t_4d1b41b032da63 285-302
+  s_b67dd46a9e3df2::t_3d289cced9c22c 1-10,12-24,28-114,117-119,122-124,127-130,132-133,138-254,261-284,303-305
+  s_b67dd46a9e3df2::t_bfd2516c5c967e 11,25-27
+  s_b67dd46a9e3df2::t_007915dc08e252 115-116,120-121,125-126,131,134-137
+  s_b67dd46a9e3df2::t_54e9bbd02079ac 255-260
+docs/diagramas/vista-escenarios-cu.puml
+  s_4700d05819993f::t_05d15083481cc7 1-91
+event-service/src/main/resources/application-prod.yml
+  s_d371ad073063c8::t_cb8a70116535eb 1-20
+  s_d371ad073063c8::t_cda5a61a3c857e 21-24
+  s_e975fa25d919d9::t_27e02e4b96426f 25-33
+event-service/src/test/resources/application-test.yml
+  s_d371ad073063c8::t_8a929e707066e5 1,7-9,12-13,15,18-20,25-28
+  s_d371ad073063c8::t_2a232483ff9e0a 2-6,10-11,14,16-17,21-24
+  s_d371ad073063c8::t_fd8c51c8c7cbe9 29-31
+  s_e975fa25d919d9::t_27e02e4b96426f 32-37
+frontend/src/features/checkout/PaymentPage.tsx
+  s_e975fa25d919d9::t_d33e5736472cfb 3,5,15,25,70
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-2,4,6-14,16-24,26-58,60-69,71-74,76-78
+  s_e975fa25d919d9::t_7169db33b61eeb 59,75
+frontend/src/features/checkout/ConfirmationPage.tsx
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-27
+frontend/src/lib/retry/index.ts
+  s_e975fa25d919d9::t_725d6ae11c72af 1
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/outbox/OutboxRelayService.java
+  s_d371ad073063c8::t_478d64dd27e938 97-98
+  s_d371ad073063c8::t_891fd38bc6969a 3,10-11,15,18,24,32,41,45,48-49,53,56,63,65,71,80,83,90-93,99,107,137-140
+  s_d371ad073063c8::t_bcd3b14fda4295 4
+  s_d371ad073063c8::t_17297c860f441f 6,9,12,20-21,26-30,35-39,42-43,46-47,50,62,66-68,70,72-77,82,101-106,108-110,112-119,122-136
+  s_d371ad073063c8::t_913dc55f267679 85-88,94-96
+  s_d371ad073063c8::t_b140c52441bcfa 5
+event-service/src/main/java/com/javeriana/eventos/event/domain/events/PayloadEventoDominio.java
+  s_d371ad073063c8::t_f2d9bfa81b968f 1-95
+frontend/src/lib/serviceHealth/serviceHealthStore.ts
+  s_e975fa25d919d9::t_60aa79ae74fdbe 15,17-20,22,32,45-50
+  s_e975fa25d919d9::t_89fac951b5adf6 1-14,16,21,23-31,33-44,51-57
+frontend/src/lib/serviceHealth/index.ts
+  s_e975fa25d919d9::t_152d073a8814a0 1
+docs/diagramas/vista-desarrollo-maven-modulos.puml
+  s_feae4534e259a7::t_ac4caa7b2b31d0 1-90
+docs/diagramas/c4-code-event-service.puml
+  s_feae4534e259a7::t_e01cb7fa17b258 16,18-19,24-25
+  s_feae4534e259a7::t_36950518c2d9d3 1-15,17,20-23,26-447,459-483
+  s_feae4534e259a7::t_590da5bedadccb 448-458
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/clientes/EventoServiceAdapter.java
+  s_d371ad073063c8::t_d4ebdfd0af2edd 106-113,115
+  s_d371ad073063c8::t_6245291737d5df 1-4,9-32,35-42,44,47,49-52,58-61,67-68,79-83,86,89-96,99,105,124-125
+  s_d371ad073063c8::t_a0e89217235b78 5
+  s_e975fa25d919d9::t_734d9f47025663 7-8,33-34,43,45-46,48,53-57,62-66,71-75
+  s_d371ad073063c8::t_67439551110a7d 69-70,76-77
+  s_e975fa25d919d9::t_f3aa847e65258c 6,88,101-104,114,116-123
+  s_d371ad073063c8::t_5160d483cfa271 78,84-85,87,97-98,100
+inscription-service/src/test/java/com/javeriana/eventos/inscription/InscripcionFlowEndToEndIT.java
+  s_d371ad073063c8::t_62a825e6598b33 318-322
+  s_d371ad073063c8::t_646d910aebdcd4 134-135,152-161,163
+  s_d371ad073063c8::t_a64d53e707d5d9 70
+  s_d371ad073063c8::t_70d431e20094c7 1-35,38-39,41-69,71-121,123-125,127-133,136-151,164-188,190-232,234-317,323-342
+  s_d371ad073063c8::t_9e1c2b134f02c3 36-37,40
+  s_d371ad073063c8::t_396f0b4bb69f0d 122,126
+  s_d371ad073063c8::t_0d1e3cd8bf2a1c 162,189,233
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/clientes/PaymentServiceFeignClient.java
+  s_d371ad073063c8::t_79b5547e88aff0 1-33
+inscription-service/src/main/java/com/javeriana/eventos/inscription/domain/port/out/EventoServicePort.java
+  s_d371ad073063c8::t_bb09eba651e15c 22-30,38-43
+docs/diagramas/vista-escenarios-cu-general.puml
+  s_feae4534e259a7::t_0a77a97240f8b0 1-115
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/security/WebhookSignatureValidator.java
+  s_d371ad073063c8::t_2c99043d6b13c6 1-81
+e2e-tests/src/test/java/com/javeriana/eventos/e2e/JwtE2EHelper.java
+  s_d371ad073063c8::t_4113a6acb28872 1-2,4-24,26-40,49-71
+  s_e975fa25d919d9::t_a222425143391c 3,25,41-48
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/idempotencia/MensajeProcesadoId.java
+  s_d371ad073063c8::t_0bdcda037fc4a1 1-47
+load-tests/bin/entrypoint.sh
+  s_e975fa25d919d9::t_7612e2d1340605 11
+  s_e975fa25d919d9::t_2a7c8ed369465b 1-10,12-20
+frontend/src/app/App.tsx
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-5,8-25
+  s_e975fa25d919d9::t_3cdacffc806afc 6-7
+frontend/src/components/degradation/DegradedServiceBanner.test.tsx
+  s_e975fa25d919d9::t_08f4c7a221eb06 1,20-24,34-39
+  s_e975fa25d919d9::t_ba7cc948e671a7 2-19,25-33,40-45
+frontend/src/features/checkout/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-2
+e2e-tests/src/test/java/com/javeriana/eventos/e2e/E2ETestBase.java
+  s_d371ad073063c8::t_dbe9a46e600f7b 1-14,16-115,120-133,135-150,152-189,191-256
+  s_e975fa25d919d9::t_a742d1aed547b5 118
+  s_e975fa25d919d9::t_a222425143391c 15
+  s_e975fa25d919d9::t_00c9213e8d71c7 116,119,134,151
+  s_e975fa25d919d9::t_15322df3684d85 117
+  s_e975fa25d919d9::t_805262503ff035 190
+payment-service/Dockerfile
+  s_e975fa25d919d9::t_8935e0492857a4 3-6
+  s_d371ad073063c8::t_64951bcc6afd10 1-2,7-14
+frontend/src/features/auth/jwt-utils.ts
+  s_e975fa25d919d9::t_0556d806dc9048 1-58
+docs/diagramas/actividad-outbox-relay.puml
+  s_feae4534e259a7::t_cb620587f9ea24 1-236
+docs/adr/ADR-013-frontend-spa-revision-typescript.md
+  s_e975fa25d919d9::t_6591577d8cd5e0 1-77
+event-service/src/test/java/com/javeriana/eventos/event/retention/RetentionIT.java
+  s_e975fa25d919d9::t_df7d1423579a7d 41-45
+  s_e975fa25d919d9::t_0c01232e2963a7 96,189-200
+  s_d371ad073063c8::t_2e54850ab384de 1-40,46-95,97-188,201-202
+docs/diagnostico-registry-npm.md
+  s_e975fa25d919d9::t_687edcacae6591 1-322
+frontend/src/lib/retry/withRetry.test.ts
+  s_e975fa25d919d9::t_b2a922d6f8f0c2 40,44
+  s_e975fa25d919d9::t_32711ea2a12ab5 1-39,41-43,45-61
+docs/diagramas/escenario-a-inscripcion-outbox.puml
+  s_b67dd46a9e3df2::t_ee7456d9f63d51 1-106
+frontend/src/lib/errors/index.ts
+  s_e975fa25d919d9::t_f2a5264d778843 1-2
+inscription-service/src/main/java/com/javeriana/eventos/inscription/application/CrearInscripcionService.java
+  s_d371ad073063c8::t_51c92e6e00e901 89-91,102-103
+  s_d371ad073063c8::t_bd5ef4dbe5646a 3-4,9-10,24-27,29-31,33,41-45,51,55-56,61,65,73,76,79,97,99,101,104-106,109,120-136
+  s_d371ad073063c8::t_ac75f96e4f3584 8,13
+  s_d371ad073063c8::t_d06d2dbf25c7ac 94-96
+  s_d371ad073063c8::t_34b38b755f18f7 28,53-54,77-78,88,108
+inscription-service/src/test/java/com/javeriana/eventos/inscription/infrastructure/clientes/EventoServiceAdapterTest.java
+  s_d371ad073063c8::t_222492ac71de60 76-77,80,84-86,88-89,95-97,100,107-109,111-114
+  s_d371ad073063c8::t_5961d2949cb38c 150,153-154,157
+  s_e975fa25d919d9::t_734d9f47025663 5-6,16,44-52,115-146
+  s_d371ad073063c8::t_f3e37a913b9cae 167-174,176-182
+  s_d371ad073063c8::t_10a7e3f74ade46 1-4,7-15,17-25,28,31-43,53-75,78-79,81-83,87,90-94,98-99,101-106,110,147-149,151-152,155-156,158-166,175,183-185
+  s_e975fa25d919d9::t_4adf53649c84c5 26-27,29-30
+e2e-tests/src/test/java/com/javeriana/eventos/e2e/TrazabilidadE2EIT.java
+  s_d371ad073063c8::t_f27dafbe8263c8 1-126
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/retention/RetentionService.java
+  s_d371ad073063c8::t_14dc80d07c1817 7,9,13,16,18-20,22-23,28-37,40,42-45,48-53,55-57,59-60,64-73,76-77
+  s_d371ad073063c8::t_78dd61268a11db 1-6,8,10-12,14-15,17,21,24-27,38-39,41,46-47,54,58,61-63,74-75,78-79
+event-service/src/main/java/com/javeriana/eventos/event/domain/events/CupoReservadoEvent.java
+  s_d371ad073063c8::t_9b8b71f649d192 1-23
+payment-service/src/main/java/com/javeriana/eventos/payment/application/observer/PagoAuditObserver.java
+  s_d371ad073063c8::t_42f5025a2f6b0c 1-36
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/JpaMensajeProcesadoRepository.java
+  s_d371ad073063c8::t_7e31fb8456a8d4 1-46
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/clientes/EventoServiceFeignClient.java
+  s_d371ad073063c8::t_9663482ef8a493 4,6,34-40
+  s_d371ad073063c8::t_896d5320ddd3a9 1-3,5,7-33,41
+payment-service/src/main/resources/db/migration/V4__pago_audit.sql
+  s_d371ad073063c8::t_001489bd18d568 1-38
+frontend/src/accessibility/wcag-axe.test.tsx
+  s_e975fa25d919d9::t_7169db33b61eeb 20,29-31
+  s_e975fa25d919d9::t_ab82b6cca6c052 1-19,21-28,32-100
+payment-service/src/main/resources/db/migration/V1__create_payment_schema.sql
+  s_d371ad073063c8::t_316bca4bbe6953 1-93
+inscription-service/src/main/resources/application-test.yml
+  s_e975fa25d919d9::t_27e02e4b96426f 51-56
+  s_d371ad073063c8::t_90ee54d46e4c47 48-50
+  s_d371ad073063c8::t_a00ba9e7ad5b66 26-27,30-33,35,41-47
+  s_d371ad073063c8::t_1e3de1a715e724 28-29,34
+  s_d371ad073063c8::t_fff9f669b8b569 36-40
+  s_d371ad073063c8::t_957627276377fd 1-13,20-25
+  s_d371ad073063c8::t_967c895d020189 14-19
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/messaging/RabbitMQConfig.java
+  s_d371ad073063c8::t_d5327c670b6640 1-111
+auth-service-stub/pom.xml
+  s_e975fa25d919d9::t_3675915ff82b91 1-71
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/retention/RetentionService.java
+  s_d371ad073063c8::t_2f4c0afbc155b9 1-70
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/messaging/RabbitMQConfig.java
+  s_d371ad073063c8::t_26d0e0c3d92e74 4-5,16-25,30-31,39-57
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/pasarela/MercadoPagoAdapter.java
+  s_d371ad073063c8::t_3f0172960657af 56
+  s_d371ad073063c8::t_de952d2f19b2ea 30,32,34
+inscription-service/src/test/java/com/javeriana/eventos/inscription/application/ConfirmarInscripcionPayloadTest.java
+  s_d371ad073063c8::t_5fbe3fced50c2f 58-59,61
+  s_d371ad073063c8::t_8724c3a3838fa2 1-9,11-57,60,62-64,70,78-254
+  s_d371ad073063c8::t_81ed12783ddcf8 10
+  s_d371ad073063c8::t_4da478e9e6c8a0 65-69,71-77
+docs/evidencia-carga.md
+  s_e975fa25d919d9::t_33649d83128321 50-56
+  s_e975fa25d919d9::t_d81d77e165766a 251,255,257,266,268,290
+  s_e975fa25d919d9::t_e4d057acf95300 43-48,58-59,63-64,67-68,70-71,97-102,105-106,110-111,114-115,117-118
+  s_e975fa25d919d9::t_7656973edbeffe 32
+  s_e975fa25d919d9::t_0833718a02d412 1,5,7,9,11-13,17,19,21-22,24-25,27-29,31,129,131,133,135-138,140,142-147,149,151,153,155-157,159,161,163,165,167,169-172,174,176-177,179-181,183,185,187-189,191,193,195,197,199,201,203-205,209-211,213,215-217,219,221,223,225,227,229-232,234,236-238,240-244,246,248-250,252,254,256,258,260-265,267,269,271,273-277,279,281,283-285,287,289,291-294,296
+  s_e975fa25d919d9::t_9e44f222477276 2-4,6,8,10,18,130,132,134,141,150,152,154,158,160,162,164,166,168,173,175,184,186,192,194,196,198,200,202,212,214,218,220,222,224,226,228,233,235,245,247,253,259,270,272,280,282,286,288,295
+  s_e975fa25d919d9::t_4a3d7227919d36 190
+  s_e975fa25d919d9::t_9eee031eeae4ff 139
+  s_e975fa25d919d9::t_c5b98f2f72410b 14-16,23,26,73-96,103-104,107-109,112-113,116,119-128,148,178,182,206-208,239
+  s_e975fa25d919d9::t_8c208c727974e2 33-42,49,57,60-62,65-66,69,72,278
+  s_e975fa25d919d9::t_0f64d3b82c8baf 20,30
+shared/src/main/java/com/javeriana/eventos/shared/domain/outbox/PublicacionException.java
+  s_d371ad073063c8::t_989afc66b49005 1-23
+docs/diagramas/vista-desarrollo-paquetes-hexagonales.puml
+  s_feae4534e259a7::t_2f5a64ba6eed8d 1-173
+frontend/src/lib/errors/AppError.ts
+  s_e975fa25d919d9::t_ab529d66899b37 1-81
+payment-service/src/main/resources/application.yml
+  s_d371ad073063c8::t_743df712a99514 86-87,92-99
+  s_d371ad073063c8::t_427116d64de476 1-7,12-22,24-26,29-30,48-50,59,61-62,65-67,85
+  s_d371ad073063c8::t_4b06c92955247c 36-40,42-43
+  s_d371ad073063c8::t_84cc7b181b096e 100-108
+  s_d371ad073063c8::t_21e936d95f9020 54-57
+frontend/src/entities/event/model.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-27
+docs/diagramas/c4-3-event-service.puml
+  s_b67dd46a9e3df2::t_77f532dafd6a7e 11-31,41,56,62,69,75,83,92,107,114,119,128,133,137,142,150,157,167,179
+  s_b67dd46a9e3df2::t_6b71028cc4b564 34-36,40,49-50,55,80,91,127,130-131,134-135,138,149,154-155,160-161,166,168,170,178,207-208,214-228
+  s_b67dd46a9e3df2::t_cd3b649be740d4 1-10,32-33,37-39,42-48,51-54,57-61,63-68,70-74,76-79,81-82,84-90,93-106,108-113,115-118,120-126,129,132,136,139-141,143-148,151-153,156,158-159,162-165,169,171-177,180-206,209-213,229-231
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/security/JwtAuthFilter.java
+  s_d371ad073063c8::t_896a0b955481ba 86
+  s_d371ad073063c8::t_e7267528745ad7 1-2,4-85,87-103,107-109
+  s_d371ad073063c8::t_78773fceec7062 3
+  s_d371ad073063c8::t_c5e5296b159e95 104-106
+inscription-service/src/main/resources/application-prod.yml
+  s_d371ad073063c8::t_61b6e5388eae54 1-26
+  s_d371ad073063c8::t_2d6efd35073f77 27-31
+  s_e975fa25d919d9::t_27e02e4b96426f 32-40
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/outbox/OutboxEventEntity.java
+  s_d371ad073063c8::t_902bdd48977b82 3,10,12-14,18-19,26-28,38-68
+inscription-service/src/main/java/com/javeriana/eventos/inscription/domain/events/PayloadEventoDominio.java
+  s_d371ad073063c8::t_5e3141dc0320f1 1-4,7-9,12,15,19-27,33-38,65-66,69-70,72-73,75,84-89,93-96,98,107-111
+  s_d371ad073063c8::t_ec4212db326c2e 5-6,10-11,13-14,16-18,28-32,39-64,67-68,71,74,76-83,90-92,97,99-106
+inscription-service/src/test/java/com/javeriana/eventos/inscription/infrastructure/security/JwtValidadorTest.java
+  s_d371ad073063c8::t_3f4c2672272f8b 1-137
+event-service/pom.xml
+  s_d371ad073063c8::t_b3ed25f91d7456 149-166
+  s_d371ad073063c8::t_6dbb2b96495a2d 99-114,131-133
+  s_d371ad073063c8::t_785ca228e0fea2 123-125,134-138
+  s_d371ad073063c8::t_b88ff72978c087 39-48
+inscription-service/src/main/java/com/javeriana/eventos/inscription/domain/exceptions/ServicioExternoNoDisponibleException.java
+  s_d371ad073063c8::t_065d19de6debec 1-29
+inscription-service/src/main/java/com/javeriana/eventos/inscription/domain/events/InscripcionCreadaEvent.java
+  s_d371ad073063c8::t_1ed5189613a83e 1-38
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/outbox/OutboxRelayService.java
+  s_d371ad073063c8::t_d219dc031e4382 1-153
+payment-service/src/main/resources/db/migration/V5__shedlock.sql
+  s_d371ad073063c8::t_ab907c6266eb15 1-8
+load-tests/scripts/02-load-test.js
+  s_e975fa25d919d9::t_3778eff4a03485 1-4,13-17,24-25,27,29-31,35-40,43-45,62,67-69,71,73-79,81,88,90,95,100,102-106,108-110
+  s_e975fa25d919d9::t_1b365172eafba6 18
+  s_e975fa25d919d9::t_7a96be2ce247cd 46-61,70
+  s_e975fa25d919d9::t_20fcb0d8d2e775 63-66,80,101
+  s_e975fa25d919d9::t_4a3d7227919d36 5-12,83-87,89,91-94,96-99
+  s_e975fa25d919d9::t_4e6e8c664f63c8 28,32-34,41-42,107
+  s_e975fa25d919d9::t_9eee031eeae4ff 26,72
+  s_e975fa25d919d9::t_665be96d880b17 19-23,82
+inscription-service/src/test/java/com/javeriana/eventos/inscription/infrastructure/web/InscripcionControllerTest.java
+  s_e975fa25d919d9::t_d97acc37dd813a 1-58
+docs/limites-carga-reconocidos.md
+  s_e975fa25d919d9::t_0833718a02d412 1-77,88-93
+  s_e975fa25d919d9::t_921b6bd835019c 78-81,86-87
+  s_e975fa25d919d9::t_38dd585f6761c0 82-85
+frontend/src/features/catalog/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/outbox/SpringDataOutboxRepository.java
+  s_d371ad073063c8::t_c2f10f37071491 3,17-19,29-31
+  s_d371ad073063c8::t_8f32260c15a335 6,13-16,20-28
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/security/JwtPrincipal.java
+  s_d371ad073063c8::t_0d12c8c54ccf51 1-13
+frontend/index.html
+  s_e975fa25d919d9::t_58ed44b435d2a8 1-17
+frontend/e2e/04-cupo-agotado.spec.ts
+  s_e975fa25d919d9::t_8f56ee55babceb 1-25
+frontend/TESTING.md
+  s_e975fa25d919d9::t_b64058cf4d384f 1-16,25-31,33-52,60-75,77-99
+  s_e975fa25d919d9::t_0601d42b7b0a5f 32,53-59,76
+  s_e975fa25d919d9::t_e43383a1e43f11 17-24
+README.md
+  s_e975fa25d919d9::t_6ba2c3c422e2fa 3-9,11-60,63,65,67-74,76,78,81-82,84-85,87-88,90-93,95-96,99,101-108,110,112-136,138-153,156,158,160-198
+  s_e975fa25d919d9::t_489138d4d1717e 10
+frontend/.gitignore
+  s_e975fa25d919d9::t_502239da48f2e3 1-28
+payment-service/pom.xml
+  s_d371ad073063c8::t_018e6b8ceddd30 139-143,158-166
+  s_d371ad073063c8::t_e9b2cfb29f611a 35-40
+  s_d371ad073063c8::t_e3f9a82a91eff3 144,157
+  s_d371ad073063c8::t_753bd6a666dc09 154
+  s_d371ad073063c8::t_c3911d9361cb04 156
+  s_d371ad073063c8::t_596954423b7997 145-153,155
+  s_d371ad073063c8::t_66ac88e76d10c3 53-57
+inscription-service/src/main/resources/db/migration/V3__mensaje_procesado.sql
+  s_d371ad073063c8::t_e9bb25b073daef 1-32
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/outbox/JpaOutboxEventRepository.java
+  s_d371ad073063c8::t_7b7b3ae5e55608 77-81
+  s_d371ad073063c8::t_8c0c5692d2b211 4-5,10,12,32-33,35,46,49,54-57,61-73
+  s_d371ad073063c8::t_7ae4f9cf5fd2ed 7-8,15,17-20,38-43,45,47,50
+payment-service/src/test/resources/docker.properties
+  s_d371ad073063c8::t_232495257c4187 1
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/outbox/JpaOutboxEventRepository.java
+  s_d371ad073063c8::t_f76c46672e16fa 1-67
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/retention/RetentionConfig.java
+  s_d371ad073063c8::t_14de9057a101e2 1-31
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/retention/RetentionMetrics.java
+  s_d371ad073063c8::t_06668d8c14c631 1-49
+docs/diagramas/escenario-b-confirmacion-pago.puml
+  s_b67dd46a9e3df2::t_e76bb34648492e 1-116
+payment-service/src/test/java/com/javeriana/eventos/payment/retention/RetentionServiceTest.java
+  s_e975fa25d919d9::t_e035cb3d6965bd 1-6,8-13,16-17,19-21,24-28,31-43,46-54,57-65,69-75,77-79,84-89,93-94,130,150-151
+  s_e975fa25d919d9::t_f781567b7e3fea 7,14-15,18,22-23,29-30,44-45,55-56,66-68,76,80-83,90-92,95-129,131-149
+frontend/eslint.config.js
+  s_e975fa25d919d9::t_eff0e0e2e1d83e 10
+  s_e975fa25d919d9::t_dee196c1ec21e8 3,6,29-47
+  s_e975fa25d919d9::t_58ed44b435d2a8 1-2,4-5,7-9,11-28,48-50
+auth-service-stub/src/test/java/com/javeriana/eventos/authstub/AuthControllerIT.java
+  s_e975fa25d919d9::t_9cc85f869cc061 5,24-26,64
+  s_e975fa25d919d9::t_46d31ed21546aa 59-60
+  s_e975fa25d919d9::t_3675915ff82b91 1-4,6-23,27-58,61-63,65-83
+docs/evidencia-e2e.md
+  s_d371ad073063c8::t_0571f7455460fb 1-228
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/retention/RetentionConfig.java
+  s_e975fa25d919d9::t_27e02e4b96426f 13,25-26
+  s_d371ad073063c8::t_99ab1fe9497840 1-12,14-24,27-31
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/port/out/OutboxEventRepository.java
+  s_d371ad073063c8::t_dba146428adbd5 3,6,8-13,15-29
+  s_d371ad073063c8::t_b0375c56a84236 30-32
+payment-service/src/test/java/com/javeriana/eventos/payment/audit/PagoAuditIT.java
+  s_d371ad073063c8::t_7e922e31d0cdd5 1-33,36-43,49-50,53-55,64-65,70-75,93,96-97,99,101-102,104-111,113,116-118,120-124,126,129-131,133-138,141-149,151,153-155,157-161,163,165-171
+  s_d371ad073063c8::t_58e7f290707468 34-35,44-48,51-52,56-63,66-69,76-92,94-95,98,100,103,112,114-115,119,125,127-128,132,139-140,150,152,156,162,164
+frontend/vitest.config.ts
+  s_e975fa25d919d9::t_d3d6a0e01f8409 1-10,12-35
+  s_e975fa25d919d9::t_c4d41731a159b2 11
+frontend/src/lib/api/index.ts
+  s_e975fa25d919d9::t_b2323611ca83a8 1
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/events/PagoFallidoEvent.java
+  s_d371ad073063c8::t_12438c5caaa130 1-37
+docs/asyncapi/inscription-service.yml
+  s_d371ad073063c8::t_b1faff4ddd3354 1-345
+event-service/src/main/java/com/javeriana/eventos/event/domain/events/CupoLiberadoEvent.java
+  s_d371ad073063c8::t_c28b509187817d 1-23
+load-tests/scripts/01-smoke-test.js
+  s_e975fa25d919d9::t_9eee031eeae4ff 12,35
+  s_e975fa25d919d9::t_4bfb89bf1e5638 23,40
+  s_e975fa25d919d9::t_3778eff4a03485 1-11,13-22,24-34,36-39,41-49,51-69
+  s_e975fa25d919d9::t_4def2378ad78b1 50
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/clientes/EventoServiceAuthInterceptor.java
+  s_d371ad073063c8::t_58d8a904d4286b 1-44
+frontend/src/shared/ui/Icon.tsx
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-33
+load-tests/scripts/05-circuit-breaker.js
+  s_e975fa25d919d9::t_b10e4e8011d733 3,9,23-24,63,67,72
+  s_e975fa25d919d9::t_6fbade429d8ed6 2,75
+  s_e975fa25d919d9::t_d7e9ee151ebd91 25
+  s_e975fa25d919d9::t_cba063c0e2125c 47,49-50,78
+  s_e975fa25d919d9::t_10683281a2df48 76-77
+  s_e975fa25d919d9::t_4def2378ad78b1 62
+  s_e975fa25d919d9::t_3778eff4a03485 1,5-8,10,12-13,15-22,26-27,45-46,51-56,58-61,64-66,68-71,73-74,79-87
+  s_e975fa25d919d9::t_862f66bbff3b1e 11,48
+  s_e975fa25d919d9::t_9eee031eeae4ff 14,57
+  s_e975fa25d919d9::t_e416e655da5850 30
+  s_e975fa25d919d9::t_afb9fb21c54015 4,28-29,31-44
+docs/diagramas/c4-code-inscription-service.puml
+  s_b67dd46a9e3df2::t_d406a17dc55995 1-381
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/outbox/OutboxEventEntity.java
+  s_d371ad073063c8::t_d1519866fb4373 1-61
+event-service/src/test/java/com/javeriana/eventos/event/retention/RetentionServiceTest.java
+  s_e975fa25d919d9::t_e035cb3d6965bd 1-6,8-13,16-17,19-21,24-28,31-43,46-54,57-65,68-74,76-78,82-87,90-91,119,139-140
+  s_e975fa25d919d9::t_f781567b7e3fea 7,14-15,18,22-23,29-30,44-45,55-56,66-67,75,79-81,88-89,92-118,120-138
+frontend/src/lib/api/axios-error-interceptor.ts
+  s_e975fa25d919d9::t_433f9c0d1c81c4 1-22
+frontend/src/test/mocks/handlers.ts
+  s_e975fa25d919d9::t_45f3790390f07f 1-81
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/web/dto/TarifaResponse.java
+  s_d371ad073063c8::t_2dad011fbae706 1-28
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/outbox/SpringDataOutboxRepository.java
+  s_d371ad073063c8::t_0d13186387a966 19-20,30-32
+  s_d371ad073063c8::t_0c39a00a383c5b 3
+  s_d371ad073063c8::t_b92a5a5b13d7ed 6
+  s_d371ad073063c8::t_19e5db8cc0da6f 13-18,21-29
+frontend/src/vite-env.d.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-3,5-13
+  s_e975fa25d919d9::t_44b75c909cee78 4
+load-tests/lib/helpers.js
+  s_e975fa25d919d9::t_dcca7ef3e9a7a6 20
+  s_e975fa25d919d9::t_4a3d7227919d36 25-28
+  s_e975fa25d919d9::t_2a7c8ed369465b 1-19,21-24,29-61,63-66
+  s_e975fa25d919d9::t_9eee031eeae4ff 62
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/events/PagoReembolsadoEvent.java
+  s_d371ad073063c8::t_eb92d29dd5c1b5 5,9-14,19-21,25-29
+frontend/src/shared/ui/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-3
+frontend/src/features/auth/AuthContext.test.tsx
+  s_e975fa25d919d9::t_e1c0fa11aca25c 1-78
+frontend/src/features/checkout/ConfirmationPage.test.tsx
+  s_e975fa25d919d9::t_87b9005ed17e32 1-41
+frontend/package.json
+  s_e975fa25d919d9::t_9bcff03dad417d 16-19,21-22,35-37,43,50-52,55
+  s_e975fa25d919d9::t_db9e67d49d59f2 12
+  s_e975fa25d919d9::t_c07f13e133f617 14-15
+  s_e975fa25d919d9::t_80a718285b6a7c 13
+  s_e975fa25d919d9::t_dee196c1ec21e8 20
+  s_e975fa25d919d9::t_17571cb28232c9 32,34,38,41,44,46,54,56
+  s_e975fa25d919d9::t_5d2362c94de886 53
+  s_e975fa25d919d9::t_c797d8205a2849 1-11,23-31,33,39-40,42,45,47-49,57-58
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/events/PagoConfirmadoEvent.java
+  s_d371ad073063c8::t_35b31bbbbb77e3 5,9-15,18,21-23,27-32
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/persistence/SpringDataTarifaRepository.java
+  s_d371ad073063c8::t_59be16e6535c86 1-12
+inscription-service/src/main/java/com/javeriana/eventos/inscription/domain/port/out/OutboxEventRepository.java
+  s_d371ad073063c8::t_094db87dfe948b 30-32
+  s_d371ad073063c8::t_da714d31cfbeb6 3
+  s_d371ad073063c8::t_547dbbda391880 6,9,11-12,16-17,19-20,22-29
+frontend/scripts/capture-e2e-screenshots.mjs
+  s_e975fa25d919d9::t_8e9e55ad5b73fb 2,150-160,162,164-165,260
+  s_e975fa25d919d9::t_dbd1c1b8dbd829 261
+  s_e975fa25d919d9::t_41cfd543b34890 298-302
+  s_e975fa25d919d9::t_7c812a1c9bcb69 91-97,179-206,276-278,280-288
+  s_e975fa25d919d9::t_be946cc790d5cf 224,226-229,234-244,246-247,289-292
+  s_e975fa25d919d9::t_2a166a3a9abac1 12-13,259,265,279
+  s_e975fa25d919d9::t_cf8bbabeeed853 245
+  s_e975fa25d919d9::t_4b6047fb06a62d 1,3-11,14-90,98-149,166-178,207-223,225,230-233,248-258,262-264,266-275,293-297,303
+  s_e975fa25d919d9::t_eea4932f7e1d9a 161,163
+frontend/src/features/events/EventDetailPage.test.tsx
+  s_e975fa25d919d9::t_994ba0c793b1a3 1-8,10-57,59-65
+  s_e975fa25d919d9::t_cb69cb4c80dd45 9,58
+frontend/src/lib/api/api-client.test.ts
+  s_e975fa25d919d9::t_32711ea2a12ab5 1-36,38-69
+  s_e975fa25d919d9::t_b2a922d6f8f0c2 37
+frontend/e2e/helpers.ts
+  s_e975fa25d919d9::t_8f56ee55babceb 1-4,6,8,83-111,113-126,130,132-134,139-145,147-178,186-187
+  s_e975fa25d919d9::t_fb47f5ebb19cf0 5,7,9-82,112,127-129,131,135-138,179-185
+  s_e975fa25d919d9::t_285bb385d70ed4 146
+frontend/.prettierrc.json
+  s_e975fa25d919d9::t_58ed44b435d2a8 1-6
+payment-service/src/main/java/com/javeriana/eventos/payment/PaymentApplication.java
+  s_d371ad073063c8::t_fa17486b2e472a 3-5,8-9,14,20-28
+frontend/scripts/check-broken-links.mjs
+  s_e975fa25d919d9::t_c07f13e133f617 1-210,212-281
+  s_e975fa25d919d9::t_b3846fbfe581dd 211
+load-tests/lib/auth.js
+  s_e975fa25d919d9::t_5088c231f67cff 26-34
+  s_e975fa25d919d9::t_2a7c8ed369465b 1-25
+frontend/README.md
+  s_e975fa25d919d9::t_8e42fea8c382bd 76,80-81
+  s_e975fa25d919d9::t_0601d42b7b0a5f 97-114
+  s_e975fa25d919d9::t_dab3346cd90a5f 19,22-23,82-83
+  s_e975fa25d919d9::t_b64058cf4d384f 85-96
+  s_e975fa25d919d9::t_44b75c909cee78 5,37,45,79,117,121
+  s_e975fa25d919d9::t_0f0fb495ad5320 1-4,6-18,20-21,24-36,38-44,46-75,77-78,84,115-116,118-120
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/JpaAuditoriaPagoRepository.java
+  s_d371ad073063c8::t_08b11b98c72fcb 1-32
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/JpaOutboxRetentionRepository.java
+  s_d371ad073063c8::t_189f7da4c50aae 1-59
+load-tests/lib/generate-tokens.mjs
+  s_e975fa25d919d9::t_2a7c8ed369465b 1-59
+payment-service/src/main/resources/db/migration/V3__mensaje_procesado.sql
+  s_d371ad073063c8::t_5b42e85fff3460 1-33
+event-service/src/main/java/com/javeriana/eventos/event/domain/model/Evento.java
+  s_d371ad073063c8::t_ab9747969d9d41 122-124
+  s_d371ad073063c8::t_18f604d2658aff 196-200
+  s_d371ad073063c8::t_d814d290dc6428 5-6,8
+  s_d371ad073063c8::t_7959830ef1a3ea 173
+  s_d371ad073063c8::t_3901881579ab17 187
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/dto/WebhookPagoRequest.java
+  s_d371ad073063c8::t_8b6434bc66636a 1-43
+e2e-tests/src/test/java/com/javeriana/eventos/e2e/CasosErrorE2EIT.java
+  s_d371ad073063c8::t_219f199456933e 1-144
+frontend/src/shared/api/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/outbox/SpringDataOutboxRepository.java
+  s_d371ad073063c8::t_f72fb784e9a560 1-23
+event-service/src/main/resources/db/migration/V3__fix_tarifa_moneda_type.sql
+  s_d371ad073063c8::t_25d3dc882e5344 1-4
+frontend/vitest.setup.ts
+  s_e975fa25d919d9::t_dffa643d281792 2,5,7-8,45-52
+  s_e975fa25d919d9::t_8e1236bf92f8ce 54-80,82-83
+  s_e975fa25d919d9::t_d3d6a0e01f8409 1,3,84-99
+  s_e975fa25d919d9::t_c4d41731a159b2 4,6,9-44,53,81
+frontend/scripts/smoke-e2e.mjs
+  s_e975fa25d919d9::t_7d76608b368941 98
+  s_e975fa25d919d9::t_b53669cbade79b 20-33,41,57,62-66,68-96,99
+  s_e975fa25d919d9::t_276565a26d2c13 1-17,48-49,51-56,58-61,67,97,100-121,123-131
+  s_e975fa25d919d9::t_0e4014be4c8f2d 18-19,34-40,42-47,50,122
+frontend/src/test/test-utils.tsx
+  s_e975fa25d919d9::t_45f3790390f07f 1-27
+docs/vista-procesos-kruchten.md
+  s_b67dd46a9e3df2::t_c47b69363f6093 1-3,8,10-14,42-44,46,48,54,57-58,60,62-64,81-90,93,95,97,99,101,103-104,106,108,111-113,115-116,118,120,122,124,126-131,133,135,139-140,147-149,151-153,156,159,166-169,171,174,180-181,184-185,187,190,209-214,216,220,223-224,226,228-230,232,234,239,244,246,248,250-253,260-262,267,269-271,273-277,279,286-289,291,293,296-298,300-305,307,317-319,321-323,328-329,333,335,337,339-340,345,349-350,352-353,384-389,391,393,396-397,399-403,405-408,411-418,420-424,426-428,431,434,436-437,440-443,447-451,453-455,457-459,461,465,472-473,475-477,479-485,503-511,519-523,529-530,540-542,548-552,563-565,567,588-590,592,594,600,602-603
+  s_b67dd46a9e3df2::t_31542584984d24 4-7,9,15-41,45,47,49-53,55-56,59,61,65-80,91-92,94,96,98,100,102,105,107,109-110,114,117,119,121,123,125,132,134,136-138,141-146,150,154-155,157-158,160-165,170,172-173,175-179,182-183,186,188-189,191-208,215,217-219,221-222,225,227,231,233,235-238,240-243,245,247,249,254-259,263-266,268,272,278,280-285,290,292,294-295,299,306,308-316,320,324-327,330-332,334,336,338,341-344,346-348,351,354-383,390,392,394-395,398,404,409-410,419,425,429-430,432-433,435,438-439,444-446,452,456,460,462-464,466-471,474,478,486-502,512-518,524-528,531-539,543-547,553-562,566,568-587,591,593,595-599,601,604
+inscription-service/src/test/java/com/javeriana/eventos/inscription/infrastructure/observability/CorrelationIdFilterTest.java
+  s_d371ad073063c8::t_5717084c8a7f24 1-121
+frontend/vite.config.js
+  s_e975fa25d919d9::t_58ed44b435d2a8 1-8,14-31
+  s_e975fa25d919d9::t_bb7bc9b50fe20d 9-13
+docs/diagramas/c4-code-payment-service.puml
+  s_feae4534e259a7::t_a65a0a3e578e98 1-495
+docs/vista-desarrollo-kruchten.md
+  s_feae4534e259a7::t_178b80c0474f66 1-1583
+frontend/e2e/02-catalogo-inscripcion-pago.spec.ts
+  s_e975fa25d919d9::t_8f56ee55babceb 1-24
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/serialization/JacksonEventoSerializador.java
+  s_d371ad073063c8::t_1eaf8d6278141a 1-36
+frontend/playwright.config.ts
+  s_e975fa25d919d9::t_d3d6a0e01f8409 1-29
+docs/diagramas/README.md
+  s_b67dd46a9e3df2::t_07cf64be6741ee 3,5,11-12,21-26,28-35,54-61,66-67
+  s_4700d05819993f::t_761503dc5c003a 36-53
+  s_4700d05819993f::t_926dcbd7ef81e7 14-20,27
+  s_b67dd46a9e3df2::t_648535f01e884d 13
+frontend/e2e/08-rbac-frontend.spec.ts
+  s_e975fa25d919d9::t_947f325ae573cc 1-49
+load-tests/reports/.gitkeep
+  s_e975fa25d919d9::t_467c26414eb309 1
+inscription-service/src/test/java/com/javeriana/eventos/inscription/infrastructure/observability/CorrelationIdFeignInterceptorTest.java
+  s_d371ad073063c8::t_08ce6c9eb8ac02 1-74
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/audit/EventoAuditoria.java
+  s_d371ad073063c8::t_026ce997d8dadd 1-37
+docs/diagramas/c4-3-auth-service.puml
+  s_b67dd46a9e3df2::t_8c8e027e80c3eb 1-226
+docs/diagramas/vp-escenario-c-expiracion.puml
+  s_b67dd46a9e3df2::t_298954de86ffad 1-115
+docs/diagramas/c4-3-certificate-service.puml
+  s_b67dd46a9e3df2::t_554d4657007fdb 1-252
+inscription-service/src/main/resources/application.yml
+  s_d371ad073063c8::t_2eb6b3bedee20c 58
+  s_d371ad073063c8::t_23bedcac724512 85-128,141-144
+  s_d371ad073063c8::t_dc35b004404b5e 133-140
+  s_d371ad073063c8::t_84cc7b181b096e 145-153
+  s_d371ad073063c8::t_4ec23cf6d5d920 36-38,41-42
+  s_d371ad073063c8::t_847c3ddcafa4fc 1-7,12-21,23-25,29,35,39,54
+  s_d371ad073063c8::t_e94f3d4003929a 62-84
+docs/c4-nivel3-componentes.md
+  s_b67dd46a9e3df2::t_ad206301913f3f 1-686
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/outbox/OutboxMetrics.java
+  s_d371ad073063c8::t_dd944de8cad54a 1-63
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/messaging/CorrelationIdAmqpMessagePostProcessor.java
+  s_d371ad073063c8::t_1426ea0f60e686 1-33
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/outbox/JpaOutboxRetentionRepository.java
+  s_d371ad073063c8::t_7f80173fd5161d 1-58
+event-service/src/main/java/com/javeriana/eventos/event/domain/port/in/ReservarCupoUseCase.java
+  s_d371ad073063c8::t_decc8b505057f2 1-13
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/outbox/JpaOutboxRetentionRepository.java
+  s_d371ad073063c8::t_c6d57cb6220cb7 1-45
+frontend/src/shared/config/env.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-3,5-6,8-12
+  s_e975fa25d919d9::t_60e22c93e4555c 4,7
+frontend/src/shared/lib/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-3
+docs/adrs/ADR-020-versionado-eventos-amqp.md
+  s_d371ad073063c8::t_8e18e727fc42cd 1-93
+inscription-service/src/main/java/com/javeriana/eventos/inscription/domain/model/Inscripcion.java
+  s_d371ad073063c8::t_c98b93e07c28f2 6
+  s_d371ad073063c8::t_3ccf5ea2c106e3 52-57
+inscription-service/src/main/resources/logback-spring.xml
+  s_d371ad073063c8::t_285380ca85d965 1-55
+frontend/src/components/degradation/index.ts
+  s_e975fa25d919d9::t_9ea45fd4dc05f5 1-4
+frontend/evidence/full/manifest.json
+  s_e975fa25d919d9::t_5a0d1d1a675fad 1-619
+frontend/e2e/12-jwks-endpoint.spec.ts
+  s_e975fa25d919d9::t_ee0fc1b1ceb475 1-37
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/persistence/JpaTarifaRepository.java
+  s_d371ad073063c8::t_21ca917165a418 1-62
+frontend/src/components/degradation/NetworkOfflineBanner.tsx
+  s_e975fa25d919d9::t_d9d3f5dac64e9c 1-14
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/messaging/RabbitMQConfig.java
+  s_d371ad073063c8::t_77122ee955816a 1-5,10-19,35,39-43,68,105,108-131
+  s_d371ad073063c8::t_6e6bf765383284 6-9,20-34,36-38,44-67,69-104,106-107
+frontend/src/features/auth/model.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-2,4-6,14-17,19-21
+  s_e975fa25d919d9::t_60e22c93e4555c 3,7-13,18
+docs/diagramas-complementarios.md
+  s_feae4534e259a7::t_de495eae9cbb0d 1-867
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/observability/MdcKeys.java
+  s_d371ad073063c8::t_954ed69c487f71 1-20
+frontend/src/features/auth/LoginPage.tsx
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 2-3,6-10,14-20,30-32,34-36,38-46,54-58,61-64,66,69,71,73,76-79,120-124
+  s_e975fa25d919d9::t_dee196c1ec21e8 111
+  s_e975fa25d919d9::t_95733692a4e61e 1,4-5,11-13,21-29,33,37,65,67-68,70,72,74-75,80-87,89-110,112-114,116-117
+  s_e975fa25d919d9::t_6591577d8cd5e0 47-53,59-60,88,115,118-119
+event-service/src/main/java/com/javeriana/eventos/event/application/LiberarCupoService.java
+  s_d371ad073063c8::t_1591d24259569d 1-2,5-8,13-26,35-36,39-43,45-47,57-64
+  s_d371ad073063c8::t_89e3d9db7a8836 3-4,9-12,27-34,37-38,44,48-56
+frontend/src/components/degradation/DegradedServiceBanner.tsx
+  s_e975fa25d919d9::t_b3f7f29949f4ee 1-20
+frontend/src/lib/errors/parseHttpError.test.ts
+  s_e975fa25d919d9::t_32711ea2a12ab5 1-56
+load-tests/scripts/03-stress-test.js
+  s_e975fa25d919d9::t_4a3d7227919d36 5-12,17,58-67,69-72,74
+  s_e975fa25d919d9::t_3778eff4a03485 1-4,13-16,18-19,21-48,50-57,68,73,75-83
+  s_e975fa25d919d9::t_9eee031eeae4ff 20,49
+docs/diagramas/er-consolidado.puml
+  s_feae4534e259a7::t_fcd5c741c6f291 1-238
+frontend/scripts/lint-typescript.mjs
+  s_e975fa25d919d9::t_9ca46c66d95418 1-50
+inscription-service/src/test/java/com/javeriana/eventos/inscription/retention/RetentionIT.java
+  s_e975fa25d919d9::t_df7d1423579a7d 38-42
+  s_e975fa25d919d9::t_0c01232e2963a7 80,173-184
+  s_d371ad073063c8::t_7d738a0c79b3ce 1-37,43-79,81-172,185-186
+frontend/src/features/auth/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-3
+e2e-tests/src/test/resources/wiremock/mappings/mercadopago-crear-preferencia.json
+  s_d371ad073063c8::t_34a52f2bfa798f 1-61
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/security/SecurityConfig.java
+  s_d371ad073063c8::t_3c46b6cbedc1d5 14-20
+  s_d371ad073063c8::t_559c0dc8412b2e 50-51
+  s_d371ad073063c8::t_93414370f8bbc5 1-13,21-49,52-69
+inscription-service/src/test/java/com/javeriana/eventos/inscription/retention/RetentionServiceTest.java
+  s_e975fa25d919d9::t_e035cb3d6965bd 1-6,8-13,16-17,19-21,24-28,31-43,46-54,57-65,69-75,77-79,84-89,93-94,130,150-151
+  s_e975fa25d919d9::t_f781567b7e3fea 7,14-15,18,22-23,29-30,44-45,55-56,66-68,76,80-83,90-92,95-129,131-149
+frontend/.npmrc
+  s_e975fa25d919d9::t_d381d4e7f44b13 1-4
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/persistence/entity/TarifaEntity.java
+  s_d371ad073063c8::t_7b76c88140f1b2 1-64
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/messaging/CorrelationIdAmqpMessagePostProcessor.java
+  s_d371ad073063c8::t_ee6965824e1ddf 1-28
+frontend/src/services/paymentService.ts
+  s_e975fa25d919d9::t_53c935cd6992f2 4,6,19,26-32
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-3,5,7-18,20-25,33-34
+docs/diagramas/despliegue-aws.puml
+  s_4700d05819993f::t_acec2e5a09b339 2,8,53,59,64,68,81,92,96-97,134-135
+  s_4700d05819993f::t_b02eb1f7f2542a 1,3-7,9-52,54-58,60-63,65-67,69-80,82-91,93-95,98-133
+frontend/src/services/inscriptionService.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-3,5,7-8,10-12,18-19
+  s_e975fa25d919d9::t_d37509919ebfa0 4,6,9,13-17
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/entity/MensajeProcesadoId.java
+  s_d371ad073063c8::t_8b507e4c0d0015 1-45
+inscription-service/src/test/java/com/javeriana/eventos/inscription/infrastructure/messaging/PagoConfirmadoConsumerTest.java
+  s_d371ad073063c8::t_64ada3d80cd3b1 1-80,82-94,96-108,110-135,137-150,152-163,165-177,179-200,202-215,217-221
+  s_d371ad073063c8::t_db734590d0a27c 109
+  s_d371ad073063c8::t_65e187df510a76 81
+  s_d371ad073063c8::t_7af5d606fbe93e 95,136,151,164,178,201,216
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/SpringDataAuditoriaPagoRepository.java
+  s_d371ad073063c8::t_3d7ab71775de2d 1-13
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/entity/PagoAuditEntity.java
+  s_d371ad073063c8::t_2cd9dd4ae1b556 1-76
+load-tests/Makefile
+  s_e975fa25d919d9::t_faec84677df541 43,58-62,93-94
+  s_e975fa25d919d9::t_467c26414eb309 2,11,15,22-24,30-33,39-40,44,47-48,51-52,54,56-57,96-97,99
+  s_e975fa25d919d9::t_7742cc99f6a689 63-65,91-92,95
+  s_e975fa25d919d9::t_9804fea6daa402 1,67-71
+  s_e975fa25d919d9::t_f655ec5b487596 25-27,66,72-90
+  s_e975fa25d919d9::t_6bd0202b65b22d 38,50,55
+  s_e975fa25d919d9::t_62ab9e43f16bd6 5-6,34-37,41,45,49,53
+  s_e975fa25d919d9::t_3f57a8cb13a1d2 4
+  s_e975fa25d919d9::t_682e655764a66c 13,42
+  s_e975fa25d919d9::t_820deefd85f4d0 3
+  s_e975fa25d919d9::t_d7e9ee151ebd91 12
+  s_e975fa25d919d9::t_7656973edbeffe 7-10,16-21,28,98
+  s_e975fa25d919d9::t_5f32ea0692d344 14,46
+  s_e975fa25d919d9::t_bb6790d50bd978 29
+docs/diagramas/c4-code-notification-service.puml
+  s_feae4534e259a7::t_00b66990a64661 357
+  s_feae4534e259a7::t_bb44510105200a 1-192,197-198,200-209,211-216,218-222,239-240,244,246-278,294-356,358-428
+  s_feae4534e259a7::t_32dc9252e5d0d2 193-196,199,210,217,223-238
+  s_feae4534e259a7::t_41bd168125271f 241-243,245,279-293
+frontend/e2e/05-circuit-breaker-ui.spec.ts
+  s_e975fa25d919d9::t_8f56ee55babceb 1-21,23-24
+  s_e975fa25d919d9::t_285bb385d70ed4 22
+docs/evidencia-autenticacion-completa.md
+  s_e975fa25d919d9::t_3b84d91cb1dc2c 1-20,32-91
+  s_e975fa25d919d9::t_e71c06d45c6125 21-31
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/web/TarifaController.java
+  s_d371ad073063c8::t_37cf7fc839829c 1-48
+docs/diagramas/vp-escenario-a-fanout.puml
+  s_b67dd46a9e3df2::t_d14215d71d6e6a 1-124
+event-service/src/main/java/com/javeriana/eventos/event/application/ConsultarTarifaService.java
+  s_d371ad073063c8::t_e098caa2baa911 1-38
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/security/SecurityConfig.java
+  s_d371ad073063c8::t_a193625ad4e4c4 1-77
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/retention/RetentionMetrics.java
+  s_d371ad073063c8::t_9e97a0d895d6e9 1-49
+frontend/src/features/checkout/storage.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-19
+frontend/src/app/AppShell.tsx
+  s_e975fa25d919d9::t_3cdacffc806afc 1-2,4-40,43-48
+  s_e975fa25d919d9::t_6ed41ed3dfb47f 3,41-42
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/SpringDataMensajeProcesadoRepository.java
+  s_d371ad073063c8::t_57cf115f4d7132 1-11
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/security/JwtPrincipal.java
+  s_d371ad073063c8::t_999a76e988e1e5 1-26
+frontend/src/hooks/useNetworkStatus.ts
+  s_e975fa25d919d9::t_56b650fcb75406 1-19
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/web/CorrelationIdFilter.java
+  s_d371ad073063c8::t_e50b1e3a46bfbe 1-55
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/web/dto/EventoResponse.java
+  s_d371ad073063c8::t_92d0ab401b93b0 9-13,27-28,44-45
+frontend/public/javeriana-logo.svg
+  s_e975fa25d919d9::t_6591577d8cd5e0 1-11
+frontend/e2e/03-sesion-expirada.spec.ts
+  s_e975fa25d919d9::t_8f56ee55babceb 1-9,23-28
+  s_e975fa25d919d9::t_7588402b672d2d 10-22
+payment-service/src/main/java/com/javeriana/eventos/payment/application/ProcesarWebhookService.java
+  s_d371ad073063c8::t_4450fbc0a71822 112,115-116,131,135-136,139,142-143,156,159-160,166
+  s_d371ad073063c8::t_989c6eff905b58 182
+  s_d371ad073063c8::t_fd9230fe857133 3,6,29,31-33,35-36,73,84,90,119,146,157,161-164,172-179,181,183-185
+  s_d371ad073063c8::t_430a1a07a03757 15
+  s_d371ad073063c8::t_c79964a8043b29 5,7
+  s_d371ad073063c8::t_32e4f7040e866c 54,59-60,65
+event-service/src/main/java/com/javeriana/eventos/event/domain/port/in/LiberarCupoUseCase.java
+  s_d371ad073063c8::t_cfab9718bccca5 1-13
+frontend/e2e/06-accessibility.spec.ts
+  s_e975fa25d919d9::t_df78b4f226a689 1-72
+docs/diagramas/c4-3-inscription-service.puml
+  s_b67dd46a9e3df2::t_89eff2c069681a 180
+  s_b67dd46a9e3df2::t_b099bdf120597e 34,239,244
+  s_b67dd46a9e3df2::t_15f48ca988369a 35-36,39,50,61,68,90,97,104-105,118-120,141-142,151,155,168,174,192,201,209,224,229,231-238,242,245-246
+  s_b67dd46a9e3df2::t_837a360d3451ec 1-10,32-33,37-38,41-49,52-60,63-67,69,71-78,80-84,86-89,91,93-96,98-101,103,106-115,117,121-125,127-132,134-138,140,143-146,148,152,156-157,159,161-162,164-167,170-172,175,177-178,181-182,184-186,188-191,194-200,202-208,210-223,225-228,230,240-241,243,247-249
+  s_b67dd46a9e3df2::t_77f532dafd6a7e 11-31,40,51,62,70,79,85,92,102,116,126,133,139,147,153,158,163,169,176,183,193
+  s_b67dd46a9e3df2::t_d6c2fa6063787d 149-150,154,160,173,179,187
+frontend/src/features/events/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1
+frontend/src/shared/lib/format.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-31
+payment-service/src/test/java/com/javeriana/eventos/payment/security/WebhookSignatureValidatorTest.java
+  s_d371ad073063c8::t_f63355babb1a3b 1-114
+docs/diagramas/vista-escenarios-e2e-integrador.puml
+  s_feae4534e259a7::t_752ce932045959 1,6-16,19-20,22-33,35-36,38-41,43-44,46,48-51,53-54,56,58,60-61,63-64,67-69,71-73,75,77-83,85-86,88-89,91-96,98,100,102-104,107,109-114,121-125,139,141-142,144-146,148-149,165-167
+  s_feae4534e259a7::t_0d2f752ce7890b 2-5,17-18,21,34,37,42,45,47,52,55,57,59,62,65-66,70,74,76,84,87,90,97,99,101,105-106,108,115-120,126-138,140,143,147,150-164
+pom.xml
+  s_d371ad073063c8::t_bb6526cca10c27 38-40
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/idempotencia/JpaMensajeProcesadoRepository.java
+  s_d371ad073063c8::t_486efd8b44559a 1-46
+event-service/src/main/java/com/javeriana/eventos/event/application/PublicarEventoService.java
+  s_d371ad073063c8::t_25e7108ac57e69 3-4,9-12,24-25,27-30,32-34,45-54,56
+docs/diagramas/c4-3-notification-service.puml
+  s_b67dd46a9e3df2::t_b099bdf120597e 32,37,57,90,140,155,172,184,215,217,224,227,234
+  s_b67dd46a9e3df2::t_77f532dafd6a7e 11-29,39,59,68,76,82,92,104,109,115,120,123,128,133,142,146,150,157,163,174
+  s_b67dd46a9e3df2::t_8933cb433843ba 1-10,30-31,33,35-36,40-56,60-65,67,69-75,77-81,83-89,91,93-103,105-108,110-114,116-119,121-122,124-125,127,129-130,132,134-135,137-139,141,143,145,147-149,151-154,158-160,162,164-171,175-178,180-183,185-214,216,218-223,225-226,228-233,236-239
+  s_b67dd46a9e3df2::t_493f7191f8c858 34,38,58,156,173
+  s_b67dd46a9e3df2::t_89eff2c069681a 66,126,131,136,179,235
+  s_b67dd46a9e3df2::t_d6c2fa6063787d 144,161
+event-service/src/test/java/com/javeriana/eventos/event/security/JwtTestHelper.java
+  s_d371ad073063c8::t_af1c7098f5f269 1-52
+payment-service/src/main/resources/application-prod.yml
+  s_d371ad073063c8::t_a25a70a2f52e4f 28-36
+  s_d371ad073063c8::t_14ea56ef6e7e46 1-27
+  s_e975fa25d919d9::t_27e02e4b96426f 37-45
+event-service/src/main/java/com/javeriana/eventos/event/EventApplication.java
+  s_d371ad073063c8::t_0c55b76bc6fb66 3-5,8-9,14,20-28
+load-tests/lib/report.js
+  s_e975fa25d919d9::t_2a7c8ed369465b 1-100
+auth-service-stub/src/main/java/com/javeriana/eventos/authstub/AuthServiceStubApplication.java
+  s_e975fa25d919d9::t_3675915ff82b91 1-14
+inscription-service/src/main/resources/db/migration/V2__outbox_estado_aggregate_type.sql
+  s_d371ad073063c8::t_c4102193a86d17 1-65
+load-tests/Dockerfile
+  s_e975fa25d919d9::t_199ce11614dfeb 4,7,9,12
+  s_e975fa25d919d9::t_ecaf038012e5b8 13
+  s_e975fa25d919d9::t_2a7c8ed369465b 1-3,5-6,8,10-11,14-23
+frontend/src/entities/inscription/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1
+inscription-service/src/main/java/com/javeriana/eventos/inscription/application/ConfirmarInscripcionService.java
+  s_d371ad073063c8::t_ca8a6c42316451 13
+  s_d371ad073063c8::t_34e8c2f80496e3 3-4,29-31,47,76,92,95-100
+  s_d371ad073063c8::t_efd30ddd482a9e 68-69
+  s_d371ad073063c8::t_0ab784c107e45c 8,25-27,39-41,45,48,93-94,102-105
+  s_d371ad073063c8::t_3fd36d47de1ae5 11,16
+payment-service/src/main/java/com/javeriana/eventos/payment/application/CrearPreferenciaService.java
+  s_d371ad073063c8::t_9c443a078b42c1 38,41-42,45
+  s_d371ad073063c8::t_2309b961cf413f 64-65,76,79-80,82
+  s_d371ad073063c8::t_d8263df7a3d684 3-4
+docs/diagramas/escenario-c-expiracion-job.puml
+  s_b67dd46a9e3df2::t_84d1b34fa757a8 1-99
+shared/src/main/java/com/javeriana/eventos/shared/domain/outbox/EstadoOutbox.java
+  s_d371ad073063c8::t_146c901508c753 1-13
+event-service/src/main/resources/application-test.yml
+  s_d371ad073063c8::t_48c435185b8400 16-22
+  s_d371ad073063c8::t_83afb55458ddfd 1-15
+  s_e975fa25d919d9::t_27e02e4b96426f 23-31
+event-service/src/main/java/com/javeriana/eventos/event/application/ReservarCupoService.java
+  s_d371ad073063c8::t_a54ba8ded065c1 3-4,9-12,27-29,31-34,37-38,44,48-56
+  s_d371ad073063c8::t_b49bd503ebcdfc 1-2,5-8,13-26,30,35-36,39-43,45-47,57-64
+frontend/src/features/events/EventDetailPage.tsx
+  s_e975fa25d919d9::t_7169db33b61eeb 136,168
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-2,4-6,8-19,22-36,38-45,47-68,75-82,84-135,137-153,155-167,169-171
+  s_e975fa25d919d9::t_b60bf993cbb71c 3,7,20-21,37,46,69-74,83,154
+.gitignore
+  s_e975fa25d919d9::t_d111065d353a39 26-37
+event-service/src/main/java/com/javeriana/eventos/event/domain/port/in/CancelarEventoUseCase.java
+  s_d371ad073063c8::t_233b699711fb06 1-8
+auth-service-stub/src/main/java/com/javeriana/eventos/authstub/AuthController.java
+  s_e975fa25d919d9::t_3675915ff82b91 1-49,51-62
+  s_e975fa25d919d9::t_e30eaa6fc632ec 50
+docs/diagramas/c4-3-payment-service.puml
+  s_b67dd46a9e3df2::t_67468d37ecbdbd 1-10,32-33,35,37-38,42-53,57-64,68-74,76-81,83-88,90-93,95-98,100,102-112,114-122,124-130,132,134,137,139-141,143,145-146,148,150-152,156-158,161,163-165,167-170,174-182,186-188,190-194,196-216,218,220-227,229,231,234-238
+  s_b67dd46a9e3df2::t_493f7191f8c858 40,55,66,154,172,184
+  s_b67dd46a9e3df2::t_ca842a72680a02 36
+  s_b67dd46a9e3df2::t_89eff2c069681a 94,149,189,230,233
+  s_b67dd46a9e3df2::t_d6c2fa6063787d 135-136,144,159-160,166
+  s_b67dd46a9e3df2::t_77f532dafd6a7e 11-31,41,56,67,75,82,89,101,113,123,133,138,142,147,155,162,173,185
+  s_b67dd46a9e3df2::t_b099bdf120597e 34,39,54,65,99,131,153,171,183,195,217,219,228,232
+event-service/src/test/java/com/javeriana/eventos/event/outbox/OutboxRelayIT.java
+  s_d371ad073063c8::t_35d6b8448dd1c7 1-106,108-127,129-145,147-155,159-167,171-185,187-196,198-203
+  s_d371ad073063c8::t_99719252e14eaf 146,186
+  s_d371ad073063c8::t_12a7234abfeefc 156-158,168-170
+  s_d371ad073063c8::t_19d6ae0f435c1d 107,128,197
+load-tests/scripts/04-cupos-concurrencia.js
+  s_e975fa25d919d9::t_9eee031eeae4ff 11
+  s_e975fa25d919d9::t_3778eff4a03485 1-10,12-21,23,25-51
+  s_e975fa25d919d9::t_a2f4198e4df883 22,24
+event-service/src/main/java/com/javeriana/eventos/event/domain/events/EventoPublicadoEvent.java
+  s_d371ad073063c8::t_4707148822ce8c 6,13-16,20-23
+inscription-service/src/test/java/com/javeriana/eventos/inscription/infrastructure/clientes/PaymentServiceAdapterTest.java
+  s_d371ad073063c8::t_236ba5f7705f6a 1-79,83-84,87-88,92-93,96-100,102,104-105,108-113,115-118,121-125
+  s_d371ad073063c8::t_664e80adf79eb8 80-82,85-86,89-91,94-95,101,103,106-107,114,119-120
+event-service/src/test/java/com/javeriana/eventos/event/security/JwtValidadorTest.java
+  s_d371ad073063c8::t_d272dcf96ab0c3 1-122
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/retention/RetentionService.java
+  s_d371ad073063c8::t_1ed4ed853ff128 1-72
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/outbox/OutboxMetrics.java
+  s_d371ad073063c8::t_25a16955cb33d5 1-53
+event-service/src/test/resources/jwt/test-private-key.b64
+  s_d371ad073063c8::t_3d84d10fe5c203 1
+frontend/src/main.tsx
+  s_e975fa25d919d9::t_fc37b34aca483a 5,11-17
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-4,6-10,18-19
+inscription-service/src/test/java/com/javeriana/eventos/inscription/application/ExpirarInscripcionPayloadTest.java
+  s_d371ad073063c8::t_1780bb2ef31806 59-60,62
+  s_d371ad073063c8::t_dec85eda1b3af9 1-4,6-58,61,63-288
+  s_d371ad073063c8::t_249ba4f664cafb 5
+frontend/tsconfig.json
+  s_e975fa25d919d9::t_58ed44b435d2a8 1-24
+e2e-tests/src/test/resources/jwt/test-private-key.b64
+  s_d371ad073063c8::t_d067b99ed800d4 1
+event-service/src/main/java/com/javeriana/eventos/event/application/CancelarEventoService.java
+  s_d371ad073063c8::t_5e6f5b3b673747 58
+  s_d371ad073063c8::t_95f4cd9db7cc63 1-57,59-63
+load-tests/scripts/06-cache-effectiveness.js
+  s_e975fa25d919d9::t_6a3e8fd3fd9b4f 16,61
+  s_e975fa25d919d9::t_0b01069e73dfa1 1-15,17-60,62-118
+e2e-tests/src/test/java/com/javeriana/eventos/e2e/FlujoFelizE2EIT.java
+  s_e975fa25d919d9::t_85560198f9481d 24,73
+  s_e975fa25d919d9::t_1f59a051110bd4 20-21,113,196-215
+  s_d371ad073063c8::t_76f9466ca5e133 1-14,16,23,26-72,74-81,97-105,107-112,115-138,140-160,162-163,165-192,194-195,244-245
+  s_e975fa25d919d9::t_2345f2b93c55a1 15,82-85,88-92,94-96
+  s_e975fa25d919d9::t_03d592277946d7 106
+  s_e975fa25d919d9::t_95a4bac7ae231f 114,216-226
+  s_e975fa25d919d9::t_c1ac2391aeb6a7 161
+  s_e975fa25d919d9::t_17d2357164098f 86-87,93
+  s_e975fa25d919d9::t_3442cf10522d7f 17-19,22,25,139,164,193,227-243
+frontend/src/features/catalog/CatalogPage.tsx
+  s_e975fa25d919d9::t_dee196c1ec21e8 66,71-76,85
+  s_e975fa25d919d9::t_a8ed17062ffdbd 3,6,19-20,39,47,97
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-2,4-5,7-18,21-38,40-46,48-65,67-70,77-84,86-96,98-137
+inscription-service/src/test/resources/docker-java.properties
+  s_d371ad073063c8::t_0e32971f395440 1
+frontend/src/components/degradation/ContextualError.tsx
+  s_e975fa25d919d9::t_4e771718fa8eae 1-47
+frontend/src/features/checkout/PaymentPage.test.tsx
+  s_e975fa25d919d9::t_b2a922d6f8f0c2 45
+  s_e975fa25d919d9::t_87b9005ed17e32 1-44,46-61
+frontend/evidence/full/index.html
+  s_e975fa25d919d9::t_5a0d1d1a675fad 1-665
+docs/adrs/ADR-014-eventtype-en-header-amqp.md
+  s_d371ad073063c8::t_b9cf271240d843 1-94
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/CorrelationIdFilter.java
+  s_d371ad073063c8::t_bcaaade1da4636 1-50
+frontend/src/shared/lib/crypto.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-17
+docs/evidencia-accesibilidad-frontend.md
+  s_e975fa25d919d9::t_0601d42b7b0a5f 1-102
+docs/reporte-enlaces-frontend.md
+  s_e975fa25d919d9::t_9d63d3e36cfb4b 1-41
+frontend/e2e/09-token-expirado.spec.ts
+  s_e975fa25d919d9::t_e3b63684be7bf8 1-51
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/observability/MdcKeys.java
+  s_d371ad073063c8::t_737e096e824d61 1-12
+docs/diagramas/deployment-aws.dsl
+  s_4700d05819993f::t_bcfb0adeed5a79 1-103
+auth-service-stub/src/main/java/com/javeriana/eventos/authstub/UsuariosDemoConfig.java
+  s_e975fa25d919d9::t_3675915ff82b91 1-38
+docs/diagramas/topologia-rabbitmq.puml
+  s_feae4534e259a7::t_e300da75dbe5b7 1-189
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/observability/MdcKeys.java
+  s_d371ad073063c8::t_e90707b044d08c 1-33
+load-tests/.dockerignore
+  s_e975fa25d919d9::t_e4b13f1c74503f 1-3
+frontend/src/shared/lib/sanitize.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-4
+auth-service-stub/src/main/resources/application.yml
+  s_e975fa25d919d9::t_f0150b1ac6b3db 8-12
+  s_e975fa25d919d9::t_3675915ff82b91 1-7,13-53
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/clientes/PaymentServiceAdapter.java
+  s_d371ad073063c8::t_52c45a7fb8c5f9 52-59
+  s_d371ad073063c8::t_73edb4a2a40bb7 1-51,60-64
+frontend/src/shared/styles/global.css
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-8,14-17,19-39,48-356,359-396,468-634,639-641,643-646,648-649,653,655-656,662-663,667-668,678-679,686-687,693-707,710-735,739-752,768-817,830-848
+  s_e975fa25d919d9::t_bb7bc9b50fe20d 753-759
+  s_e975fa25d919d9::t_6591577d8cd5e0 9-13,18,40-47,357-358,635-638,642,647,650-652,654,657-661,664-666,669-677,680-685,688-692,708-709,736-738,760-767
+  s_e975fa25d919d9::t_93f1ff161770e1 818-829
+  s_e975fa25d919d9::t_9328a028a46113 397-467
+docs/validacion-diagramas-c4.md
+  s_e975fa25d919d9::t_17aa284684f27e 1-52
+docker-compose.e2e.yml
+  s_d371ad073063c8::t_12a82f339bfec3 138,146-150
+  s_e975fa25d919d9::t_5626fa696ca3e9 199
+  s_d371ad073063c8::t_d336482e2ef5f5 1-5,7-15,17-108,126-137,139-145,151-198,200-211,214-219
+  s_e975fa25d919d9::t_3e851a9790a945 6,16,109-125
+  s_d371ad073063c8::t_ed89dd3d2afad7 212-213
+docs/vista-escenarios-kruchten.md
+  s_feae4534e259a7::t_6ba50398f21aca 1-80,82-88,90-98,100-106,108-1244
+  s_4700d05819993f::t_3e6f2c8571f2d7 81,89,99,107
+shared/src/main/java/com/javeriana/eventos/shared/domain/outbox/OutboxEvent.java
+  s_d371ad073063c8::t_32249dd0d6299e 1-102
+event-service/src/main/java/com/javeriana/eventos/event/domain/port/in/ConsultarTarifaUseCase.java
+  s_d371ad073063c8::t_684726842ff303 1-20
+payment-service/src/test/java/com/javeriana/eventos/payment/PagoFlowEndToEndIT.java
+  s_d371ad073063c8::t_8b2af0e23e3821 24
+  s_d371ad073063c8::t_d82452a00ad13f 3-4,6,14,17-18,20-21,37,41,44,46-52,55,62-70,107,109,112,116-121,129,132-133,136-140,142,145-190,193,196-197,200-201,203,205-206,210-211,215-288,291-325,335-341,343-351,356,358-359,361-373,375-381,385-390
+  s_d371ad073063c8::t_64c06d1dd0a739 59
+  s_d371ad073063c8::t_d6a861113cc0f0 114-115,122-126
+  s_d371ad073063c8::t_e9f60b53d363ea 113
+  s_d371ad073063c8::t_11641c3dcd30e5 90-94
+  s_d371ad073063c8::t_d1735d1bdcb59a 326-334,342,352-355,357,360,374,382-383
+  s_d371ad073063c8::t_d3ba375338b342 28
+  s_d371ad073063c8::t_8e156507549026 289-290
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/outbox/OutboxEventMapper.java
+  s_d371ad073063c8::t_7e99772dcb7b72 1-43
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/outbox/JpaOutboxEventRepository.java
+  s_d371ad073063c8::t_4e2526e118c8bf 7-8,10,12,14-19,30-31,33,36-39,41-43,45-46,50-53,57-69
+  s_d371ad073063c8::t_61fba52fd0011a 73-77
+  s_d371ad073063c8::t_5a6d6bc85d54ac 4-5
+frontend/src/services/authService.ts
+  s_e975fa25d919d9::t_60e22c93e4555c 1-85
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/outbox/OutboxRelayService.java
+  s_d371ad073063c8::t_7a25ff89d52e89 3-4,9-10,14,17,32,35,39,48,52,55-56,63,70,72,78,87,90,93-96,102,140-143
+  s_d371ad073063c8::t_c2fb98b6f7776e 92,97-101
+  s_d371ad073063c8::t_bafddddc0ed8c1 5,8,11,19-20,25-30,33-34,37,42-46,49-50,53-54,57,69,73-75,77,79-84,89,104-105,107-113,115-122,125-139
+load-tests/docker-compose.k6.yml
+  s_e975fa25d919d9::t_2a7c8ed369465b 1-6,14-15,25,27,43-47,64-74,81,83-92,94-114
+  s_e975fa25d919d9::t_266b80b5bc14fe 16-24
+  s_e975fa25d919d9::t_70f051e57bafd0 82,93,117-118
+  s_e975fa25d919d9::t_1352256430091c 35-36
+  s_e975fa25d919d9::t_f6888f346b37ea 75-80
+  s_e975fa25d919d9::t_6bd0202b65b22d 115-116
+  s_e975fa25d919d9::t_be036650094c15 8-13,37-42,50-63
+  s_e975fa25d919d9::t_1914fd82c6b385 7,26,28-34,48-49
+frontend/e2e/07-auth-multi-usuario.spec.ts
+  s_e975fa25d919d9::t_d94ed8561685f0 1-24
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/clientes/CorrelationIdFeignInterceptor.java
+  s_d371ad073063c8::t_58c3c65b66e002 1-34
+docs/asyncapi/event-service.yml
+  s_d371ad073063c8::t_acb9fe8396740f 1-311
+event-service/src/main/resources/db/migration/V2__outbox_events.sql
+  s_d371ad073063c8::t_e20ed37c6f4780 1-36
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/persistence/entity/MensajeProcesadoEntity.java
+  s_d371ad073063c8::t_1cd1ecdd10af0f 1-38
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/web/InscripcionController.java
+  s_d371ad073063c8::t_8483eba98108a8 7,17,22-31,51-61,66,76,102-103,105-106,108-109,113-114,116,124-127
+  s_e975fa25d919d9::t_5fe2e508de3f42 11-12,36-37,39,41-42,44-45,67-73
+  s_d371ad073063c8::t_1554dcdf42397a 118-122
+  s_d371ad073063c8::t_501011bd4c12aa 3
+  s_e975fa25d919d9::t_8ffe021a90cb55 14,123
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/pasarela/DefaultPasarelaPagoFactory.java
+  s_d371ad073063c8::t_662ce27de180c4 32-33,37-39
+frontend/src/app/RequireAuth.tsx
+  s_e975fa25d919d9::t_95733692a4e61e 5,8
+  s_e975fa25d919d9::t_3cdacffc806afc 1-4,6-7,9-13
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/exception/WebhookFirmaInvalidaException.java
+  s_d371ad073063c8::t_0ddfeb193848f9 1-12
+frontend/src/lib/errors/parseHttpError.ts
+  s_e975fa25d919d9::t_f53144b9ee61dd 1-48,50-80
+  s_e975fa25d919d9::t_60e22c93e4555c 49
+inscription-service/pom.xml
+  s_d371ad073063c8::t_5f01ba1a781060 35-39
+  s_d371ad073063c8::t_132953045e526d 65-69
+  s_d371ad073063c8::t_5930e02605f535 77-88
+  s_d371ad073063c8::t_6ece20be318a7e 119-133,142-157
+  s_d371ad073063c8::t_5123d0da49e2f9 52-60
+inscription-service/Dockerfile
+  s_d371ad073063c8::t_9a121c3cc56395 1-2,7-14
+  s_e975fa25d919d9::t_8935e0492857a4 3-6
+frontend/src/features/auth/AuthContext.tsx
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1,3,6-8,13-20,22-24,32-34,36-38,40-47,50,52-56,58-61,70-79
+  s_e975fa25d919d9::t_c93aa37cbeedc0 4,25-31
+  s_e975fa25d919d9::t_95733692a4e61e 2,5,9-12,21,35,39,48-49,51,57,62-69,80
+load-tests/seed/seed-load-test.sql
+  s_e975fa25d919d9::t_467c26414eb309 1-87
+frontend/src/entities/inscription/model.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-19
+frontend/src/features/auth/jwt-claims.test.ts
+  s_e975fa25d919d9::t_921e2703e66b1e 1-48
+event-service/Dockerfile
+  s_d371ad073063c8::t_24105185cbf958 1-2,7-14
+  s_e975fa25d919d9::t_8935e0492857a4 3-6
+docs/diagramas/inscription-service.dsl
+  s_b67dd46a9e3df2::t_72e1fde6cd6483 1-84
+frontend/src/shared/api/http.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 4-15,17-18,20-34,37-40,42-46,48-51,53-57,59-61,63-66,68,73-75,77,82-83
+  s_e975fa25d919d9::t_60e22c93e4555c 41,47,52,58,62
+  s_e975fa25d919d9::t_00e7d49a4cb7c1 1-3,16,19,35-36,67,69-72,76,78-81
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/events/SerializacionPayloadException.java
+  s_d371ad073063c8::t_b00ff7eeecfdaa 1-13
+frontend/scripts/capture-full-frontend.mjs
+  s_e975fa25d919d9::t_b3846fbfe581dd 454
+  s_e975fa25d919d9::t_6923e8b1556368 443-448
+  s_e975fa25d919d9::t_c07f13e133f617 1-57,59-355,357-382,384-393,395-442,449-453,455-584
+  s_e975fa25d919d9::t_18086eb3d87229 356,383,394
+  s_e975fa25d919d9::t_838be2999570e6 58
+frontend/src/shared/ui/Skeleton.tsx
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-18
+frontend/src/entities/event/index.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1
+docs/diagramas/c4-component-inscription-service.puml
+  s_b67dd46a9e3df2::t_62c0db946587f6 1-80
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/idempotencia/MensajeProcesadoEntity.java
+  s_d371ad073063c8::t_551397d40a5ec6 1-40
+inscription-service/src/test/resources/jwt/test-private-key.b64
+  s_d371ad073063c8::t_7ff26d87275e3d 1
+load-tests/scripts/generate-evidence-charts.py
+  s_e975fa25d919d9::t_96eb6ac3386b50 1-289
+frontend/src/components/degradation/RetryAfterCountdown.tsx
+  s_e975fa25d919d9::t_aa0be711c48f34 1-33
+frontend/src/components/ErrorBoundary.tsx
+  s_e975fa25d919d9::t_7e0ebeb71f5b83 1-37
+frontend/e2e/11-refresh-session.spec.ts
+  s_e975fa25d919d9::t_4624b8a056cc70 1-29
+inscription-service/src/main/java/com/javeriana/eventos/inscription/application/ExpirarInscripcionesService.java
+  s_d371ad073063c8::t_c447dd7835c0f2 76-77
+  s_d371ad073063c8::t_1a80326a560588 13
+  s_d371ad073063c8::t_4a86150bc21a48 11,16
+  s_d371ad073063c8::t_b0b3c805b7028b 3-4,29-30,47-48,84,91,93-98
+  s_d371ad073063c8::t_c225b2b253bd34 7,25-27,37-40,45,49,56,92,100-102
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/web/EventoController.java
+  s_d371ad073063c8::t_21bcdb65bd7387 39,46,52
+  s_d371ad073063c8::t_f5c95f9ca718db 6
+  s_d371ad073063c8::t_264621c638862c 87-95
+  s_d371ad073063c8::t_ef0d9e1df65876 9,11,15,23,26-28,32,37-38,41-42,47-51,53-55,58-59,70,73-74,97-106,110,121,125,134-146
+  s_d371ad073063c8::t_43a2f5cb3e2d44 12,19,29-31,60-63,67-68,82-83,96,109,123
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/web/PagoController.java
+  s_d371ad073063c8::t_9efe46357f7251 29-31,33-34,36
+event-service/src/main/java/com/javeriana/eventos/event/infrastructure/security/JwtValidador.java
+  s_d371ad073063c8::t_2bfc6229d00549 1-50
+payment-service/src/main/resources/db/migration/V2__outbox_estado_aggregate_type.sql
+  s_d371ad073063c8::t_0355a75448db19 1-63
+payment-service/src/main/java/com/javeriana/eventos/payment/infrastructure/outbox/OutboxMetrics.java
+  s_d371ad073063c8::t_27e88b814b982a 1-66
+frontend/src/services/eventService.ts
+  s_e975fa25d919d9::t_d5e20d3aa1cb3c 1-3,5,7-15,25-28,33-35,40
+  s_e975fa25d919d9::t_c41b02c21b021a 4,6,16-24,29-32,36-39
+frontend/src/lib/retry/withRetry.ts
+  s_e975fa25d919d9::t_5c0cd680ddb5ac 1-47
+docs/evidencia-testing-frontend.md
+  s_e975fa25d919d9::t_b64058cf4d384f 1-18,20,46-72,81-109,116
+  s_e975fa25d919d9::t_ffad52bb6ad6a9 21-27,31-36,40-45
+  s_e975fa25d919d9::t_687edcacae6591 19,28-30,37-39,73-80,110-115,117
+frontend/src/hooks/useServiceHealth.ts
+  s_e975fa25d919d9::t_7f84fecf66b821 1-18
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/security/JwtValidador.java
+  s_d371ad073063c8::t_2b61a945b03f65 1-83
+frontend/e2e/10-logout-completo.spec.ts
+  s_e975fa25d919d9::t_704ea10e4c7840 1,3-33,36-43
+  s_e975fa25d919d9::t_56930a667b5948 2,34-35
+inscription-service/src/main/resources/db/migration/V4__shedlock.sql
+  s_d371ad073063c8::t_06ca359f31a606 1-8
+frontend/src/features/auth/LoginPage.test.tsx
+  s_e975fa25d919d9::t_40df5e5815e17c 20,40,53
+  s_e975fa25d919d9::t_e4d870d4b16076 55
+  s_e975fa25d919d9::t_e1c0fa11aca25c 1-19,21-39,41-51,54,56-57
+  s_e975fa25d919d9::t_b2a922d6f8f0c2 52
+TECH_DEBT.md
+  s_e975fa25d919d9::t_9ccac4f38a5467 112,251,266,281
+  s_e975fa25d919d9::t_487968838d6297 370,397-411
+  s_e975fa25d919d9::t_036960a4d43807 1,3-5,7,9,11-16,18-111,113-250,252-265,267-280,282-369,371-396,412-413
+  s_e975fa25d919d9::t_58ed44b435d2a8 2,6,8,10,17
+docs/vista-fisica-deployment.md
+  s_e975fa25d919d9::t_dc3a0137d27f93 161,189-193,232
+  s_4700d05819993f::t_7d954a2bca9319 1-160,162-188,194-231,233-1026
+load-tests/scripts/generate-timeseries-charts.py
+  s_e975fa25d919d9::t_1ac736885a7adc 89,108,112,117,122,126,133,138,150-151,172,201-207
+  s_e975fa25d919d9::t_d2826ea499ebb7 47-50,52-53
+  s_e975fa25d919d9::t_f655ec5b487596 1-46,55-88,90-107,109-111,113-116,118-121,123-125,127-132,134-137,139-149,152-171,173-200,208-302
+  s_e975fa25d919d9::t_7af39975f55ba3 51,54
+frontend/src/components/index.ts
+  s_e975fa25d919d9::t_6e76ce65a84ede 1-2
+docs/inventario-rutas-frontend.md
+  s_e975fa25d919d9::t_0966f4b21a2cd9 1-45
+inscription-service/src/main/java/com/javeriana/eventos/inscription/infrastructure/outbox/OutboxEventMapper.java
+  s_d371ad073063c8::t_f309c85f0c26ed 1-43
+load-tests/.gitignore
+  s_e975fa25d919d9::t_7656973edbeffe 1-3
+auth-service-stub/Dockerfile
+  s_e975fa25d919d9::t_3675915ff82b91 1-14
+payment-service/src/main/java/com/javeriana/eventos/payment/domain/model/Pago.java
+  s_d371ad073063c8::t_8c56e85bdb6b1b 106-107
+  s_d371ad073063c8::t_f49425a2a5d679 143-144,170-171
+  s_d371ad073063c8::t_cbd12d48b7140b 114,123-126
+  s_d371ad073063c8::t_0c5add8054d0f0 6
+frontend/ACCESSIBILITY.md
+  s_e975fa25d919d9::t_0601d42b7b0a5f 1-42
+event-service/src/main/resources/application.yml
+  s_e975fa25d919d9::t_27e02e4b96426f 62
+  s_d371ad073063c8::t_8deaa52db38e8e 26-34
+  s_d371ad073063c8::t_1b1af05c14f015 1-4,9-15,19,43-47,50
+  s_d371ad073063c8::t_84cc7b181b096e 56-61,63-64
+frontend/src/hooks/index.ts
+  s_e975fa25d919d9::t_9877428f2e1fb2 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "70011594bb0bd9711e46a21a5cc41a3db592db04",
+  "prompts": {},
+  "sessions": {
+    "s_4700d05819993f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ae24b7fa-7620-4443-80e8-db192fffc55c",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    },
+    "s_b67dd46a9e3df2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b5ccc6a2-cb72-4049-bef1-cc7536f36338",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    },
+    "s_d371ad073063c8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "349cfeb0-67bd-403a-8956-640cb08f0f82",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    },
+    "s_e975fa25d919d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7060-2b38-7100-839a-eb05028f243f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    },
+    "s_feae4534e259a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca13667f-5b78-4016-8b27-ea5f51ab2f3b",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
