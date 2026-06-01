@@ -80,6 +80,12 @@ jobs:
       - name: Verify services
         run: docker compose -f docker-compose.e2e.yml ps
 
+      - name: Seed E2E data
+        run: |
+          docker compose -f docker-compose.e2e.yml exec -T db-event \
+            psql -v ON_ERROR_STOP=1 -U eventos_user -d eventos_event \
+            < load-tests/seed/seed-load-test.sql
+
       - name: Configure npm registry mirror
         working-directory: frontend
         run: echo "registry=https://registry.yarnpkg.com/" > .npmrc
