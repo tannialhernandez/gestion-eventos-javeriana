@@ -1,0 +1,22 @@
+e2e-tests/src/test/java/com/javeriana/eventos/e2e/TrazabilidadE2EIT.java
+  s_e975fa25d919d9::t_30e05997e2bacb 86-102,106
+  s_e975fa25d919d9::t_302ba5e26cbede 13-16,111,148-152
+e2e-tests/src/test/java/com/javeriana/eventos/e2e/CasosErrorE2EIT.java
+  s_e975fa25d919d9::t_4641b2cc48f56b 12-15,80,95-97,99,101,152-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "7e7d8b448b11fa1f683f71f08f7c592fc0259053",
+  "prompts": {},
+  "sessions": {
+    "s_e975fa25d919d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7060-2b38-7100-839a-eb05028f243f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
