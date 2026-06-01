@@ -143,9 +143,15 @@ services:
       SPRING_DATASOURCE_PASSWORD: eventos_pass
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
+      SPRING_RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      SPRING_RABBITMQ_PASSWORD: guest
       # RSA-2048 public key para validar JWT
       JWT_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4C3rkbm3lVOmdTFJH/fGTNz1Fk+ScJIu+SkFXJdu8D9C10X9Bmpj97owkfgX2zGbZ+jDjbvwCIDkIKxW1KzgdeGxEWSnYUBCH5fakqW1f6eA1B08yoWT1WzAB46CI6Dlu9Fd965/zN1tWzzFrpvmrmqZDpm5fVsCxsDSrRrKhO36wMJVpXMFxRNxmYIbQmw/CsKCA4oJdTaC0wKF86s5p3sneqs4tH/eTNhjyrbpufYkS6aDWOxSxtqhX5C1CRqF+65QoLyvRlTocLs69O+XRQoDYxa5teZM77stmLMqAjZCtDVpSnNaYknsaqQnS9AfPiYAKJ3dd9ql/jYF5UtF9QIDAQAB"
     healthcheck:
@@ -172,8 +178,12 @@ services:
       SPRING_DATASOURCE_USERNAME: eventos_user
       SPRING_DATASOURCE_PASSWORD: eventos_pass
       RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
+      SPRING_RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      SPRING_RABBITMQ_PASSWORD: guest
       PAYMENT_GATEWAY_PROVIDER: simulador
       PAYMENT_WEBHOOK_SECRET: local-demo-secret
       MERCADOPAGO_WEBHOOK_URL: http://payment-service:8084/api/v1/webhooks/pagos
@@ -203,8 +213,12 @@ services:
       SPRING_DATASOURCE_USERNAME: eventos_user
       SPRING_DATASOURCE_PASSWORD: eventos_pass
       RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
+      SPRING_RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      SPRING_RABBITMQ_PASSWORD: guest
       EVENT_SERVICE_URL: http://event-service:8082
       PAYMENT_SERVICE_URL: http://payment-service:8084
       # RSA-2048 public key para validar JWT (Prompt 12)

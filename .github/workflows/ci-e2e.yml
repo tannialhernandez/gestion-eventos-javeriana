@@ -49,7 +49,7 @@ jobs:
             docker compose -f docker-compose.e2e.yml ps > docker-compose-ps.log || true
             docker compose -f docker-compose.e2e.yml logs --no-color --tail=120 auth-service-stub event-service payment-service inscription-service > docker-compose-services.log || true
             docker compose -f docker-compose.e2e.yml logs --no-color --tail=160 > docker-compose-e2e.log || true
-            ruby -e 'parts = []; parts << "=== docker compose ps ===\n#{File.read("docker-compose-ps.log")}" if File.exist?("docker-compose-ps.log"); parts << "=== service logs ===\n#{File.read("docker-compose-services.log")}" if File.exist?("docker-compose-services.log"); msg = parts.join("\n").gsub(/[%\\r\\n]/, " "); puts "::error title=Docker compose E2E failed::#{msg[0,8000]}"'
+            ruby -e 'parts = []; parts << "=== docker compose ps ===\n#{File.read("docker-compose-ps.log")}" if File.exist?("docker-compose-ps.log"); parts << "=== service logs ===\n#{File.read("docker-compose-services.log")}" if File.exist?("docker-compose-services.log"); msg = parts.join("\n").gsub("%", "%25").gsub("\r", "%0D").gsub("\n", "%0A"); puts "::error title=Docker compose E2E failed::#{msg[0,8000]}"'
             exit "$status"
           fi
           for service in \
@@ -72,7 +72,7 @@ jobs:
             if [ "${ready}" != "true" ]; then
               docker compose -f docker-compose.e2e.yml ps > docker-compose-ps.log || true
               docker compose -f docker-compose.e2e.yml logs --no-color --tail=160 "${name}" > docker-compose-services.log || true
-              ruby -e 'parts = []; parts << "=== docker compose ps ===\n#{File.read("docker-compose-ps.log")}" if File.exist?("docker-compose-ps.log"); parts << "=== service logs ===\n#{File.read("docker-compose-services.log")}" if File.exist?("docker-compose-services.log"); msg = parts.join("\n").gsub(/[%\\r\\n]/, " "); puts "::error title=Service healthcheck failed::#{msg[0,8000]}"'
+              ruby -e 'parts = []; parts << "=== docker compose ps ===\n#{File.read("docker-compose-ps.log")}" if File.exist?("docker-compose-ps.log"); parts << "=== service logs ===\n#{File.read("docker-compose-services.log")}" if File.exist?("docker-compose-services.log"); msg = parts.join("\n").gsub("%", "%25").gsub("\r", "%0D").gsub("\n", "%0A"); puts "::error title=Service healthcheck failed::#{msg[0,8000]}"'
               exit 1
             fi
           done
