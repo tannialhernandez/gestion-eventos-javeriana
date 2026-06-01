@@ -33,7 +33,7 @@ jobs:
           echo "@playwright:registry=https://registry.yarnpkg.com/" >> .npmrc
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps --registry=https://registry.yarnpkg.com/
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium

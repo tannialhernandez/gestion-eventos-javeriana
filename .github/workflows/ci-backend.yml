@@ -18,6 +18,8 @@ jobs:
   test:
     name: Test ${{ matrix.service }}
     runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: -Djdk.attach.allowAttachSelf=true
     strategy:
       fail-fast: false
       matrix:
@@ -57,6 +59,8 @@ jobs:
     name: Build and publish ${{ matrix.service }}
     needs: test
     runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: -Djdk.attach.allowAttachSelf=true
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -84,7 +88,7 @@ jobs:
           if [ "${{ matrix.service }}" != "auth-service-stub" ]; then
             mvn -f shared/pom.xml -B install -DskipTests
           fi
-          mvn -f ${{ matrix.service }}/pom.xml -B package -DskipTests
+          mvn -f ${{ matrix.service }}/pom.xml -B package -DskipTests -Dmaven.test.skip=true
 
       - uses: docker/setup-buildx-action@v3
 

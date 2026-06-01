@@ -163,11 +163,11 @@ El backlog completo suma aproximadamente 41.75 dias-persona tras cerrar CI/CD y 
 | Campo | Detalle |
 |---|---|
 | Estado | Mitigado localmente |
-| Descripcion | El entorno presento bloqueo `ENOTFOUND registry.npmjs.org` y configuracion global hacia `npm.artifacts.furycloud.io`; el frontend usa `.npmrc` local con `registry.yarnpkg.com`. |
-| Justificacion de Entrega 3 | Se necesitaba instalar devDependencies de testing/accesibilidad sin credenciales corporativas ni cuentas pagas. |
-| Impacto en produccion | Riesgo de reproducibilidad para otros miembros del equipo si su entorno hereda otro registry o proxy corporativo. |
-| Mitigacion actual | Diagnostico documentado y `.npmrc` local del frontend. |
-| Plan de cierre | Coordinar con TI Javeriana registry oficial, proxy, certificados CA y documentacion de onboarding. |
+| Descripcion | El entorno presento bloqueo `ENOTFOUND registry.npmjs.org`; el frontend usa `.npmrc` local y `package-lock.json` normalizado hacia `registry.yarnpkg.com`. |
+| Justificacion de Entrega 3 | Se necesitaba instalar devDependencies de testing/accesibilidad sin credenciales ni cuentas pagas adicionales. |
+| Impacto en produccion | Riesgo de reproducibilidad para otros miembros del equipo si su entorno no puede resolver el registry publico principal. |
+| Mitigacion actual | Diagnostico documentado, `.npmrc` local del frontend y lockfile sin referencias a registries privados o institucionales. |
+| Plan de cierre | Mantener `frontend/.npmrc`, validar `npm ci` en CI y documentar el mirror publico como alternativa reproducible de desarrollo. |
 | Esfuerzo estimado | 0.5 dias-persona |
 | Prioridad Fase 2 | P1 |
 | ADRs relacionados | ADR-013 frontend TypeScript, RNF-10 mantenibilidad |

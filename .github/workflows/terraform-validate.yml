@@ -44,6 +44,7 @@ jobs:
 
   infracost:
     runs-on: ubuntu-latest
+    if: ${{ vars.INFRACOST_ENABLED == 'true' }}
     env:
       INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
     steps:
