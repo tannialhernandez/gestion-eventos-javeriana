@@ -1,0 +1,19 @@
+.github/workflows/ci-e2e.yml
+  s_e975fa25d919d9::t_cfde64529ccf0d 50,52,97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "69717882a3cff383f7685153a095848bef862c4d",
+  "prompts": {},
+  "sessions": {
+    "s_e975fa25d919d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7060-2b38-7100-839a-eb05028f243f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
