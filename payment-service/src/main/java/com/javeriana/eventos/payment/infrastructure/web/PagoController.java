@@ -26,12 +26,14 @@ public class PagoController {
     /**
      * POST /api/v1/pagos
      *
-     * Crea un pago en estado INICIADO y retorna la URL de checkout de la pasarela.
-     * El usuario debe completar el pago en esa URL para que llegue el webhook.
+     * C-02 (Prompt 18/19): path corregido a /preferencias para alinear con el
+     * contrato del Feign client de inscription-service:
+     *   PaymentServiceFeignClient → POST /api/v1/pagos/preferencias
      *
-     * Circuit Breaker activo (ADR-18): si la pasarela no responde → HTTP 503.
+     * Crea un pago en INICIADO y retorna el checkout URL.
+     * Circuit Breaker activo: si la pasarela no responde → HTTP 503.
      */
-    @PostMapping
+    @PostMapping("/preferencias")
     public ResponseEntity<PreferenciaResponse> crear(
             @Valid @RequestBody CrearPreferenciaRequest request,
             @RequestHeader(value = "X-User-Id", required = false) UUID usuarioId) {

@@ -29,12 +29,14 @@ public class DefaultPasarelaPagoFactory implements PasarelaPagoFactory {
 
     public DefaultPasarelaPagoFactory(
             @Value("${payment.gateway.provider:simulador}") String provider,
-            @Value("${mercadopago.access-token:}") String mpAccessToken) {
+            @Value("${mercadopago.access-token:}") String mpAccessToken,
+            @Value("${mercadopago.webhook-url:http://localhost:8084/api/v1/webhooks/pagos}") String webhookUrl) {
 
         this.pasarela = switch (provider.toLowerCase()) {
             case "mercadopago" -> {
-                log.info("[PasarelaPagoFactory] Usando adaptador MercadoPago (producción).");
-                yield new MercadoPagoAdapter(mpAccessToken);
+                log.info("[PasarelaPagoFactory] Usando adaptador MercadoPago (producción). webhookUrl={}",
+                    webhookUrl);
+                yield new MercadoPagoAdapter(mpAccessToken, webhookUrl);
             }
             default -> {
                 log.info("[PasarelaPagoFactory] Usando SimuladorPasarelaAdapter (demo/test).");

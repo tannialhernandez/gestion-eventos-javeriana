@@ -1,0 +1,37 @@
+# =============================================================================
+# application-test.yml — perfil para tests de integración con Testcontainers
+#
+# Activar con: @ActiveProfiles("test") en la clase de test.
+#
+# Las coordenadas reales de BD y RabbitMQ las inyecta @DynamicPropertySource
+# en tiempo de ejecución (URLs de Testcontainers no son conocidas en build time).
+# Este archivo solo fija las propiedades que SÍ se conocen de antemano.
+# =============================================================================
+
+spring:
+  rabbitmq:
+    # RabbitMQ oficial (rabbitmq:3-management-alpine) arranca con virtual-host "/"
+    virtual-host: /
+
+  jpa:
+    show-sql: true
+
+  flyway:
+    enabled: true
+
+# C-01: secret fijo para tests — permite generar firmas válidas en tests de integración
+payment:
+  gateway:
+    webhook-secret: test-webhook-secret-hmac-sha256
+
+mercadopago:
+  webhook-url: http://localhost:8084/api/v1/webhooks/pagos
+
+retention:
+  enabled: false
+  cron: "0 0 3 * * *"
+  outbox-enviado-days: 30
+  outbox-fallido-days: 90
+  mensaje-procesado-days: 30
+  batch-size: 1000
+  max-batches-per-run: 100

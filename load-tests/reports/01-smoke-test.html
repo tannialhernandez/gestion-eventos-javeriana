@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>K6 Smoke Test</title>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; margin: 32px; color: #172033; }
+    h1, h2 { margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { border: 1px solid #d8dee8; border-radius: 6px; padding: 14px; background: #f8fafc; }
+    .label { color: #5b677a; font-size: 12px; text-transform: uppercase; }
+    .value { font-size: 24px; font-weight: 700; margin-top: 6px; }
+    table { border-collapse: collapse; width: 100%; margin: 18px 0 28px; }
+    th, td { border-bottom: 1px solid #e6ebf2; padding: 10px 8px; text-align: left; }
+    th { background: #f1f5f9; font-size: 13px; }
+    .ok { color: #0f7b3b; font-weight: 700; }
+    .fail { color: #b42318; font-weight: 700; }
+    code { background: #eef2f7; padding: 2px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>K6 Smoke Test</h1>
+  <p>Generado: 2026-05-30T01:11:18.390Z</p>
+  <div class="grid">
+    <div class="card"><div class="label">p95 HTTP</div><div class="value">434.23 ms</div></div>
+    <div class="card"><div class="label">p99 HTTP</div><div class="value">- ms</div></div>
+    <div class="card"><div class="label">Error rate</div><div class="value">0.00</div></div>
+    <div class="card"><div class="label">Checks</div><div class="value">0.99</div></div>
+  </div>
+  <h2>Thresholds</h2>
+  <table>
+    <thead><tr><th>Metrica</th><th>Threshold</th><th>Resultado</th></tr></thead>
+    <tbody>
+        <tr>
+          <td>latencia_crear_inscripcion</td>
+          <td><code>p(95)<1000</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>http_req_duration{name:catalogo}</td>
+          <td><code>p(95)<1000</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>http_req_failed</td>
+          <td><code>rate<0.01</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>http_req_duration</td>
+          <td><code>p(95)<1000</code></td>
+          <td class="ok">OK</td>
+        </tr></tbody>
+  </table>
+  <h2>Metricas</h2>
+  <table>
+    <thead><tr><th>Metrica</th><th>count</th><th>rate</th><th>avg</th><th>p95</th><th>p99</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>http_req_blocked</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.22</td>
+        <td>0.65</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_failed</td>
+        <td>-</td>
+        <td>0.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>data_received</td>
+        <td>243376.00</td>
+        <td>3965.85</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_waiting</td>
+        <td>-</td>
+        <td>-</td>
+        <td>183.73</td>
+        <td>431.62</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>185.76</td>
+        <td>434.23</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>vus_max</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>vus</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>latencia_crear_inscripcion</td>
+        <td>-</td>
+        <td>-</td>
+        <td>240.80</td>
+        <td>458.22</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_reqs</td>
+        <td>52.00</td>
+        <td>0.85</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>group_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>190.39</td>
+        <td>437.28</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>data_sent</td>
+        <td>28122.00</td>
+        <td>458.25</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_connecting</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.03</td>
+        <td>0.00</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>checks</td>
+        <td>-</td>
+        <td>0.99</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>inscripciones_creadas_total</td>
+        <td>26.00</td>
+        <td>0.42</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration{expected_response:true}</td>
+        <td>-</td>
+        <td>-</td>
+        <td>185.76</td>
+        <td>434.23</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_tls_handshaking</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_receiving</td>
+        <td>-</td>
+        <td>-</td>
+        <td>1.87</td>
+        <td>5.17</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>iteration_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>2385.34</td>
+        <td>3219.77</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration{name:catalogo}</td>
+        <td>-</td>
+        <td>-</td>
+        <td>130.72</td>
+        <td>57.07</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_sending</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.16</td>
+        <td>0.28</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>iterations</td>
+        <td>26.00</td>
+        <td>0.42</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr></tbody>
+  </table>
+</body>
+</html>

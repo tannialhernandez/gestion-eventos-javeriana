@@ -1,0 +1,37 @@
+# =============================================================================
+# application-test.yml — perfil para tests de integración con Testcontainers
+#
+# Las coordenadas reales de BD, RabbitMQ y Redis las inyecta @DynamicPropertySource
+# en tiempo de ejecucion (URLs de Testcontainers no son conocidas en build time).
+# Este archivo solo fija propiedades que SI se conocen de antemano.
+# =============================================================================
+
+spring:
+  jpa:
+    show-sql: true
+
+  flyway:
+    enabled: true
+
+  rabbitmq:
+    virtual-host: /
+
+jwt:
+  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4C3rkbm3lVOmdTFJH/fGTNz1Fk+ScJIu+SkFXJdu8D9C10X9Bmpj97owkfgX2zGbZ+jDjbvwCIDkIKxW1KzgdeGxEWSnYUBCH5fakqW1f6eA1B08yoWT1WzAB46CI6Dlu9Fd965/zN1tWzzFrpvmrmqZDpm5fVsCxsDSrRrKhO36wMJVpXMFxRNxmYIbQmw/CsKCA4oJdTaC0wKF86s5p3sneqs4tH/eTNhjyrbpufYkS6aDWOxSxtqhX5C1CRqF+65QoLyvRlTocLs69O+XRQoDYxa5teZM77stmLMqAjZCtDVpSnNaYknsaqQnS9AfPiYAKJ3dd9ql/jYF5UtF9QIDAQAB
+
+outbox:
+  relay:
+    interval-ms: 500
+
+logging:
+  level:
+    com.javeriana.eventos: WARN
+
+retention:
+  enabled: false
+  cron: "0 0 3 * * *"
+  outbox-enviado-days: 30
+  outbox-fallido-days: 90
+  mensaje-procesado-days: 30
+  batch-size: 1000
+  max-batches-per-run: 100

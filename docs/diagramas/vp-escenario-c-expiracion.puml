@@ -1,0 +1,115 @@
+@startuml vp-escenario-c-expiracion
+!theme plain
+skinparam defaultFontSize 10
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam arrowColor #555555
+skinparam activityDiamondBackgroundColor #FFF9C4
+skinparam activityDiamondBorderColor #DAA520
+scale 0.9
+
+title Escenario C — Job de Expiración @Scheduled(60s) + SKIP LOCKED\nVista de Procesos (Kruchten 4+1) | ADR-003 · ADR-011 · ADR-018
+
+start
+
+#FFE0B2:ExpirarInscripcionesPendientesService.ejecutar()
+  Disparado por: @Scheduled(fixedDelay=60_000 ms)
+  Thread: scheduler-1 (Spring TaskScheduler);
+
+#BDE5FF:@SchedulerLock — ShedLock adquiere lock distribuido
+  UPDATE shedlock
+    SET lock_until = NOW() + INTERVAL '90s',
+        locked_at  = NOW(),
+        locked_by  = :hostname
+  WHERE name = 'expiracion-inscripciones-job'
+    AND (lock_until <= NOW() OR locked_by = :hostname);
+
+if (¿lock adquirido?) then (NO — otro nodo activo)
+  #FFB3B3:log.debug("Job omitido: lock en {locked_by}");
+  stop
+else (SÍ — este nodo ejecuta)
+endif
+
+#C8EDCB:Obtener lote de inscripciones vencidas
+  SELECT id, evento_id, usuario_id
+  FROM inscripciones
+  WHERE estado = 'PENDING'
+    AND expira_en < NOW()
+  ORDER BY expira_en ASC
+  LIMIT 50
+  FOR UPDATE SKIP LOCKED;
+
+if (¿lote vacío?) then (SÍ)
+  #BDE5FF:ShedLock libera lock
+    UPDATE shedlock SET lock_until = NOW()
+    WHERE name = 'expiracion-inscripciones-job';
+  stop
+else (NO — hay inscripciones a expirar)
+endif
+
+while (por cada inscripción del lote) is (quedan registros)
+
+  #C8EDCB:BEGIN TRANSACTION;
+
+  #FFF9C4:Bloqueo pesimista sobre el evento (ADR-003)
+    SELECT * FROM eventos
+    WHERE id = :eventoId
+    FOR UPDATE;
+
+  #C8EDCB:evento.incrementarCupo()
+    cupos_disponibles = cupos_disponibles + 1;
+
+  #C8EDCB:UPDATE eventos
+    SET cupos_disponibles = cupos_disponibles + 1
+    WHERE id = :eventoId;
+
+  #C8EDCB:inscripcion.expirar()
+    estado: PENDING → EXPIRADA
+    expirada_en = NOW();
+
+  #C8EDCB:UPDATE inscripciones
+    SET estado = 'EXPIRADA',
+        expirada_en = NOW()
+    WHERE id = :inscripcionId;
+
+  #FFE0B2:OutboxRepository.guardar() — ADR-011
+    INSERT INTO outbox (
+      event_type     = 'InscriptionExpired',
+      aggregate_type = 'Inscripcion',
+      aggregate_id   = :inscripcionId,
+      payload        = JSON{inscripcionId, eventoId, usuarioId},
+      processed_at   = NULL,
+      attempts       = 0
+    );
+
+  if (¿COMMIT exitoso?) then (SÍ)
+    #C8EDCB:COMMIT
+      (cupo devuelto + estado expirado + outbox — ACID);
+  else (NO — deadlock / constraint violation)
+    #FFB3B3:ROLLBACK;
+    #FFB3B3:log.error("Fallo al expirar {inscripcionId}");
+    note right #FFB3B3
+      La inscripción queda PENDING y será
+      reintentada en el próximo ciclo (60s)
+    end note
+  endif
+
+endwhile (fin del lote — todas procesadas)
+
+#BDE5FF:ShedLock libera lock
+  UPDATE shedlock SET lock_until = NOW()
+  WHERE name = 'expiracion-inscripciones-job';
+
+note right #F3E5F5
+  Hilo independiente: OutboxRelayService
+  En el próximo poll (≤ 2s) detecta los
+  OutboxEvents InscriptionExpired y publica:
+    exchange = 'inscripcion.events'
+    routingKey = 'inscripcion.expired'
+  → notification-service notifica al estudiante:
+    "Tu inscripción venció. El cupo fue liberado."
+end note
+
+stop
+
+@enduml

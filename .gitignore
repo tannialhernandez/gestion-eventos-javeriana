@@ -23,5 +23,17 @@ application-local.yml
 *.log
 logs/
 
+# Frontend dependencies and build cache
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Generated compose scratch files
+load-tests/.generated/
+
+# Local assistant/session artifacts
+.claude/
+out/
+
 # Superpowers brainstorming companion
 .superpowers/

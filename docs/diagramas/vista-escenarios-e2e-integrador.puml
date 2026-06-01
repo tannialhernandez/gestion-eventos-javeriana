@@ -1,0 +1,167 @@
+@startuml vista-escenarios-e2e-integrador
+' Vista +1 Escenarios -- Escenario Integrador E2E
+' "Maria se inscribe y paga al Simposio de IA"
+' Plataforma de Gestion de Eventos Academicos -- Javeriana 2026
+' Kruchten 4+1 - Entrega 3
+
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 9
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceGroupBorderColor #AAAAAA
+skinparam shadowing false
+skinparam sequenceBoxBackgroundColor #F5F5F5
+skinparam responseMessageBelowArrow true
+
+title
+  <b><size:12>Escenario Integrador E2E -- "Maria se inscribe y paga al Simposio de IA"</size></b>
+  <size:10>Vista +1 Escenarios - Kruchten 4+1 - Plataforma Gestion Eventos Academicos - Javeriana 2026</size>
+end title
+
+actor "Maria\n(Estudiante)" as MARIA
+participant "CloudFront\n+ S3 (SPA)" as CDN
+boundary "ALB\n(HTTPS:443)" as ALB
+participant "event-service\n:8081" as EVTSVC #C8EDCB
+participant "inscription-service\n:8082" as INSSVC #FFD7D7
+participant "payment-service\n:8083" as PAYSVC #FFE0B2
+participant "notification-service\n:8084" as NOTIFSVC #FFF9C4
+database "event_db" as EVTDB #C8EDCB
+database "inscription_db" as INSDB #FFD7D7
+database "payment_db" as PAYDB #FFE0B2
+database "notification_db" as NOTIFDB #FFF9C4
+participant "Redis\n(ElastiCache)" as REDIS #E0E0E0
+queue "Amazon MQ\n(RabbitMQ)" as MQ #E8D5FF
+participant "WireMock\n(Pasarela+SMTP)" as WIREMOCK #FFEECC
+participant "Secrets\nManager" as SECRETS #F0F0F0
+
+== [1] Maria carga la SPA ==
+
+MARIA -> CDN : GET https://eventos.javeriana.edu.co
+CDN --> MARIA : React SPA (S3 + CloudFront OAC)
+
+== [2] Consulta catalogo -- Cache-Aside (ADR-008) ==
+
+MARIA -> ALB : GET /api/v1/eventos [JWT]
+ALB -> EVTSVC : path /api/v1/eventos -> :8081
+EVTSVC -> REDIS : GET eventos:lista:pagina:1
+
+alt Cache HIT (TTL 5 min)
+  REDIS --> EVTSVC : JSON lista eventos (< 200 ms)
+else Cache MISS
+  EVTSVC -> EVTDB : SELECT * FROM eventos WHERE estado='PUBLICADO'
+  EVTDB --> EVTSVC : [Simposio de IA {cupos:1, precio:50000}]
+  EVTSVC -> REDIS : SET eventos:lista:pagina:1 EX 300
+end
+
+EVTSVC --> ALB : 200 OK [lista eventos]
+ALB --> MARIA : 200 OK -- Maria ve "Simposio de IA - 1 cupo"
+
+== [3] Inscripcion -- Pessimistic Lock + Outbox (ADR-003, ADR-011) ==
+
+MARIA -> ALB : POST /api/v1/inscripciones\n{eventoId:"simposio-ia"} [JWT maria-uuid]
+ALB -> INSSVC : InscripcionController -> CrearInscripcionService
+
+activate INSSVC #FFD7D7
+INSSVC -> INSDB : BEGIN TX\nSELECT FROM eventos FOR UPDATE NOWAIT
+INSDB --> INSSVC : {cupos:1} [LOCK ADQUIRIDO]
+INSSVC -> INSDB : UPDATE eventos SET cupos=0
+INSSVC -> INSDB : INSERT inscripciones\n{ins-001, PENDIENTE, expiraEn=now+30min}
+INSSVC -> INSDB : INSERT outbox_events\n{InscripcionCreadaEvent{ins-001, simposio-ia, 50000}}
+INSSVC -> INSDB : COMMIT [atomico: cupo + inscripcion + outbox]
+deactivate INSSVC
+
+INSSVC --> ALB : 201 Created {ins-001, PENDIENTE}
+ALB --> MARIA : 201 Created -- "Inscripcion pendiente - 30 min para pagar"
+
+== [4] OutboxRelay publica InscripcionCreadaEvent (scheduler-1, cada 2s) ==
+
+INSSVC -> INSDB : SELECT outbox_events WHERE status='PENDING'
+INSDB --> INSSVC : [InscripcionCreadaEvent{ins-001}]
+INSSVC -> MQ : PUBLISH inscription.events\nRK: inscription.created (AMQPS:5671)
+MQ --> INSSVC : publisher CONFIRM
+INSSVC -> INSDB : UPDATE outbox_events SET status='PROCESSED'
+
+== [5] payment-service consume y crea intencion de pago ==
+
+MQ -> PAYSVC : CONSUME payment.inscription.created
+
+activate PAYSVC #FFE0B2
+PAYSVC -> SECRETS : GetSecretValue(payment-api-key)
+SECRETS --> PAYSVC : api-key (rotacion automatica)
+PAYSVC -> WIREMOCK : POST /v1/payment_intents\n{amount:50000, currency:COP}
+WIREMOCK --> PAYSVC : {paymentId:pay-001, status:PENDING, checkoutUrl}
+PAYSVC -> PAYDB : INSERT pagos {pay-001, INICIADO, ins-001}
+PAYSVC --> MQ : ACK
+deactivate PAYSVC
+
+== [6] Maria completa el pago (Pasarela WireMock) ==
+
+MARIA -> WIREMOCK : GET {checkoutUrl} -- Completa formulario de pago
+WIREMOCK -> ALB : POST /api/v1/pagos/webhook\n{pagoId:pay-001, status:CONFIRMED} [HTTPS]
+ALB -> PAYSVC : PagoController -> ConfirmarPagoWebhookService
+
+activate PAYSVC #FFE0B2
+PAYSVC -> REDIS : GET idem:webhook:pay-001
+REDIS --> PAYSVC : (nil) -- no existe, procede
+PAYSVC -> PAYDB : BEGIN TX\nUPDATE pagos SET estado=CONFIRMADO\nINSERT outbox_events {PaymentConfirmedEvent}
+PAYDB --> PAYSVC : COMMIT
+PAYSVC -> REDIS : SET idem:webhook:pay-001 EX 86400
+PAYSVC --> ALB : 200 OK
+deactivate PAYSVC
+ALB --> WIREMOCK : 200 OK
+
+== [7] OutboxRelay payment publica PaymentConfirmedEvent ==
+
+note over PAYSVC,PAYDB
+  OutboxRelayService
+  [pendiente: feat/payment-outbox-e2e]
+end note
+
+PAYSVC -> PAYDB : SELECT outbox_events WHERE status='PENDING'
+PAYDB --> PAYSVC : [PaymentConfirmedEvent{pay-001, ins-001}]
+PAYSVC -> MQ : PUBLISH payment.events RK: payment.confirmed (AMQPS:5671)
+MQ --> PAYSVC : publisher CONFIRM
+PAYSVC -> PAYDB : UPDATE outbox_events SET status='PROCESSED'
+
+== [8] Fan-out choreography -- dos consumers en paralelo (ADR-006) ==
+
+MQ -> INSSVC : CONSUME inscription.payment.confirmed
+INSSVC -> INSDB : BEGIN TX\nUPDATE inscripciones SET estado='CONFIRMADA'\nINSERT outbox_events {InscripcionConfirmadaEvent}
+INSDB --> INSSVC : COMMIT
+INSSVC --> MQ : ACK
+
+MQ -> NOTIFSVC : CONSUME notification.payment.confirmed
+NOTIFSVC -> NOTIFDB : INSERT notificaciones {PENDIENTE, tipo:PAGO_CONFIRMADO}
+NOTIFSVC -> WIREMOCK : JavaMailSender.send()\nPago confirmado, Maria! - Simposio de IA
+WIREMOCK --> NOTIFSVC : 250 OK (SMTP mock)
+NOTIFSVC -> NOTIFDB : UPDATE notificaciones SET estado='ENVIADA'
+NOTIFSVC --> MQ : ACK
+
+== [9] Maria verifica su inscripcion ==
+
+MARIA -> ALB : GET /api/v1/inscripciones/ins-001 [JWT]
+ALB -> INSSVC : InscripcionController
+INSSVC -> INSDB : SELECT * FROM inscripciones WHERE id='ins-001'
+INSDB --> INSSVC : {estado:CONFIRMADA, eventoId:simposio-ia}
+INSSVC --> ALB : 200 OK {ins-001, CONFIRMADA}
+ALB --> MARIA : [OK] Inscripcion CONFIRMADA al Simposio de IA
+
+note over MARIA, SECRETS
+  Estado final coherente del sistema:
+
+  event_db:        evento Simposio-IA {cupos: 0}
+  inscription_db:  ins-001 {estado: CONFIRMADA}
+  payment_db:      pay-001 {estado: CONFIRMADO}
+  notification_db: notif-001 {estado: ENVIADA, tipo: PAGO_CONFIRMADO}
+  Redis:           idem:webhook:pay-001 {TTL 24h}
+  Amazon MQ:       todas las colas vacias (procesado)
+  outbox_events:   todos en status = PROCESSED
+
+  Patrones ejercitados:
+  Cache-Aside (E1) - Pessimistic Lock (E2)
+  Transactional Outbox (E2, E3) - Fan-out AMQP (E3)
+  Observer (E3, E7) - Strategy (E7)
+  Idempotent Consumer (E3, E6) - ShedLock (E5)
+end note
+
+@enduml

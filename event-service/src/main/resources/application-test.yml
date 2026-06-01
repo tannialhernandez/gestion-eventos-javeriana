@@ -1,0 +1,31 @@
+# =============================================================================
+# application-test.yml — tests de integración con Testcontainers
+# =============================================================================
+
+spring:
+  jpa:
+    show-sql: true
+
+  flyway:
+    enabled: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  rabbitmq:
+    virtual-host: /
+
+outbox:
+  relay:
+    interval-ms: 500
+
+retention:
+  enabled: false
+  cron: "0 0 3 * * *"
+  outbox-enviado-days: 30
+  outbox-fallido-days: 90
+  mensaje-procesado-days: 30
+  batch-size: 1000
+  max-batches-per-run: 100

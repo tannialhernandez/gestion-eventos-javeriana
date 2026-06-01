@@ -1,0 +1,231 @@
+@startuml c4-3-event-service
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 30
+skinparam ranksep 45
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam roundcorner 6
+scale 0.85
+
+skinparam classBackgroundColor<<RestController>> #FEF5E7
+skinparam classBorderColor<<RestController>> #A04000
+skinparam classBackgroundColor<<ApplicationSvc>> #EBF5FB
+skinparam classBorderColor<<ApplicationSvc>> #1A5276
+skinparam classBackgroundColor<<Port>> #EAFAF1
+skinparam classBorderColor<<Port>> #1E8449
+skinparam classBackgroundColor<<JpaAdapter>> #E8F8F5
+skinparam classBorderColor<<JpaAdapter>> #148F77
+skinparam classBackgroundColor<<CacheAdapter>> #E0F7FA
+skinparam classBorderColor<<CacheAdapter>> #0E6655
+skinparam classBackgroundColor<<RabbitPublisher>> #F3E5F5
+skinparam classBorderColor<<RabbitPublisher>> #7D3C98
+skinparam classBackgroundColor<<AggregateRoot>> #EDE0F5
+skinparam classBorderColor<<AggregateRoot>> #7B2D8B
+skinparam classBackgroundColor<<Entity>> #EAF0FB
+skinparam classBorderColor<<Entity>> #2E5FA3
+skinparam classBackgroundColor<<Enumeration>> #FEF9E7
+skinparam classBorderColor<<Enumeration>> #C8A400
+skinparam classBackgroundColor<<DomainService>> #FDEDEC
+skinparam classBorderColor<<DomainService>> #B03A2E
+
+
+title
+  <b><size:14>C4 Nivel 3: Vista de Componentes -- event-service</size></b>
+  <size:11>Plataforma de Gestion de Eventos Academicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:10>ADRs: ADR-008 (Cache-Aside) | ADR-011 (Outbox) | ADR-012 (Hexagonal)</size>
+end title
+
+' ── infrastructure.rest ──────────────────────────────────────
+package "infrastructure.rest  [Driving Adapter HTTP]" as pkg_rest #FEF5E7 {
+  class "EventoRestController\n[DEUDA HEXAGONAL]" as CTRL <<RestController>> {
+    - crearEventoService: CrearEventoService
+    - catalogoService: ConsultarCatalogoService
+    ==
+    + crearEvento(req: CrearEventoRequest): EventoDto
+    + publicarEvento(id: UUID): void
+    + cancelarEvento(id: UUID): void
+    + obtenerEvento(id: UUID): EventoDto
+    + listarPublicados(filtros): List~EventoDto~
+    ' Deuda: acceso directo a repo en algunos metodos
+  }
+}
+
+' ── application.service ──────────────────────────────────────
+package "application.service  [Application Layer]" as pkg_app #EBF5FB {
+  class "CrearEventoService" as SVC_CREAR <<ApplicationSvc>> {
+    - eventoRepository: EventoRepository
+    - eventPublisher: EventPublisher
+    ==
+    + ejecutar(cmd: CrearEventoCommand): EventoDto
+  }
+  class "PublicarEventoService" as SVC_PUB <<ApplicationSvc>> {
+    - eventoRepository: EventoRepository
+    - politicaPublicacion: PoliticaPublicacion
+    - eventPublisher: EventPublisher
+    ==
+    + ejecutar(eventoId: UUID): void
+  }
+  class "CancelarEventoService" as SVC_CANCEL <<ApplicationSvc>> {
+    - eventoRepository: EventoRepository
+    - eventPublisher: EventPublisher
+    ==
+    + ejecutar(eventoId: UUID, motivo: String): void
+  }
+  class "ConsultarCatalogoService" as SVC_CATALOG <<ApplicationSvc>> {
+    - eventoRepository: EventoRepository
+    - cache: CacheEventoPort
+    ==
+    + buscarEvento(id: UUID): EventoDto
+    + listarPublicados(filtros): List~EventoDto~
+    ' ADR-008: Cache-Aside, TTL 60s
+  }
+  class "ActualizarEventoService" as SVC_UPD <<ApplicationSvc>> {
+    - eventoRepository: EventoRepository
+    ==
+    + ejecutar(id: UUID, cmd): EventoDto
+  }
+}
+
+' ── domain.model ─────────────────────────────────────────────
+package "domain.model  [Domain]" as pkg_model #EDE0F5 {
+  class "Evento  [AggregateRoot]" as Evento <<AggregateRoot>> {
+    - id: UUID
+    - nombre: String
+    - cuposTotales: int
+    - cuposDisponibles: int
+    - precio: BigDecimal
+    - estado: EstadoEvento
+    - organizadorId: UUID
+    ==
+    + publicar(): void
+    + cancelar(): void
+    + decrementarCupo(): void
+    + incrementarCupo(): void
+    + tieneCuposDisponibles(): boolean
+  }
+  enum "EstadoEvento" as EstadoEvento <<Enumeration>> {
+    BORRADOR
+    PUBLICADO
+    AGOTADO
+    FINALIZADO
+    CANCELADO
+  }
+  class "Categoria" as Categoria <<Entity>> {
+    - id: UUID
+    - nombre: String
+    ==
+  }
+  class "PoliticaPublicacion" as Politica <<DomainService>> {
+    ==
+    + puedePublicar(evento: Evento): boolean
+    + requiereAprobacion(evento: Evento): boolean
+  }
+}
+
+' ── domain.port ──────────────────────────────────────────────
+package "domain.port  [Ports / Interfaces]" as pkg_port #EAFAF1 {
+  interface "EventoRepository" as IEventoRepo <<Port>> {
+    + guardar(evento: Evento): Evento
+    + buscarPorId(id: UUID): Optional~Evento~
+    + buscarPublicados(filtros): List~Evento~
+  }
+  interface "CategoriaRepository" as ICatRepo <<Port>> {
+    + buscarPorId(id: UUID): Optional~Categoria~
+    + listarTodas(): List~Categoria~
+  }
+  interface "CacheEventoPort" as ICache <<Port>> {
+    + obtener(id: UUID): Optional~EventoDto~
+    + guardar(id: UUID, dto: EventoDto, ttlSeg: long): void
+    + invalidar(id: UUID): void
+  }
+  interface "EventPublisher" as IPublisher <<Port>> {
+    + publicarEventoCreado(evento: Evento): void
+    + publicarEventoCancelado(evento: Evento): void
+  }
+}
+
+' ── infrastructure.persistence ───────────────────────────────
+package "infrastructure.persistence  [JPA Adapters]" as pkg_pers #E8F8F5 {
+  class "EventoJpaAdapter" as EventoJpa <<JpaAdapter>> {
+    - jpaRepository: EventoJpaRepository
+    ==
+    + guardar(evento: Evento): Evento
+    + buscarPorId(id: UUID): Optional~Evento~
+    + buscarPublicados(filtros): List~Evento~
+  }
+  class "CategoriaJpaAdapter" as CatJpa <<JpaAdapter>> {
+    - jpaRepository: CategoriaJpaRepository
+    ==
+    + buscarPorId(id: UUID): Optional~Categoria~
+    + listarTodas(): List~Categoria~
+  }
+}
+
+' ── infrastructure.cache ─────────────────────────────────────
+package "infrastructure.cache  [Redis Adapter]" as pkg_cache #E0F7FA {
+  class "RedisEventoCacheAdapter" as RedisAdapter <<CacheAdapter>> {
+    - redisTemplate: RedisTemplate~String, EventoDto~
+    ==
+    + obtener(id: UUID): Optional~EventoDto~
+    + guardar(id: UUID, dto: EventoDto, ttlSeg: long): void
+    + invalidar(id: UUID): void
+    ' TTL=60s | ADR-008 Cache-Aside
+  }
+}
+
+' ── infrastructure.messaging ─────────────────────────────────
+package "infrastructure.messaging  [AMQP Publisher]" as pkg_msg #F3E5F5 {
+  class "EventoRabbitPublisherAdapter" as RabbitPub <<RabbitPublisher>> {
+    - rabbitTemplate: RabbitTemplate
+    ==
+    + publicarEventoCreado(evento: Evento): void
+    + publicarEventoCancelado(evento: Evento): void
+    ' exchange: evento.events | ADR-011
+  }
+}
+
+' ── RELACIONES ───────────────────────────────────────────────
+CTRL o--> SVC_CREAR    : crearEventoService
+CTRL o--> SVC_CATALOG  : catalogoService
+CTRL o--> SVC_PUB      : publicarEventoService
+CTRL o--> SVC_CANCEL   : cancelarEventoService
+
+SVC_CREAR   o--> IEventoRepo : eventoRepository
+SVC_CREAR   o--> IPublisher  : eventPublisher
+SVC_PUB     o--> IEventoRepo : eventoRepository
+SVC_PUB     o--> Politica    : politicaPublicacion
+SVC_PUB     o--> IPublisher  : eventPublisher
+SVC_CANCEL  o--> IEventoRepo : eventoRepository
+SVC_CANCEL  o--> IPublisher  : eventPublisher
+SVC_CATALOG o--> IEventoRepo : eventoRepository
+SVC_CATALOG o--> ICache      : cache
+SVC_UPD     o--> IEventoRepo : eventoRepository
+
+Evento "1" --> "1" EstadoEvento : estado
+
+EventoJpa    ..|> IEventoRepo
+CatJpa       ..|> ICatRepo
+RedisAdapter ..|> ICache
+RabbitPub    ..|> IPublisher
+
+' ── LEYENDA ──────────────────────────────────────────────────
+legend right
+  Capas -- Arquitectura Hexagonal
+  |<back:#FEF5E7>  </back>| infrastructure.rest   RestController   |
+  |<back:#EBF5FB>  </back>| application.service   Use Cases        |
+  |<back:#EDE0F5>  </back>| domain.model          Entidades y V.O. |
+  |<back:#EAFAF1>  </back>| domain.port           Interfaces       |
+  |<back:#E8F8F5>  </back>| infrastructure.persistence  JPA        |
+  |<back:#E0F7FA>  </back>| infrastructure.cache  Redis Adapter    |
+  |<back:#F3E5F5>  </back>| infrastructure.messaging  AMQP         |
+  ----
+  ADR-008: Cache-Aside con Redis 7
+  ADR-011: Transactional Outbox
+  ADR-012: Arquitectura Hexagonal
+  ----
+  [DEUDA HEXAGONAL]: EventoRestController
+  accede directo a repo en algunos metodos
+end legend
+
+@enduml

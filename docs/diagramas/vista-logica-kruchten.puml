@@ -1,0 +1,305 @@
+@startuml vista-logica-kruchten
+' Vista Lógica (Kruchten 4+1)
+' Organización del Sistema en Bounded Contexts y Capas Hexagonales
+' Plataforma de Gestión de Eventos Académicos - Javeriana 2026
+'
+' Cubre: Domain-Driven Design + Arquitectura Hexagonal + Patrones de Integración
+' Referencia: Entrega 3 - Feedback profesor: "completar las 5 vistas Kruchten"
+
+!theme plain
+top to bottom direction
+scale 0.85
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 9
+skinparam ArrowFontColor #333333
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #AAAAAA
+skinparam ClassFontSize 10
+skinparam NoteBackgroundColor #FFFFF0
+skinparam NoteBorderColor #CCCC00
+skinparam nodesep 10
+skinparam ranksep 20
+skinparam padding 4
+
+title
+  <b><size:15>Vista Lógica (Kruchten 4+1) — Organización del Sistema en Capas y Bounded Contexts</size></b>
+  <size:12>Plataforma de Gestión de Eventos Académicos  |  DDD + Arquitectura Hexagonal  |  Spring Boot 3 / Java 17</size>
+end title
+
+' ═══════════════════════════════════════════════════════════════════
+' BOUNDED CONTEXT 1: Identity & Access Management
+' ═══════════════════════════════════════════════════════════════════
+package "Identity & Access Management\n«Bounded Context»  ·  auth-service" as IAM #BDE5FF {
+  class "  Autenticación OAuth 2.0 → SSO Institucional\n  Emisión y Validación de JWT (RS256)\n  Autorización RBAC: ESTUDIANTE | COORDINADOR\n  Open Host Service: API pública estable para todos  " as IAM_body <<OHS>> {
+  }
+}
+
+' ═══════════════════════════════════════════════════════════════════
+' BOUNDED CONTEXT 2: Event Catalog
+' ═══════════════════════════════════════════════════════════════════
+package "Event Catalog\n«Bounded Context»  ·  event-service" as EC #C8EDCB {
+  class "  Creación y publicación de eventos académicos\n  Flujo de aprobación institucional\n  Agregado Evento — Patrón State\n  Eventos: EventoPublicado, EventoCancelado  " as EC_body {
+  }
+}
+
+' ═══════════════════════════════════════════════════════════════════
+' BOUNDED CONTEXT 3: Inscription Management — CORE DOMAIN
+' ═══════════════════════════════════════════════════════════════════
+package "Inscription Management  «Bounded Context»  «Core Domain»  ·  inscription-service" as IM #FFD7D7 {
+
+  ' ── Capa 1: Domain (núcleo hexagonal) ──────────────────────────
+  package "domain  «Domain Layer»" as IM_dom #FFEAEC {
+
+    package "domain.model" as IM_dm #FBCFE8 {
+      class "Inscripcion\n«Aggregate Root»" as IM_inscripcion {
+        - id: UUID
+        - usuarioId: UUID
+        - eventoId: UUID
+        - estado: EstadoInscripcion
+        - expiraEn: LocalDateTime
+        ==
+        + confirmar(): void
+        + cancelar(motivo): void
+        + expirar(): void
+      }
+      class "Evento\n«Entity»" as IM_evento {
+        - id: UUID
+        - cuposDisponibles: int
+        ==
+        + decrementarCupo(): void
+        + incrementarCupo(): void
+      }
+      class "OutboxEvent\n«Entity»" as IM_outbox {
+        - payload: String (JSON)
+        - attempts: int
+        ==
+        + marcarProcesado(): void
+      }
+      class "EstadoInscripcion\n«Enumeration»" as IM_estado {
+        PENDIENTE
+        CONFIRMADA
+        CANCELADA
+        EXPIRADA
+      }
+    }
+
+    package "domain.port" as IM_dp #FBCFE8 {
+      interface "InscripcionRepository\n«Port»" as IM_irepo
+      interface "EventoRepository\n«Port»" as IM_erepo
+      interface "OutboxRepository\n«Port»" as IM_orepo
+      interface "EventPublisher\n«Port»" as IM_epub
+    }
+
+    package "domain.service" as IM_ds #FBCFE8 {
+      class "PoliticaCancelacion\n«Domain Service»" as IM_pol {
+        + puedeCancelarse(): boolean
+        + aplicaReembolso(): boolean
+      }
+    }
+  }
+
+  ' ── Capa 2: Application (casos de uso) ─────────────────────────
+  package "application  «Application Layer»" as IM_app #FFCDD2 {
+    class "  CrearInscripcionService  @Transactional\n  ConfirmarInscripcionService  @Transactional\n  CancelarInscripcionService  @Transactional\n  ExpirarPendientesService  @Scheduled  @SchedulerLock\n  OutboxRelayService  @Scheduled  @SchedulerLock\n  ──\n  Comandos de entrada: CrearInscripcionCommand\n  DTOs de salida: InscripcionDto  " as IM_app_body {
+    }
+  }
+
+  ' ── Capa 3: Infrastructure (adaptadores) ───────────────────────
+  package "infrastructure  «Infrastructure Layer»" as IM_infra #EF9A9A {
+
+    package "infrastructure.rest  [Driving Adapter HTTP]" as IM_rest #FFCDD2 {
+      class "InscripcionRestController @RestController\nPOST /api/v1/inscripciones\nGET /api/v1/inscripciones/{id}\nDELETE /api/v1/inscripciones/{id}" as IM_ctrl {
+      }
+    }
+
+    package "infrastructure.messaging  [Driving/Driven AMQP]" as IM_msg #FFCDD2 {
+      class "EventoConsumerListener @RabbitListener\ninscripcion.pago.confirmado\ninscripcion.pago.expirado\nRabbitMQ Publisher [Driven Adapter]" as IM_listener {
+      }
+    }
+
+    package "infrastructure.persistence  [Driven Adapter JPA]" as IM_pers #FFCDD2 {
+      class "InscripcionJpaAdapter @Repository\nEventoJpaAdapter @Repository  ⚡SELECT FOR UPDATE\nOutboxJpaAdapter @Repository" as IM_jpa {
+      }
+    }
+
+    package "infrastructure.config" as IM_cfg #FFCDD2 {
+      class "Spring Beans / ShedLock / RabbitMQ Topology\nSecurity Filter Chain" as IM_conf {
+      }
+    }
+
+    IM_rest -[hidden]down-> IM_msg
+    IM_msg  -[hidden]down-> IM_pers
+    IM_pers -[hidden]down-> IM_cfg
+  }
+
+  ' ── Capa 4: Cross-cutting (transversal) ────────────────────────
+  package "cross-cutting  «Cross-cutting Concerns»" as IM_cc #FFB3B3 {
+    class "  Logging — SLF4J + Logback\n  Métricas — Micrometer + Prometheus\n  Seguridad — Spring Security + JWT\n  Resiliencia — Resilience4j (CB, Retry, Timeout)\n  Observabilidad — Correlation ID, Distributed Traces  " as IM_cc_body {
+    }
+  }
+}
+
+' ═══════════════════════════════════════════════════════════════════
+' BOUNDED CONTEXT 4: Payment Processing
+' ═══════════════════════════════════════════════════════════════════
+package "Payment Processing\n«Bounded Context»  ·  payment-service" as PP #FFE0B2 {
+  class "  Integración con MercadoPago (API v2)\n  Webhooks idempotentes (idempotency-key)\n  Reembolsos automáticos por expiración\n  Implementa Transactional Outbox (ADR-008)\n  Eventos: PagoConfirmado, PagoExpirado  " as PP_body {
+  }
+}
+
+' ═══════════════════════════════════════════════════════════════════
+' BOUNDED CONTEXT 5: Notification — Generic Subdomain
+' ═══════════════════════════════════════════════════════════════════
+package "Notification\n«Bounded Context»  «Generic Subdomain»  ·  notification-service" as NOT #FFF9C4 {
+  class "  Worker asíncrono de emails transaccionales\n  Plantillas HTML (Thymeleaf)\n  Cola de envío con reintentos\n  Reemplazable por solución SaaS (SendGrid, SES)  " as NOT_body {
+  }
+}
+
+' ═══════════════════════════════════════════════════════════════════
+' BOUNDED CONTEXT 6: Certification — Supporting Subdomain
+' ═══════════════════════════════════════════════════════════════════
+package "Certification\n«Bounded Context»  «Supporting Subdomain»  ·  certificate-service" as CERT #EDE7F6 {
+  class "  Generación de certificados PDF con QR\n  Firma HMAC-SHA256 para verificación\n  Almacenamiento en S3 (URLs firmadas)\n  Registro de asistencia por evento\n  Evento: CertificadoGenerado  " as CERT_body {
+  }
+}
+
+' ═══════════════════════════════════════════════════════════════════
+' SHARED KERNELS (infraestructura compartida)
+' ═══════════════════════════════════════════════════════════════════
+package "Common Events\n«Shared Kernel»" as SK1 #E0E0E0 {
+  class "  Esquema JSON canónico de eventos de dominio\n  Routing Keys: inscripcion.* | pago.* | evento.*\n  Versionado de contratos: v1, v2\n  Dead Letter Queue: *.dlq  " as SK1_body {
+  }
+}
+
+package "Cross-cutting Libraries\n«Shared Library»" as SK2 #E0E0E0 {
+  class "  Correlation-ID propagation (MDC)\n  Resilience4j config base\n  DTOs de auditoría — Ley 1581 Colombia\n  Excepciones base del dominio\n  Pagination / Sorting utilities  " as SK2_body {
+  }
+}
+
+package "Infrastructure Abstractions\n«Shared Infrastructure»" as SK3 #E0E0E0 {
+  class "  RabbitMQ Exchange / Queue topology base\n  PostgreSQL / Hibernate config común\n  Outbox base reutilizable (AbstractOutboxEvent)\n  ShedLock config y tabla compartida  " as SK3_body {
+  }
+}
+
+' ═══════════════════════════════════════════════════════════════════
+' HINTS DE LAYOUT (hidden arrows para ordenar el grafo)
+' ═══════════════════════════════════════════════════════════════════
+IAM      -[hidden]down-> EC
+IAM      -[hidden]down-> IM
+IAM      -[hidden]down-> PP
+EC       -[hidden]right-> IM
+IM       -[hidden]right-> PP
+IM       -[hidden]down-> NOT
+PP       -[hidden]down-> CERT
+NOT      -[hidden]right-> CERT
+CERT     -[hidden]down-> SK1
+NOT      -[hidden]down-> SK2
+SK1      -[hidden]right-> SK2
+SK2      -[hidden]right-> SK3
+
+' ═══════════════════════════════════════════════════════════════════
+' RELACIONES ENTRE BOUNDED CONTEXTS
+' ═══════════════════════════════════════════════════════════════════
+
+' IAM → todos: Open Host Service con JWT
+IAM ..> EC   #1565C0 : «Conformist»\nValida JWT [OHS]
+IAM ..> IM   #1565C0 : «Conformist»\nValida JWT [OHS]
+IAM ..> PP   #1565C0 : «Conformist»\nValida JWT [OHS]
+IAM ..> NOT  #1565C0 : «Conformist»\nValida JWT [OHS]
+IAM ..> CERT #1565C0 : «Conformist»\nValida JWT [OHS]
+
+' Event Catalog → Inscription: upstream provee eventos de catálogo
+EC ..> IM #2E7D32 : «Customer/Supplier»\nEventoPublicado\nEventoCancelado [AMQP]
+
+' Inscription ↔ Payment: colaboración bidireccional
+IM ..> PP #C62828 : «Customer/Supplier»\nInscripcionCreada [AMQP]
+PP ..> IM #C62828 : «Customer/Supplier»\nPagoConfirmado\nPagoExpirado [AMQP]
+
+' Inscription → Notification, Certification
+IM ..> NOT  #E65100 : «Customer/Supplier»\nInscripcionConfirmada [AMQP]
+IM ..> CERT #6A1B9A : «Customer/Supplier»\nEventoFinalizado [AMQP]
+
+' Payment → Notification: recibo de pago
+PP ..> NOT #F57F17 : «Customer/Supplier»\nPagoConfirmado (recibo) [AMQP]
+
+' Certification → Notification: aviso de certificado listo
+CERT ..> NOT #7B1FA2 : «Customer/Supplier»\nCertificadoGenerado [AMQP]
+
+' Todos → Shared Kernels
+EC   ..> SK1 #888888 : «Shared Kernel»
+IM   ..> SK1 #888888 : «Shared Kernel»
+PP   ..> SK1 #888888 : «Shared Kernel»
+NOT  ..> SK1 #888888 : «Shared Kernel»
+CERT ..> SK1 #888888 : «Shared Kernel»
+
+IAM  ..> SK2 #888888 : «Shared Library»
+EC   ..> SK2 #888888 : «Shared Library»
+IM   ..> SK2 #888888 : «Shared Library»
+PP   ..> SK2 #888888 : «Shared Library»
+NOT  ..> SK2 #888888 : «Shared Library»
+CERT ..> SK2 #888888 : «Shared Library»
+
+IM   ..> SK3 #888888 : «Shared Infrastructure»
+PP   ..> SK3 #888888 : «Shared Infrastructure»
+EC   ..> SK3 #888888 : «Shared Infrastructure»
+
+' ═══════════════════════════════════════════════════════════════════
+' NOTAS ARQUITECTÓNICAS
+' ═══════════════════════════════════════════════════════════════════
+
+note left of IM
+  <b>DOMINIO CORE — Drivers Críticos:</b>
+  ⚡ DA-01: Concurrencia → ADR-012 SELECT FOR UPDATE
+  📦 DA-02: Asincronía → ADR-008 Transactional Outbox
+  🔒 DA-03: Jobs dist. → ADR-018 ShedLock
+  ⚖️  DA-04: Legal → Auditoría Ley 1581 Colombia
+end note
+
+note bottom of SK2
+  <b>Shared Kernels:</b> única dependencia transversal
+  entre microservicios. Cualquier cambio aquí
+  requiere coordinación entre equipos.
+  Se mantienen minimalistas y versionados
+  (semver) para evitar acoplamiento.
+end note
+
+note top of IAM
+  <b>Arquitectura de integración:</b>
+  Cada Bounded Context es un microservicio
+  independiente con schema propio en RDS.
+  Comunicación: <b>100% asíncrona vía RabbitMQ</b>.
+  Patrón: <b>Choreography</b> (sin orquestador central).
+  Consistencia eventual entre contextos.
+end note
+
+' ═══════════════════════════════════════════════════════════════════
+' LEYENDA
+' ═══════════════════════════════════════════════════════════════════
+legend bottom left
+  <b>Vista Lógica — Kruchten 4+1</b>
+  ¿Cómo se organiza el sistema lógicamente?
+  ────────────────────────
+  |<back:#BDE5FF> </back>| IAM — Identity & Access   |
+  |<back:#C8EDCB> </back>| Event Catalog             |
+  |<back:#FFD7D7> </back>| Inscription «Core Domain» |
+  |<back:#FFE0B2> </back>| Payment Processing        |
+  |<back:#FFF9C4> </back>| Notification «Generic»    |
+  |<back:#EDE7F6> </back>| Certification «Support»   |
+  |<back:#E0E0E0> </back>| Shared Kernel / Library   |
+  ────────────────────────
+  «Core Domain»: máxima inversión en diseño
+  «Generic Subdomain»: reemplazable por SaaS
+  «Conformist»: consumidor adopta al proveedor
+  «Customer/Supplier»: dependencia coordinada
+  OHS: Open Host Service — API pública estable
+  ────────────────────────
+  DDD (Evans) · Hexagonal (Cockburn)
+  Choreography · ADRs 008, 012, 018
+end legend
+
+@enduml

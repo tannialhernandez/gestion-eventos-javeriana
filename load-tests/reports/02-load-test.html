@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>K6 Load Sostenido 150 VUs</title>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; margin: 32px; color: #172033; }
+    h1, h2 { margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { border: 1px solid #d8dee8; border-radius: 6px; padding: 14px; background: #f8fafc; }
+    .label { color: #5b677a; font-size: 12px; text-transform: uppercase; }
+    .value { font-size: 24px; font-weight: 700; margin-top: 6px; }
+    table { border-collapse: collapse; width: 100%; margin: 18px 0 28px; }
+    th, td { border-bottom: 1px solid #e6ebf2; padding: 10px 8px; text-align: left; }
+    th { background: #f1f5f9; font-size: 13px; }
+    .ok { color: #0f7b3b; font-weight: 700; }
+    .fail { color: #b42318; font-weight: 700; }
+    code { background: #eef2f7; padding: 2px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>K6 Load Sostenido 150 VUs</h1>
+  <p>Generado: 2026-05-30T04:31:09.813Z</p>
+  <div class="grid">
+    <div class="card"><div class="label">p95 HTTP</div><div class="value">52.81 ms</div></div>
+    <div class="card"><div class="label">p99 HTTP</div><div class="value">- ms</div></div>
+    <div class="card"><div class="label">Error rate</div><div class="value">0.00</div></div>
+    <div class="card"><div class="label">Checks</div><div class="value">1.00</div></div>
+  </div>
+  <h2>Thresholds</h2>
+  <table>
+    <thead><tr><th>Metrica</th><th>Threshold</th><th>Resultado</th></tr></thead>
+    <tbody>
+        <tr>
+          <td>http_req_failed</td>
+          <td><code>rate<0.02</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>http_req_duration</td>
+          <td><code>p(95)<800</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>http_req_duration</td>
+          <td><code>p(99)<1500</code></td>
+          <td class="ok">OK</td>
+        </tr></tbody>
+  </table>
+  <h2>Metricas</h2>
+  <table>
+    <thead><tr><th>Metrica</th><th>count</th><th>rate</th><th>avg</th><th>p95</th><th>p99</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>http_req_connecting</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.38</td>
+        <td>0.63</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration{expected_response:true}</td>
+        <td>-</td>
+        <td>-</td>
+        <td>24.17</td>
+        <td>52.81</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>checks</td>
+        <td>-</td>
+        <td>1.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_reqs</td>
+        <td>821.00</td>
+        <td>2.51</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_tls_handshaking</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_waiting</td>
+        <td>-</td>
+        <td>-</td>
+        <td>22.60</td>
+        <td>46.42</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_receiving</td>
+        <td>-</td>
+        <td>-</td>
+        <td>1.42</td>
+        <td>4.32</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>vus_max</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>data_received</td>
+        <td>7033507.00</td>
+        <td>21511.88</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_failed</td>
+        <td>-</td>
+        <td>0.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>vus</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>iterations</td>
+        <td>768.00</td>
+        <td>2.35</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_sending</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.16</td>
+        <td>0.33</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>24.17</td>
+        <td>52.81</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_blocked</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.55</td>
+        <td>0.88</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>iteration_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>48139.56</td>
+        <td>60262.53</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>group_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>27.32</td>
+        <td>53.46</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>data_sent</td>
+        <td>96057.00</td>
+        <td>293.79</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr></tbody>
+  </table>
+</body>
+</html>

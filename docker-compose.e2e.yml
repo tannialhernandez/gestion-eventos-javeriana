@@ -1,0 +1,219 @@
+##############################################################################
+# docker-compose.e2e.yml — Stack completo para demos manuales de sustentación
+#
+# PRERREQUISITO: construir los JARs de los servicios:
+#   mvn package -DskipTests -pl shared,event-service,inscription-service,payment-service
+#   mvn -f auth-service-stub/pom.xml package -DskipTests
+#
+# Arrancar:
+#   docker compose -f docker-compose.e2e.yml up -d
+#   docker compose -f docker-compose.e2e.yml logs -f
+#
+# Parar y limpiar:
+#   docker compose -f docker-compose.e2e.yml down -v
+#
+# URLs de los servicios:
+#   auth-service-stub:  http://localhost:8081/actuator/health
+#   event-service:       http://localhost:8082/actuator/health
+#   inscription-service: http://localhost:8083/actuator/health
+#   payment-service:     http://localhost:8084/actuator/health
+#   RabbitMQ Management: http://localhost:15672  (guest/guest)
+##############################################################################
+
+version: "3.9"
+
+networks:
+  eventos-network:
+    driver: bridge
+
+volumes:
+  postgres-event-data:
+  postgres-inscription-data:
+  postgres-payment-data:
+  redis-data:
+
+services:
+
+  # ─── Bases de datos ────────────────────────────────────────────────────────
+
+  db-event:
+    image: postgres:15-alpine
+    networks: [eventos-network]
+    environment:
+      POSTGRES_DB: eventos_event
+      POSTGRES_USER: eventos_user
+      POSTGRES_PASSWORD: eventos_pass
+    volumes:
+      - postgres-event-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventos_user -d eventos_event"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-inscription:
+    image: postgres:15-alpine
+    networks: [eventos-network]
+    environment:
+      POSTGRES_DB: eventos_inscription
+      POSTGRES_USER: eventos_user
+      POSTGRES_PASSWORD: eventos_pass
+    volumes:
+      - postgres-inscription-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventos_user -d eventos_inscription"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-payment:
+    image: postgres:15-alpine
+    networks: [eventos-network]
+    environment:
+      POSTGRES_DB: eventos_payment
+      POSTGRES_USER: eventos_user
+      POSTGRES_PASSWORD: eventos_pass
+    volumes:
+      - postgres-payment-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventos_user -d eventos_payment"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─── Redis ────────────────────────────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    networks: [eventos-network]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  # ─── RabbitMQ ─────────────────────────────────────────────────────────────
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    networks: [eventos-network]
+    ports:
+      - "15672:15672"   # Management UI — http://localhost:15672 (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─── Microservicios ───────────────────────────────────────────────────────
+
+  auth-service-stub:
+    build:
+      context: ./auth-service-stub
+      dockerfile: Dockerfile
+    image: auth-service-stub:e2e
+    networks: [eventos-network]
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  event-service:
+    build:
+      context: ./event-service
+      dockerfile: Dockerfile
+    image: event-service:e2e
+    networks: [eventos-network]
+    ports:
+      - "8082:8082"
+    depends_on:
+      db-event:    { condition: service_healthy }
+      redis:       { condition: service_healthy }
+      rabbitmq:    { condition: service_healthy }
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db-event:5432/eventos_event
+      SPRING_DATASOURCE_USERNAME: eventos_user
+      SPRING_DATASOURCE_PASSWORD: eventos_pass
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      # RSA-2048 public key para validar JWT
+      JWT_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4C3rkbm3lVOmdTFJH/fGTNz1Fk+ScJIu+SkFXJdu8D9C10X9Bmpj97owkfgX2zGbZ+jDjbvwCIDkIKxW1KzgdeGxEWSnYUBCH5fakqW1f6eA1B08yoWT1WzAB46CI6Dlu9Fd965/zN1tWzzFrpvmrmqZDpm5fVsCxsDSrRrKhO36wMJVpXMFxRNxmYIbQmw/CsKCA4oJdTaC0wKF86s5p3sneqs4tH/eTNhjyrbpufYkS6aDWOxSxtqhX5C1CRqF+65QoLyvRlTocLs69O+XRQoDYxa5teZM77stmLMqAjZCtDVpSnNaYknsaqQnS9AfPiYAKJ3dd9ql/jYF5UtF9QIDAQAB"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    image: payment-service:e2e
+    networks: [eventos-network]
+    ports:
+      - "8084:8084"
+    depends_on:
+      db-payment: { condition: service_healthy }
+      rabbitmq:   { condition: service_healthy }
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db-payment:5432/eventos_payment
+      SPRING_DATASOURCE_USERNAME: eventos_user
+      SPRING_DATASOURCE_PASSWORD: eventos_pass
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      PAYMENT_GATEWAY_PROVIDER: simulador
+      PAYMENT_WEBHOOK_SECRET: local-demo-secret
+      MERCADOPAGO_WEBHOOK_URL: http://payment-service:8084/api/v1/webhooks/pagos
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  inscription-service:
+    build:
+      context: ./inscription-service
+      dockerfile: Dockerfile
+    image: inscription-service:e2e
+    networks: [eventos-network]
+    ports:
+      - "8083:8083"
+    depends_on:
+      db-inscription: { condition: service_healthy }
+      rabbitmq:       { condition: service_healthy }
+      event-service:  { condition: service_healthy }
+      payment-service: { condition: service_healthy }
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db-inscription:5432/eventos_inscription
+      SPRING_DATASOURCE_USERNAME: eventos_user
+      SPRING_DATASOURCE_PASSWORD: eventos_pass
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      EVENT_SERVICE_URL: http://event-service:8082
+      PAYMENT_SERVICE_URL: http://payment-service:8084
+      # RSA-2048 public key para validar JWT (Prompt 12)
+      JWT_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4C3rkbm3lVOmdTFJH/fGTNz1Fk+ScJIu+SkFXJdu8D9C10X9Bmpj97owkfgX2zGbZ+jDjbvwCIDkIKxW1KzgdeGxEWSnYUBCH5fakqW1f6eA1B08yoWT1WzAB46CI6Dlu9Fd965/zN1tWzzFrpvmrmqZDpm5fVsCxsDSrRrKhO36wMJVpXMFxRNxmYIbQmw/CsKCA4oJdTaC0wKF86s5p3sneqs4tH/eTNhjyrbpufYkS6aDWOxSxtqhX5C1CRqF+65QoLyvRlTocLs69O+XRQoDYxa5teZM77stmLMqAjZCtDVpSnNaYknsaqQnS9AfPiYAKJ3dd9ql/jYF5UtF9QIDAQAB"
+      # Token de servicio para llamadas a event-service (rol SERVICE, expira 2030-01-01)
+      EVENT_SERVICE_AUTH_TOKEN: "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlcyI6WyJTRVJWSUNFIl0sImVtYWlsIjoiaW5zY3JpcHRpb24tc2VydmljZUBpbnRlcm5hbCIsImlhdCI6MTc3OTk0Mjg3OSwiZXhwIjoxODkzNDU2MDAwfQ.Ba2f6JfdI970NRpt4K1_MIOO6RPyaW3rm7-RNlVyiA6cnVxZaQpJggKgzfDUwMroSXOFOXfGBcUhjufW3ufAbcwRF63fmdLLK92hCMkPC0y1kJ2APZg0GPEeV2E-lJHKZDr_KvPKWYtjz5JeskiRwnx4x0VOKxgP0edKiK3WWNFk6XwNrpTv19LS5o8wBZ8ByN5ELQKbYW8AI9lSvMTlo5q-vFoG0VPg8yrgJp8yrzkNnAbSy0VKoGy7xWTUCISb_mebjvrIRFa8kOElpuMPxwKfZXIAClBhzqITNQiiPPi7o9rFIF2gAgxBOc1Grvb1HdolSHPqK7miv4HdY6PN_A"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s

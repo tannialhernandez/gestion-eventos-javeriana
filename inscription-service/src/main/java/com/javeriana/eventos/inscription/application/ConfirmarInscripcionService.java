@@ -1,31 +1,34 @@
 package com.javeriana.eventos.inscription.application;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.javeriana.eventos.inscription.domain.events.InscripcionConfirmadaEvent;
+import com.javeriana.eventos.inscription.domain.events.PayloadEventoDominio;
 import com.javeriana.eventos.inscription.domain.model.EstadoInscripcion;
 import com.javeriana.eventos.inscription.domain.model.Inscripcion;
 import com.javeriana.eventos.inscription.domain.port.in.ConfirmarInscripcionUseCase;
+import com.javeriana.eventos.inscription.domain.port.out.EventoSerializadorPort;
 import com.javeriana.eventos.inscription.domain.port.out.InscripcionRepository;
 import com.javeriana.eventos.inscription.domain.port.out.OutboxEventRepository;
+import com.javeriana.eventos.inscription.infrastructure.observability.MdcKeys;
 import com.javeriana.eventos.shared.domain.DomainEvent;
-import com.javeriana.eventos.shared.infrastructure.outbox.OutboxEvent;
+import com.javeriana.eventos.shared.domain.outbox.OutboxEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.UUID;
 
 /**
  * Confirma una inscripción cuando payment-service notifica el pago exitoso.
  *
- * Este servicio es invocado por el InscripcionEventConsumer que escucha
- * la cola RabbitMQ "pago.confirmado".
+ * M-04 (ADR-001): ObjectMapper reemplazado por EventoSerializadorPort.
+ * La capa de aplicación solo conoce objetos de dominio; la conversión a JSON
+ * ocurre exclusivamente en infrastructure/serialization/JacksonEventoSerializador.
  *
- * Garantías:
- * - Si la inscripción ya está CONFIRMADA → idempotente, no hace nada
- * - Si la inscripción está EXPIRADA → pago tardío, no confirma
- *   (payment-service ya emitió el reembolso)
+ * Payload AMQP publicado (SAD §5.3.4):
+ * {@code InscripcionConfirmadaEvent} → outbox → relay → exchange eventos.topic
+ * routing key: inscripcion.confirmada
  */
 @Service
 @Transactional
@@ -33,16 +36,16 @@ public class ConfirmarInscripcionService implements ConfirmarInscripcionUseCase 
 
     private static final Logger log = LoggerFactory.getLogger(ConfirmarInscripcionService.class);
 
-    private final InscripcionRepository inscripcionRepository;
-    private final OutboxEventRepository outboxRepository;
-    private final ObjectMapper objectMapper;
+    private final InscripcionRepository  inscripcionRepository;
+    private final OutboxEventRepository  outboxRepository;
+    private final EventoSerializadorPort serializador;
 
     public ConfirmarInscripcionService(InscripcionRepository inscripcionRepository,
                                        OutboxEventRepository outboxRepository,
-                                       ObjectMapper objectMapper) {
+                                       EventoSerializadorPort serializador) {
         this.inscripcionRepository = inscripcionRepository;
-        this.outboxRepository = outboxRepository;
-        this.objectMapper = objectMapper;
+        this.outboxRepository      = outboxRepository;
+        this.serializador          = serializador;
     }
 
     @Override
@@ -51,7 +54,6 @@ public class ConfirmarInscripcionService implements ConfirmarInscripcionUseCase 
             .orElseThrow(() -> new IllegalArgumentException(
                 "Inscripción no encontrada: " + inscripcionId));
 
-        // Idempotencia: si ya está confirmada, no hacer nada
         if (inscripcion.getEstado() == EstadoInscripcion.CONFIRMADA) {
             log.info("Inscripción {} ya está confirmada. Ignorando mensaje duplicado.", inscripcionId);
             return;
@@ -63,16 +65,15 @@ public class ConfirmarInscripcionService implements ConfirmarInscripcionUseCase 
             return;
         }
 
-        // Generar código QR para acceso físico
-        String codigoQr = generarCodigoQr(inscripcionId);
+        MDC.put(MdcKeys.INSCRIPCION_ID, inscripcionId.toString());
+        MDC.put(MdcKeys.EVENTO_ID,      inscripcion.getEventoId().toString());
 
-        // Transición de estado en el agregado
+        String codigoQr = generarCodigoQr(inscripcionId);
         inscripcion.confirmar(codigoQr);
         inscripcionRepository.guardar(inscripcion);
 
-        // Publicar eventos de dominio vía Outbox Pattern
         for (DomainEvent event : inscripcion.pullDomainEvents()) {
-            outboxRepository.guardar(serializarEvento(event));
+            outboxRepository.guardar(crearOutboxEvent(event, inscripcion));
         }
 
         log.info("Inscripción {} confirmada. QR generado.", inscripcionId);
@@ -80,28 +81,27 @@ public class ConfirmarInscripcionService implements ConfirmarInscripcionUseCase 
 
     @Override
     public void manejarPagoTardio(UUID inscripcionId, String referenciaExterna) {
-        // La inscripción ya expiró pero el pago llegó tarde
-        // payment-service ya emitió el reembolso; solo logueamos
         log.warn("Pago tardío para inscripción {} (ref: {}). Reembolso manejado por payment-service.",
             inscripcionId, referenciaExterna);
     }
 
     private String generarCodigoQr(UUID inscripcionId) {
-        // El token QR es un UUID firmado — en prod sería un JWT de corta duración
         return "QR-" + UUID.randomUUID() + "-" + inscripcionId.toString().substring(0, 8);
     }
 
-    private OutboxEvent serializarEvento(DomainEvent event) {
-        try {
-            String payload = objectMapper.writeValueAsString(Map.of(
-                "eventId", event.eventId().toString(),
-                "aggregateId", event.aggregateId().toString(),
-                "eventType", event.eventType(),
-                "occurredAt", event.occurredAt().toString()
-            ));
-            return new OutboxEvent(event.aggregateId(), event.eventType(), payload);
-        } catch (Exception e) {
-            throw new RuntimeException("Error serializando evento de dominio", e);
+    /**
+     * Construye el OutboxEvent delegando la serialización a EventoSerializadorPort (M-04).
+     * La aplicación construye el payload de dominio; la infraestructura convierte a JSON.
+     */
+    private OutboxEvent crearOutboxEvent(DomainEvent event, Inscripcion inscripcion) {
+        if (!(event instanceof InscripcionConfirmadaEvent confirmada)) {
+            throw new IllegalArgumentException(
+                "ConfirmarInscripcionService solo procesa InscripcionConfirmadaEvent, " +
+                "recibió: " + event.getClass().getSimpleName());
         }
+        PayloadEventoDominio payload = PayloadEventoDominio.deConfirmada(
+            confirmada, inscripcion.getCodigoQr());
+        String json = serializador.serializar(payload);
+        return new OutboxEvent("Inscripcion", event.aggregateId(), event.eventType(), json);
     }
 }

@@ -1,0 +1,249 @@
+@startuml c4-3-inscription-service
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 28
+skinparam ranksep 42
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam roundcorner 6
+scale 0.85
+
+skinparam classBackgroundColor<<RestController>> #FEF5E7
+skinparam classBorderColor<<RestController>> #A04000
+skinparam classBackgroundColor<<RabbitListener>> #F3E5F5
+skinparam classBorderColor<<RabbitListener>> #7D3C98
+skinparam classBackgroundColor<<ApplicationSvc>> #EBF5FB
+skinparam classBorderColor<<ApplicationSvc>> #1A5276
+skinparam classBackgroundColor<<Port>> #EAFAF1
+skinparam classBorderColor<<Port>> #1E8449
+skinparam classBackgroundColor<<JpaAdapter>> #E8F8F5
+skinparam classBorderColor<<JpaAdapter>> #148F77
+skinparam classBackgroundColor<<RabbitPublisher>> #F9EBEA
+skinparam classBorderColor<<RabbitPublisher>> #7D3C98
+skinparam classBackgroundColor<<AggregateRoot>> #EDE0F5
+skinparam classBorderColor<<AggregateRoot>> #7B2D8B
+skinparam classBackgroundColor<<Entity>> #EAF0FB
+skinparam classBorderColor<<Entity>> #2E5FA3
+skinparam classBackgroundColor<<Enumeration>> #FEF9E7
+skinparam classBorderColor<<Enumeration>> #C8A400
+skinparam classBackgroundColor<<DomainService>> #FDEDEC
+skinparam classBorderColor<<DomainService>> #B03A2E
+
+
+title
+  <b><size:14>C4 Nivel 3: Vista de Componentes -- inscription-service (CORE)</size></b>
+  <size:11>Plataforma de Gestion de Eventos Academicos | Arquitectura Hexagonal | Spring Boot 3</size>
+  <size:10>ADRs: ADR-003 | ADR-011 | ADR-012 | ADR-018</size>
+end title
+
+package "infrastructure.rest" as pkg_rest #FEF5E7 {
+  class "InscripcionRestController" as CTRL <<RestController>> {
+    - crearService: CrearInscripcionService
+    - cancelarService: CancelarInscripcionService
+    ==
+    + crearInscripcion(req: CrearInscripcionRequest): InscripcionDto
+    + cancelarInscripcion(id: UUID): void
+    + obtenerInscripcion(id: UUID): InscripcionDto
+  }
+}
+
+package "infrastructure.messaging.driving" as pkg_listener #F3E5F5 {
+  class "PagoEventConsumerListener" as LISTENER <<RabbitListener>> {
+    - confirmarService: ConfirmarInscripcionService
+    - cancelarService: CancelarInscripcionService
+    ==
+    + onPagoConfirmado(event: PagoConfirmadoEvent): void
+    + onPagoExpirado(event: PagoExpiradoEvent): void
+    ' Idempotencia: check messageId
+  }
+}
+
+package "application.service" as pkg_app #EBF5FB {
+  class "CrearInscripcionService" as SVC_CREAR <<ApplicationSvc>> {
+    - inscripcionRepo: InscripcionRepository
+    - eventoRepo: EventoRepository
+    - outboxRepo: OutboxRepository
+    ==
+    + ejecutar(cmd: CrearInscripcionCommand): InscripcionDto
+    ' @Transactional | ADR-003 SELECT FOR UPDATE | ADR-011 outbox
+  }
+  class "CancelarInscripcionService" as SVC_CANCEL <<ApplicationSvc>> {
+    - inscripcionRepo: InscripcionRepository
+    - eventoRepo: EventoRepository
+    - outboxRepo: OutboxRepository
+    - politica: PoliticaCancelacion
+    ==
+    + ejecutar(id: UUID, motivo: String): void
+    ' Strategy: PoliticaCancelacion
+  }
+  class "ConfirmarInscripcionService" as SVC_CONF <<ApplicationSvc>> {
+    - inscripcionRepo: InscripcionRepository
+    - outboxRepo: OutboxRepository
+    ==
+    + ejecutar(id: UUID, referenciaPago: String): void
+  }
+  class "ExpirarInscripcionesPendientesService" as SVC_EXPIRAR <<ApplicationSvc>> {
+    - inscripcionRepo: InscripcionRepository
+    - cancelarService: CancelarInscripcionService
+    ==
+    + ejecutar(): void
+    ' @Scheduled(fixedDelay=60000) @SchedulerLock ADR-018
+  }
+  class "OutboxRelayService" as SVC_RELAY <<ApplicationSvc>> {
+    - outboxRepo: OutboxRepository
+    - eventPublisher: EventPublisher
+    ==
+    + procesarEventosPendientes(): void
+    ' @Scheduled(fixedDelay=2000) @SchedulerLock ADR-011
+  }
+}
+
+package "domain.model" as pkg_model #EDE0F5 {
+  class "Inscripcion" as Inscripcion <<AggregateRoot>> {
+    - id: UUID
+    - usuarioId: UUID
+    - eventoId: UUID
+    - estado: EstadoInscripcion
+    - expiraEn: LocalDateTime
+    - referenciaPago: String
+    ==
+    + confirmar(): void
+    + cancelar(motivo: String): void
+    + expirar(): void
+    + estaPendiente(): boolean
+    + haExpirado(): boolean
+  }
+  class "OutboxEvent" as Outbox <<Entity>> {
+    - id: UUID
+    - aggregateType: String
+    - eventType: String
+    - payload: String
+    - intentos: int
+    ==
+    + marcarProcesado(): void
+    + incrementarIntentos(): void
+  }
+  class "Evento" as Evento <<Entity>> {
+    - id: UUID
+    - cuposDisponibles: int
+    ==
+    + decrementarCupo(): void
+    + incrementarCupo(): void
+  }
+  enum "EstadoInscripcion" as Estado <<Enumeration>> {
+    PENDIENTE
+    CONFIRMADA
+    CANCELADA
+    EXPIRADA
+  }
+  class "PoliticaCancelacion" as Politica <<DomainService>> {
+    ==
+    + puedeCancelarse(insc: Inscripcion, evento: Evento): boolean
+    + aplicaReembolso(insc: Inscripcion, evento: Evento): boolean
+  }
+}
+
+package "domain.port" as pkg_port #EAFAF1 {
+  interface "InscripcionRepository" as IInscRepo <<Port>> {
+    + guardar(i: Inscripcion): Inscripcion
+    + buscarPorId(id: UUID): Optional~Inscripcion~
+    + buscarPendientesExpiradas(antes: LocalDateTime): List~Inscripcion~
+    + existeInscripcionActiva(usuarioId: UUID, eventoId: UUID): boolean
+  }
+  interface "EventoRepository" as IEvtRepo <<Port>> {
+    + buscarPorIdConBloqueoPesimista(id: UUID): Optional~Evento~
+    ' ADR-003: SELECT FOR UPDATE
+    + guardar(evento: Evento): Evento
+  }
+  interface "OutboxRepository" as IOutboxRepo <<Port>> {
+    + guardar(e: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List~OutboxEvent~
+    + marcarProcesado(id: UUID): void
+  }
+  interface "EventPublisher" as IPublisher <<Port>> {
+    + publicar(evento: OutboxEvent): void
+  }
+}
+
+package "infrastructure.persistence" as pkg_pers #E8F8F5 {
+  class "InscripcionJpaAdapter" as InscJpa <<JpaAdapter>> {
+    - jpaRepo: InscripcionJpaRepository
+    ==
+    + guardar(i: Inscripcion): Inscripcion
+    + buscarPorId(id: UUID): Optional~Inscripcion~
+    + buscarPendientesExpiradas(antes: LocalDateTime): List~Inscripcion~
+  }
+  class "EventoJpaAdapter" as EventoJpa <<JpaAdapter>> {
+    - jpaRepo: EventoJpaRepository
+    ==
+    + buscarPorIdConBloqueoPesimista(id: UUID): Optional~Evento~
+    ' @Lock(PESSIMISTIC_WRITE) -> SELECT FOR UPDATE
+    + guardar(evento: Evento): Evento
+  }
+  class "OutboxJpaAdapter" as OutboxJpa <<JpaAdapter>> {
+    - jpaRepo: OutboxJpaRepository
+    ==
+    + guardar(e: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List~OutboxEvent~
+    + marcarProcesado(id: UUID): void
+  }
+}
+
+package "infrastructure.messaging.driven" as pkg_pub #F9EBEA {
+  class "RabbitMqEventPublisher" as RabbitPub <<RabbitPublisher>> {
+    - rabbitTemplate: RabbitTemplate
+    ==
+    + publicar(evento: OutboxEvent): void
+    ' exchange: inscripcion.events
+  }
+}
+
+' ── RELACIONES ───────────────────────────────────────────────
+CTRL     o--> SVC_CREAR   : crearService
+CTRL     o--> SVC_CANCEL  : cancelarService
+
+LISTENER o--> SVC_CONF    : confirmarService
+LISTENER o--> SVC_CANCEL  : cancelarService
+
+SVC_CREAR   o--> IInscRepo  : inscripcionRepository
+SVC_CREAR   o--> IEvtRepo   : eventoRepository
+SVC_CREAR   o--> IOutboxRepo : outboxRepository
+SVC_CANCEL  o--> IInscRepo  : inscripcionRepository
+SVC_CANCEL  o--> IEvtRepo   : eventoRepository
+SVC_CANCEL  o--> IOutboxRepo : outboxRepository
+SVC_CANCEL  o--> Politica   : politicaCancelacion
+SVC_CONF    o--> IInscRepo  : inscripcionRepository
+SVC_CONF    o--> IOutboxRepo : outboxRepository
+SVC_EXPIRAR o--> IInscRepo  : inscripcionRepository
+SVC_EXPIRAR o--> SVC_CANCEL : cancelarService
+SVC_RELAY   o--> IOutboxRepo : outboxRepository
+SVC_RELAY   o--> IPublisher  : eventPublisher
+
+Inscripcion "1" --> "1" Estado : estado
+
+InscJpa   ..|> IInscRepo
+EventoJpa ..|> IEvtRepo
+OutboxJpa ..|> IOutboxRepo
+RabbitPub ..|> IPublisher
+
+' ── LEYENDA ──────────────────────────────────────────────────
+legend right
+  Capas -- Arquitectura Hexagonal
+  |<back:#FEF5E7>  </back>| infrastructure.rest      Driving HTTP  |
+  |<back:#F3E5F5>  </back>| infrastructure.messaging Driving AMQP  |
+  |<back:#EBF5FB>  </back>| application.service      Use Cases     |
+  |<back:#EDE0F5>  </back>| domain.model             Entidades     |
+  |<back:#EAFAF1>  </back>| domain.port              Puertos       |
+  |<back:#E8F8F5>  </back>| infrastructure.persistence JPA         |
+  |<back:#F9EBEA>  </back>| infrastructure.messaging Driven AMQP   |
+  ----
+  ADR-003: Pessimistic Locking (SELECT FOR UPDATE)
+  ADR-011: Transactional Outbox Pattern
+  ADR-012: Arquitectura Hexagonal
+  ADR-018: ShedLock para jobs distribuidos
+  ----
+  EventoRepository.buscarPorIdConBloqueoPesimista()
+  -> @Lock(PESSIMISTIC_WRITE) en EventoJpaAdapter
+end legend
+
+@enduml

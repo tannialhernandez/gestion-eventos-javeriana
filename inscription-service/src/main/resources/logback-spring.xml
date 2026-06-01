@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuración Logback para inscription-service.
+
+  El patrón incluye el Correlation-ID del MDC para trazabilidad distribuida E2E.
+  Cuando correlationId está presente en el MDC (puesto por CorrelationIdFilter o
+  PagoConfirmadoConsumer), aparece en cada línea de log del hilo actual,
+  permitiendo correlacionar logs entre inscription-service, event-service y payment-service.
+
+  Formato:
+    TIMESTAMP LEVEL [app][correlationId][userId][inscripcionId] Logger - Mensaje
+-->
+<configuration>
+    <springProperty scope="context" name="appName"
+                    source="spring.application.name" defaultValue="inscription-service"/>
+
+    <!-- ─── Colores para local/test ─────────────────────────────────────────── -->
+    <conversionRule conversionWord="clr"
+                    converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+
+    <!-- ─── Appender consola ─────────────────────────────────────────────────── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} %clr(%5level) [${appName}] [%X{correlationId:-no-corr}] [%X{userId:-anon}] [%X{inscripcionId:-}] %logger{36} - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- ─── Perfil local y test: DEBUG para el proyecto, INFO para frameworks ── -->
+    <springProfile name="local,test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="com.javeriana.eventos.inscription" level="DEBUG"/>
+        <logger name="org.springframework.security" level="WARN"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+    </springProfile>
+
+    <!-- ─── Perfil prod: INFO con formato JSON-like para CloudWatch ─────────── -->
+    <springProfile name="prod">
+        <appender name="CONSOLE_PROD" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>
+                    {"ts":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","lvl":"%level","app":"${appName}","corrId":"%X{correlationId:-}","userId":"%X{userId:-}","inscripcionId":"%X{inscripcionId:-}","logger":"%logger{36}","msg":"%msg"}%n
+                </pattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_PROD"/>
+        </root>
+        <logger name="com.javeriana.eventos" level="INFO"/>
+    </springProfile>
+
+</configuration>

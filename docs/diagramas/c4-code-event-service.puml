@@ -1,0 +1,483 @@
+@startuml c4-code-event-service
+' C4 Nivel 4: Vista de Codigo - Event Service (Catalogo + Cache-Aside)
+' Plataforma de Gestion de Eventos Academicos - Arquitectura Hexagonal
+'
+' Materializa:
+'   ADR-008 -- Cache-Aside con Redis (CacheEventoPort + RedisEventoCacheAdapter)
+'   ADR-011 -- Transactional Outbox (EventoPublicado, EventoCancelado)
+'   ADR-012 -- Arquitectura Hexagonal (Ports & Adapters)
+'
+' Estado: 100% implementado
+' DEUDA HEXAGONAL: EventoRestController invoca JPA directamente (refactor pendiente)
+'
+' Generado: 2026-05-22
+
+!theme plain
+top to bottom direction
+skinparam linetype ortho
+skinparam nodesep 25
+skinparam ranksep 40
+skinparam backgroundColor #F9F9F9
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam defaultFontSize 10
+skinparam wrapWidth 200
+scale 0.85
+
+' ============================================================
+' PALETA: misma que c4-code-inscription-service
+' ============================================================
+skinparam class {
+  BackgroundColor<<AggregateRoot>>          #EDE0F5
+  BorderColor<<AggregateRoot>>              #7B2D8B
+  HeaderBackgroundColor<<AggregateRoot>>    #9B59B6
+
+  BackgroundColor<<Entity>>                 #EAF0FB
+  BorderColor<<Entity>>                     #2E5FA3
+  HeaderBackgroundColor<<Entity>>           #3C7DD9
+
+  BackgroundColor<<Enumeration>>            #FEF9E7
+  BorderColor<<Enumeration>>               #C8A400
+  HeaderBackgroundColor<<Enumeration>>      #F0C040
+
+  BackgroundColor<<DomainService>>          #FDEDEC
+  BorderColor<<DomainService>>              #B03A2E
+  HeaderBackgroundColor<<DomainService>>    #E74C3C
+
+  BackgroundColor<<Port>>                   #EAFAF1
+  BorderColor<<Port>>                       #1E8449
+  HeaderBackgroundColor<<Port>>             #27AE60
+
+  BackgroundColor<<ApplicationService>>     #EBF5FB
+  BorderColor<<ApplicationService>>         #1A5276
+  HeaderBackgroundColor<<ApplicationService>> #2980B9
+
+  BackgroundColor<<RestController>>         #FEF5E7
+  BorderColor<<RestController>>             #A04000
+  HeaderBackgroundColor<<RestController>>   #E67E22
+
+  BackgroundColor<<JpaAdapter>>             #E8F8F5
+  BorderColor<<JpaAdapter>>                 #148F77
+  HeaderBackgroundColor<<JpaAdapter>>       #1ABC9C
+
+  BackgroundColor<<JpaRepository>>          #E8F6F3
+  BorderColor<<JpaRepository>>              #0E6655
+  HeaderBackgroundColor<<JpaRepository>>    #117A65
+
+  BackgroundColor<<CacheAdapter>>           #FDF2F8
+  BorderColor<<CacheAdapter>>              #6C3483
+  HeaderBackgroundColor<<CacheAdapter>>     #A569BD
+
+  BackgroundColor<<RabbitPublisher>>        #F9EBEA
+  BorderColor<<RabbitPublisher>>            #7D3C98
+  HeaderBackgroundColor<<RabbitPublisher>>  #8E44AD
+
+  FontColor #FFFFFF
+}
+
+title
+  <b><size:16>C4 Nivel 4: Vista de Codigo -- Event Service (Catalogo + Cache-Aside)</size></b>
+  <size:13>Plataforma de Gestion de Eventos Academicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:11><color:#A569BD>ADR-008: Cache-Aside Redis</color>  |  <color:#2980B9>ADR-011: Transactional Outbox</color>  |  <color:#E67E22>ADR-012: Hexagonal</color></size>
+end title
+
+' ============================================================
+' PAQUETE: domain.model
+' ============================================================
+package "com.javeriana.eventos.event\n.domain.model" as pkg_domain_model #EDE0F5 {
+
+  class Evento <<AggregateRoot>> {
+    - id: UUID
+    - nombre: String
+    - descripcion: String
+    - fechaInicio: LocalDateTime
+    - fechaFin: LocalDateTime
+    - cuposTotales: int
+    - cuposDisponibles: int
+    - precio: BigDecimal
+    - estado: EstadoEvento
+    - organizadorId: UUID
+    - categoriaId: UUID
+    ==
+    + publicar(): void
+    + cancelar(): void
+    + decrementarCupo(): boolean
+    + incrementarCupo(): void
+    + tieneCuposDisponibles(): boolean
+    + estaPublicado(): boolean
+    + {static} crear(nombre: String, ...\n  organizadorId: UUID): Evento
+  }
+
+  enum EstadoEvento <<Enumeration>> {
+    BORRADOR
+    PUBLICADO
+    AGOTADO
+    FINALIZADO
+    CANCELADO
+  }
+
+  class Categoria <<Entity>> {
+    - id: UUID
+    - nombre: String
+    - descripcion: String
+    ==
+    + getNombre(): String
+  }
+
+  class OutboxEvent <<Entity>> {
+    - id: UUID
+    - aggregateType: String
+    - aggregateId: UUID
+    - eventType: String
+    - payload: String {JSON}
+    - createdAt: LocalDateTime
+    - processedAt: LocalDateTime {nullable}
+    - attempts: int
+    ==
+    + marcarProcesado(): void
+    + incrementarIntentos(): void
+  }
+
+  class PoliticaPublicacion <<DomainService>> {
+    ==
+    + puedePublicar(evento: Evento): boolean
+    - tieneDatosCompletos(evento: Evento): boolean
+    - fechasValidas(evento: Evento): boolean
+  }
+}
+
+' ============================================================
+' PAQUETE: domain.port
+' ============================================================
+package "com.javeriana.eventos.event\n.domain.port" as pkg_domain_port #EAFAF1 {
+
+  interface EventoRepository <<Port>> {
+    + guardar(evento: Evento): Evento
+    + buscarPorId(id: UUID): Optional<Evento>
+    + buscarPublicados(filtros: FiltrosEvento,\n  paginacion: Pageable): Page<Evento>
+    + buscarPorOrganizador(organizadorId: UUID): List<Evento>
+  }
+
+  interface CategoriaRepository <<Port>> {
+    + buscarPorId(id: UUID): Optional<Categoria>
+    + listarTodas(): List<Categoria>
+  }
+
+  interface CacheEventoPort <<Port>> {
+    ' ADR-008: Cache-Aside con Redis
+    + obtenerDeCache(clave: String): Optional<String>
+    + guardarEnCache(clave: String, valor: String,\n  ttl: Duration): void
+    + invalidar(clave: String): void
+    + invalidarPorPatron(patron: String): void
+  }
+
+  interface OutboxRepository <<Port>> {
+    + guardar(evento: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List<OutboxEvent>
+    + marcarProcesado(id: UUID): void
+  }
+
+  interface EventPublisher <<Port>> {
+    + publicar(evento: OutboxEvent): void
+  }
+}
+
+' ============================================================
+' PAQUETE: application.service
+' ============================================================
+package "com.javeriana.eventos.event\n.application.service" as pkg_application #EBF5FB {
+
+  class CrearEventoService <<ApplicationService>> {
+    ' @Transactional
+    - eventoRepository: EventoRepository
+    - categoriaRepository: CategoriaRepository
+    - outboxRepository: OutboxRepository
+    ==
+    + ejecutar(comando: CrearEventoCommand): Evento
+    - validarCategoria(categoriaId: UUID): Categoria
+  }
+
+  class ActualizarEventoService <<ApplicationService>> {
+    ' @Transactional
+    - eventoRepository: EventoRepository
+    - cacheEventoPort: CacheEventoPort
+    ==
+    + ejecutar(comando: ActualizarEventoCommand): Evento
+    - invalidarCacheEvento(eventoId: UUID): void
+  }
+
+  class PublicarEventoService <<ApplicationService>> {
+    ' @Transactional
+    - eventoRepository: EventoRepository
+    - outboxRepository: OutboxRepository
+    - politicaPublicacion: PoliticaPublicacion
+    - cacheEventoPort: CacheEventoPort
+    ==
+    + ejecutar(eventoId: UUID): void
+    - invalidarCacheListado(): void
+  }
+
+  class CancelarEventoService <<ApplicationService>> {
+    ' @Transactional
+    - eventoRepository: EventoRepository
+    - outboxRepository: OutboxRepository
+    - cacheEventoPort: CacheEventoPort
+    ==
+    + ejecutar(eventoId: UUID, motivo: String): void
+  }
+
+  class ConsultarCatalogoService <<ApplicationService>> {
+    ' Cache-Aside: Redis primero, PostgreSQL si miss (ADR-008)
+    - eventoRepository: EventoRepository
+    - cacheEventoPort: CacheEventoPort
+    ==
+    + consultarPublicados(filtros: FiltrosEvento,\n  paginacion: Pageable): Page<Evento>
+    + consultarPorId(id: UUID): Evento
+    - claveCache(filtros: FiltrosEvento, pag: Pageable): String
+  }
+
+  class CrearEventoCommand {
+    + nombre: String
+    + descripcion: String
+    + fechaInicio: LocalDateTime
+    + fechaFin: LocalDateTime
+    + cuposTotales: int
+    + precio: BigDecimal
+    + organizadorId: UUID
+    + categoriaId: UUID
+  }
+
+  class ActualizarEventoCommand {
+    + eventoId: UUID
+    + nombre: String
+    + descripcion: String
+    + fechaInicio: LocalDateTime
+    + fechaFin: LocalDateTime
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.rest
+' ============================================================
+package "com.javeriana.eventos.event\n.infrastructure.rest" as pkg_rest #FEF5E7 {
+
+  class EventoRestController <<RestController>> {
+    ' @RestController
+    ' DEUDA HEXAGONAL: usa JPA directamente en algunos metodos
+    - crearEventoService: CrearEventoService
+    - actualizarEventoService: ActualizarEventoService
+    - publicarEventoService: PublicarEventoService
+    - cancelarEventoService: CancelarEventoService
+    - consultarCatalogoService: ConsultarCatalogoService
+    ==
+    + crearEvento(req: CrearEventoRequest):\n  ResponseEntity<EventoDto>
+    + actualizarEvento(id: UUID,\n  req: ActualizarEventoRequest): EventoDto
+    + publicarEvento(id: UUID): void
+    + cancelarEvento(id: UUID): void
+    + obtenerEvento(id: UUID): EventoDto
+    + listarPublicados(filtros: FiltrosEvento): Page<EventoDto>
+  }
+
+
+  class CrearEventoRequest {
+    + nombre: String
+    + descripcion: String
+    + fechaInicio: LocalDateTime
+    + fechaFin: LocalDateTime
+    + cuposTotales: int
+    + precio: BigDecimal
+    + categoriaId: UUID
+  }
+
+  class ActualizarEventoRequest {
+    + nombre: String
+    + descripcion: String
+    + fechaInicio: LocalDateTime
+    + fechaFin: LocalDateTime
+  }
+
+  class EventoDto {
+    + id: UUID
+    + nombre: String
+    + estado: String
+    + cuposDisponibles: int
+    + precio: BigDecimal
+    + fechaInicio: LocalDateTime
+  }
+
+  class FiltrosEvento {
+    + categoriaId: UUID {nullable}
+    + fechaDesde: LocalDate {nullable}
+    + fechaHasta: LocalDate {nullable}
+    + soloConCupos: boolean
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.cache
+' ============================================================
+package "com.javeriana.eventos.event\n.infrastructure.cache" as pkg_cache #FDF2F8 {
+
+  class RedisEventoCacheAdapter <<CacheAdapter>> {
+    ' implements CacheEventoPort
+    ' ADR-008: Cache-Aside con Redis 7 via Lettuce
+    - redisTemplate: RedisTemplate<String, String>
+    - ttlDefecto: Duration {= 60s}
+    ==
+    + obtenerDeCache(clave: String): Optional<String>
+    + guardarEnCache(clave: String, valor: String,\n  ttl: Duration): void
+    + invalidar(clave: String): void
+    + invalidarPorPatron(patron: String): void
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.persistence
+' ============================================================
+package "com.javeriana.eventos.event\n.infrastructure.persistence" as pkg_persistence #E8F8F5 {
+
+  class EventoJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: EventoJpaRepository
+    ==
+    + guardar(evento: Evento): Evento
+    + buscarPorId(id: UUID): Optional<Evento>
+    + buscarPublicados(filtros: FiltrosEvento,\n  paginacion: Pageable): Page<Evento>
+    + buscarPorOrganizador(organizadorId: UUID): List<Evento>
+  }
+
+  interface EventoJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<EventoEntity, UUID>
+    + findByEstado(estado: EstadoEvento,\n  pageable: Pageable): Page<EventoEntity>
+    + findByOrganizadorId(organizadorId: UUID): List<EventoEntity>
+  }
+
+  class CategoriaJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: CategoriaJpaRepository
+    ==
+    + buscarPorId(id: UUID): Optional<Categoria>
+    + listarTodas(): List<Categoria>
+  }
+
+  interface CategoriaJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<CategoriaEntity, UUID>
+  }
+
+  class OutboxJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: OutboxJpaRepository
+    ==
+    + guardar(evento: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List<OutboxEvent>
+    + marcarProcesado(id: UUID): void
+  }
+
+  interface OutboxJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<OutboxEventEntity, UUID>
+    + findByProcessedAtIsNullOrderByCreatedAtAsc(\n  pageable: Pageable): List<OutboxEventEntity>
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.messaging
+' ============================================================
+package "com.javeriana.eventos.event\n.infrastructure.messaging" as pkg_messaging #F9EBEA {
+
+  class EventoRabbitPublisherAdapter <<RabbitPublisher>> {
+    ' implements EventPublisher
+    - rabbitTemplate: RabbitTemplate
+    ==
+    + publicar(evento: OutboxEvent): void
+    - buildMessage(evento: OutboxEvent): Message
+  }
+}
+
+' ============================================================
+' RELACIONES: Domain Model
+' ============================================================
+Evento          "1" -->  "1"  EstadoEvento        : estado
+Evento          "1" -->  "0.1" Categoria           : categoria
+PoliticaPublicacion ..>         Evento             : evalua
+
+' ============================================================
+' RELACIONES: Application -> Ports
+' ============================================================
+CrearEventoService      "1" o--> "1" EventoRepository   : eventoRepository
+CrearEventoService      "1" o--> "1" CategoriaRepository: categoriaRepository
+CrearEventoService      "1" o--> "1" OutboxRepository   : outboxRepository
+
+ActualizarEventoService "1" o--> "1" EventoRepository   : eventoRepository
+ActualizarEventoService "1" o--> "1" CacheEventoPort    : cacheEventoPort\n[ADR-008] invalida cache
+
+PublicarEventoService   "1" o--> "1" EventoRepository   : eventoRepository
+PublicarEventoService   "1" o--> "1" OutboxRepository   : outboxRepository\n[ADR-011] EventoPublicado
+PublicarEventoService   "1" o--> "1" CacheEventoPort    : cacheEventoPort\n[ADR-008] invalida listado
+PublicarEventoService   "1" o--> "1" PoliticaPublicacion: politicaPublicacion
+
+CancelarEventoService   "1" o--> "1" EventoRepository   : eventoRepository
+CancelarEventoService   "1" o--> "1" OutboxRepository   : outboxRepository\n[ADR-011] EventoCancelado
+CancelarEventoService   "1" o--> "1" CacheEventoPort    : cacheEventoPort
+
+ConsultarCatalogoService "1" o--> "1" EventoRepository  : eventoRepository
+ConsultarCatalogoService "1" o--> "1" CacheEventoPort   : cacheEventoPort\n[ADR-008] Cache-Aside
+
+' ============================================================
+' RELACIONES: REST -> Application
+' ============================================================
+EventoRestController "1" o--> "1" CrearEventoService      : crearEventoService
+EventoRestController "1" o--> "1" ActualizarEventoService : actualizarEventoService
+EventoRestController "1" o--> "1" PublicarEventoService   : publicarEventoService
+EventoRestController "1" o--> "1" CancelarEventoService   : cancelarEventoService
+EventoRestController "1" o--> "1" ConsultarCatalogoService: consultarCatalogoService
+
+' ============================================================
+' RELACIONES: Driven Adapters -> Ports
+' ============================================================
+EventoJpaAdapter            ..|> EventoRepository
+CategoriaJpaAdapter         ..|> CategoriaRepository
+OutboxJpaAdapter            ..|> OutboxRepository
+RedisEventoCacheAdapter     ..|> CacheEventoPort
+EventoRabbitPublisherAdapter ..|> EventPublisher
+
+EventoJpaAdapter    "1" o--> "1" EventoJpaRepository    : jpaRepository
+CategoriaJpaAdapter "1" o--> "1" CategoriaJpaRepository : jpaRepository
+OutboxJpaAdapter    "1" o--> "1" OutboxJpaRepository    : jpaRepository
+
+' ============================================================
+' LAYOUT: forzar apilado vertical de paquetes
+' (evita que se expandan en una sola fila horizontal)
+' ============================================================
+pkg_domain_model    -[hidden]down-> pkg_domain_port
+pkg_domain_port     -[hidden]down-> pkg_application
+pkg_application     -[hidden]down-> pkg_rest
+pkg_rest            -[hidden]right-> pkg_cache
+pkg_cache           -[hidden]right-> pkg_persistence
+pkg_persistence     -[hidden]right-> pkg_messaging
+
+' ============================================================
+' LEYENDA
+' ============================================================
+legend right
+  <b>Capas -- Arquitectura Hexagonal</b>
+  |<back:#9B59B6><color:white>  AggregateRoot  </color></back>| Raiz de agregado (Dominio)         |
+  |<back:#3C7DD9><color:white>  Entity         </color></back>| Entidad de dominio                 |
+  |<back:#F0C040>  Enumeration  </back>| Enumeracion de dominio             |
+  |<back:#E74C3C><color:white>  DomainService  </color></back>| Servicio de dominio puro           |
+  |<back:#27AE60><color:white>  Port           </color></back>| Puerto / Interfaz del hexagono     |
+  |<back:#2980B9><color:white>  ApplicationSvc </color></back>| Servicio de aplicacion (caso uso)  |
+  |<back:#E67E22><color:white>  RestController </color></back>| Adaptador primario REST            |
+  |<back:#A569BD><color:white>  CacheAdapter   </color></back>| Adaptador Redis (Cache-Aside)      |
+  |<back:#1ABC9C><color:white>  JpaAdapter     </color></back>| Adaptador secundario JPA           |
+  |<back:#117A65><color:white>  JpaRepository  </color></back>| Repositorio Spring Data JPA        |
+  |<back:#8E44AD><color:white>  RabbitPublisher</color></back>| Publicador AMQP (Outbox relay)     |
+  ====
+  [ADR-008] CacheEventoPort + RedisEventoCacheAdapter
+            Cache-Aside: Redis primero, PostgreSQL si miss
+            TTL=60s, invalidacion por patron
+  [ADR-011] OutboxEvent + OutboxRelayService
+            Publicacion atomica con la transaccion
+  [ADR-012] Dependency Rule: infra -> app -> domain
+end legend
+
+@enduml

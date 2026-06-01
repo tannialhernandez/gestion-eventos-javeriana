@@ -1,0 +1,91 @@
+@startuml vista-escenarios-cu-general
+' Vista +1 Escenarios — Diagrama de Casos de Uso
+' Plataforma de Gestión de Eventos Académicos — Javeriana 2026
+' Renderizar: Alt+D en VS Code (extensión PlantUML)
+
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 10
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ActorBackgroundColor #DDEEFF
+skinparam ActorBorderColor #4477AA
+skinparam UsecaseBackgroundColor #FFFFFF
+skinparam UsecaseBorderColor #888888
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 9
+
+title
+  <b><size:13>Vista +1 Escenarios — Casos de Uso Arquitectónicamente Significativos</size></b>
+  <size:10>Plataforma de Gestión de Eventos Académicos · Javeriana 2026</size>
+end title
+
+' ── Actores humanos ─────────────────────────────────────────────────
+actor "Estudiante\n«actor primario»"         as EST
+actor "Organizador\n«actor primario»"        as ORG
+actor "Administrador\n«actor primario»"      as ADM
+
+' ── Actores sistema ─────────────────────────────────────────────────
+actor "Sistema Scheduler\n«actor secundario»\n(@Scheduled + ShedLock)" as SCHED
+actor "Pasarela de Pagos\n«sistema externo»\n(WireMock en proto)"       as PASARELA
+actor "Serv. Notificación\n«sistema externo»\n(SMTP mock WireMock)"     as SMTP_EXT
+
+' ════════════════════════════════════════════════════════════════════
+' SUBSISTEMA: Catálogo de Eventos (event-service)
+' ════════════════════════════════════════════════════════════════════
+rectangle "<b>Subsistema: Catálogo de Eventos</b>\n(event-service)" as CAT #C8EDCB {
+  usecase "E1: Consultar catálogo\nde eventos\n«Cache-Aside Redis»"    as E1
+  usecase "E8: Crear evento\ncon invalidación\nde caché"               as E8
+}
+
+' ════════════════════════════════════════════════════════════════════
+' SUBSISTEMA: Inscripciones (inscription-service)
+' ════════════════════════════════════════════════════════════════════
+rectangle "<b>Subsistema: Inscripciones</b>\n(inscription-service)" as INS #FFD7D7 {
+  usecase "E2: Inscribirse a evento\ncon cupo limitado\n«Pessimistic Lock + Outbox»"  as E2
+  usecase "E5: Expirar inscripciones\npendientes automáticamente\n«ShedLock»"         as E5
+  usecase "E6: Cancelar inscripción\npor estudiante\n«Strategy PoliticaCancelacion»"  as E6
+  usecase "Confirmar inscripción\n(trigger interno)"                                   as CU_CONF
+}
+
+' ════════════════════════════════════════════════════════════════════
+' SUBSISTEMA: Pagos (payment-service)
+' ════════════════════════════════════════════════════════════════════
+rectangle "<b>Subsistema: Pagos</b>\n(payment-service)" as PAY #FFE0B2 {
+  usecase "E3: Procesar pago\nconfirmado\n«Outbox + fan-out»"             as E3
+  usecase "E4: Manejar pago\nfallido/compensación\n«Compensación + DLQ»"  as E4
+}
+
+' ════════════════════════════════════════════════════════════════════
+' SUBSISTEMA: Notificaciones (notification-service)
+' ════════════════════════════════════════════════════════════════════
+rectangle "<b>Subsistema: Notificaciones</b>\n(notification-service)" as NOTIF #FFF9C4 {
+  usecase "E7: Enviar notificación\nmulti-canal\n«Observer + Strategy»"  as E7
+  usecase "E9: Recuperar tras\ncaída del broker\n«Outbox buffer durable»" as E9
+}
+
+' ── Relaciones actores → casos de uso ───────────────────────────────
+EST  --> E1
+EST  --> E2
+EST  --> E6
+ORG  --> E8
+ORG  --> E1
+ADM  --> E5
+ADM  --> E1
+
+SCHED    --> E5 : «dispara»
+SCHED    --> E9 : «dispara OutboxRelay»
+PASARELA --> E3 : «confirma pago»
+PASARELA --> E4 : «notifica fallo»
+SMTP_EXT --> E7 : «recibe email mock»
+
+' ── Include / Extend ────────────────────────────────────────────────
+E2  .right.> E7      : <<include>>\nnotificación pendiente
+E3  .right.> E7      : <<include>>\nnotificación confirmada
+E4  .right.> E7      : <<include>>\nnotificación fallida
+E3  .down.>  CU_CONF : <<include>>
+E5  .down.>  CU_CONF : <<extend>>\ncuando inscripción\nexpira
+E6  .right.> CU_CONF : <<extend>>\ncuando cancela
+E8  ..>      E1      : <<extend>>\npost-invalidación
+
+@enduml

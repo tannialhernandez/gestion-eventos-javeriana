@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>K6 RNF-16 Cupos Concurrencia</title>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; margin: 32px; color: #172033; }
+    h1, h2 { margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { border: 1px solid #d8dee8; border-radius: 6px; padding: 14px; background: #f8fafc; }
+    .label { color: #5b677a; font-size: 12px; text-transform: uppercase; }
+    .value { font-size: 24px; font-weight: 700; margin-top: 6px; }
+    table { border-collapse: collapse; width: 100%; margin: 18px 0 28px; }
+    th, td { border-bottom: 1px solid #e6ebf2; padding: 10px 8px; text-align: left; }
+    th { background: #f1f5f9; font-size: 13px; }
+    .ok { color: #0f7b3b; font-weight: 700; }
+    .fail { color: #b42318; font-weight: 700; }
+    code { background: #eef2f7; padding: 2px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>K6 RNF-16 Cupos Concurrencia</h1>
+  <p>Generado: 2026-05-30T04:19:59.172Z</p>
+  <div class="grid">
+    <div class="card"><div class="label">p95 HTTP</div><div class="value">3938.27 ms</div></div>
+    <div class="card"><div class="label">p99 HTTP</div><div class="value">- ms</div></div>
+    <div class="card"><div class="label">Error rate</div><div class="value">0.00</div></div>
+    <div class="card"><div class="label">Checks</div><div class="value">1.00</div></div>
+  </div>
+  <h2>Thresholds</h2>
+  <table>
+    <thead><tr><th>Metrica</th><th>Threshold</th><th>Resultado</th></tr></thead>
+    <tbody>
+        <tr>
+          <td>inscripciones_confirmadas</td>
+          <td><code>count==10</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>http_req_failed</td>
+          <td><code>rate<0.05</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>inscripciones_rechazadas_por_cupo</td>
+          <td><code>count==40</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>checks</td>
+          <td><code>rate==1</code></td>
+          <td class="ok">OK</td>
+        </tr></tbody>
+  </table>
+  <h2>Metricas</h2>
+  <table>
+    <thead><tr><th>Metrica</th><th>count</th><th>rate</th><th>avg</th><th>p95</th><th>p99</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>inscripciones_confirmadas</td>
+        <td>10.00</td>
+        <td>2.53</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>iteration_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>3739.89</td>
+        <td>4066.83</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_failed</td>
+        <td>-</td>
+        <td>0.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>vus</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>3612.41</td>
+        <td>3938.27</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration{expected_response:true}</td>
+        <td>-</td>
+        <td>-</td>
+        <td>3612.41</td>
+        <td>3938.27</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>data_sent</td>
+        <td>48441.00</td>
+        <td>12242.47</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>vus_max</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>inscripciones_rechazadas_por_cupo</td>
+        <td>40.00</td>
+        <td>10.11</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_waiting</td>
+        <td>-</td>
+        <td>-</td>
+        <td>3607.56</td>
+        <td>3937.58</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_receiving</td>
+        <td>-</td>
+        <td>-</td>
+        <td>4.29</td>
+        <td>12.72</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_connecting</td>
+        <td>-</td>
+        <td>-</td>
+        <td>1.79</td>
+        <td>5.89</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>checks</td>
+        <td>-</td>
+        <td>1.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_blocked</td>
+        <td>-</td>
+        <td>-</td>
+        <td>7.65</td>
+        <td>17.30</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_sending</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.55</td>
+        <td>2.67</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>data_received</td>
+        <td>29851.00</td>
+        <td>7544.23</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_reqs</td>
+        <td>50.00</td>
+        <td>12.64</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_tls_handshaking</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>iterations</td>
+        <td>50.00</td>
+        <td>12.64</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr></tbody>
+  </table>
+</body>
+</html>

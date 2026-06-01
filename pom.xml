@@ -35,7 +35,9 @@
         <resilience4j.version>2.1.0</resilience4j.version>
         <jjwt.version>0.12.5</jjwt.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
-        <testcontainers.version>1.19.7</testcontainers.version>
+        <!-- 1.20.6: docker-java 3.4.1+ con soporte Docker Engine 29.x (API mín 1.44).
+             Requerido por Colima/Docker 29.4.2. Retrocompatible con Docker 24-28. -->
+        <testcontainers.version>1.20.6</testcontainers.version>
         <itext.version>8.0.3</itext.version>
         <aws-sdk.version>2.25.10</aws-sdk.version>
 

@@ -1,0 +1,236 @@
+@startuml actividad-outbox-relay
+' Diagrama de Actividad -- OutboxRelayService
+' Transactional Outbox Pattern (ADR-011)
+' Plataforma de Gestion de Eventos Academicos
+'
+' Aplica a los 3 servicios productores:
+'   - event-service (100% implementado)
+'   - inscription-service (100% implementado)
+'   - payment-service (PENDIENTE -- feat/payment-outbox-e2e)
+'
+' ADR-011: Transactional Outbox
+' ADR-012: SKIP LOCKED para paralelismo sin bloqueo entre instancias
+' ADR-018: @SchedulerLock en inscription-service
+'
+' Generado: 2026-05-22
+
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 9
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ActivityBackgroundColor #FFFFFF
+skinparam ActivityBorderColor #888888
+skinparam ActivityDiamondBackgroundColor #FFF9C4
+skinparam ActivityDiamondBorderColor #B8860B
+skinparam ActivityStartColor #2E7D32
+skinparam ActivityEndColor #C62828
+skinparam PartitionBorderColor #AAAAAA
+skinparam PartitionBackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam NoteBackgroundColor #FFFFF0
+skinparam NoteBorderColor #CCCC88
+
+title
+  <b><size:13>Diagrama de Actividad -- OutboxRelayService</size></b>
+  <size:10>Transactional Outbox Pattern (ADR-011) | Plataforma Gestion de Eventos Academicos</size>
+  <size:9>Aplica a: event-service (OK) | inscription-service (OK) | payment-service (PENDIENTE)</size>
+end title
+
+|OutboxRelayService|
+start
+
+:Trigger @Scheduled(fixedDelay=2000ms)
+ @SchedulerLock (inscription-service);
+
+note right
+  Frecuencia: cada 2 segundos
+  ShedLock previene ejecucion
+  paralela en multi-instancia
+  (ADR-018)
+end note
+
+|PostgreSQL|
+
+:BEGIN TRANSACTION;
+
+:SELECT id, aggregate_id, event_type,
+ payload, intentos
+ FROM outbox_events
+ WHERE estado = 'PENDIENTE'
+   AND intentos < 5
+ ORDER BY creado_en ASC
+ FOR UPDATE SKIP LOCKED
+ LIMIT 50;
+
+note right
+  SKIP LOCKED: permite que multiples
+  instancias del relay corran en
+  paralelo sin bloquearse entre si.
+  Cada instancia toma un subconjunto
+  distinto de filas (ADR-012).
+end note
+
+|OutboxRelayService|
+
+if (hay eventos pendientes?) then (SÍ)
+
+  :Iniciar loop sobre eventos;
+
+  while (quedan eventos en el lote?) is (SÍ)
+
+    :Construir mensaje AMQP con
+     messageId = outbox.id;
+
+    note right
+      messageId = outbox.id garantiza
+      idempotencia en consumidores:
+      si el mensaje llega dos veces,
+      el consumidor lo detecta y descarta.
+    end note
+
+    |RabbitMQ|
+
+    :Publicar a exchange correspondiente
+     via RabbitTemplate
+     (publisher confirms activos);
+
+    note right
+      Publisher confirms: RabbitMQ
+      envia ACK/NACK al productor.
+      Evita falsos positivos de
+      publicacion (fire-and-forget).
+    end note
+
+    if (broker confirma publicacion?) then (ACK)
+
+      |PostgreSQL|
+
+      :UPDATE outbox_events
+       SET estado = 'ENVIADO',
+           enviado_en = NOW()
+       WHERE id = ?;
+
+      |CloudWatch|
+
+      :Metrica: outbox.published.rate++;
+      :Log INFO: evento publicado OK;
+
+      |OutboxRelayService|
+
+    else (NACK o timeout)
+
+      |PostgreSQL|
+
+      :UPDATE outbox_events
+       SET intentos = intentos + 1
+       WHERE id = ?;
+
+      if (intentos >= 5?) then (SÍ)
+
+        :UPDATE outbox_events
+         SET estado = 'FALLIDO'
+         WHERE id = ?;
+
+        |CloudWatch|
+
+        :Metrica: outbox.failed.count++;
+        :Log ERROR: evento envenenado;
+        :Alarma CloudWatch: outbox_failed > 0;
+
+        |RabbitMQ|
+
+        :Publicar a dlx.exchange
+         como evento envenenado
+         (intervencion manual requerida);
+
+        note right
+          Estado FALLIDO requiere
+          intervencion manual o
+          reproceso administrativo.
+          El evento NO se pierde:
+          queda en outbox_events.
+        end note
+
+        |OutboxRelayService|
+
+      else (NO -- reintentar)
+
+        |CloudWatch|
+
+        :Log WARN: reintento programado
+         (intento N de 5);
+
+        note right
+          Backoff implicito: el evento
+          queda PENDIENTE. Se reintentara
+          en la siguiente iteracion
+          (en ~2 segundos). No hay
+          sleep explicito.
+        end note
+
+        |OutboxRelayService|
+
+      endif
+
+    endif
+
+  endwhile (NO -- fin del lote)
+
+  |PostgreSQL|
+
+  :COMMIT;
+
+  note right
+    COMMIT libera los SKIP LOCKED.
+    Otras instancias o la proxima
+    iteracion pueden tomar nuevos
+    eventos PENDIENTES.
+  end note
+
+  |CloudWatch|
+
+  :Metrica: outbox.poll.duration (histogram);
+
+else (NO -- lote vacio)
+
+  |PostgreSQL|
+
+  :COMMIT (vacio);
+
+  |CloudWatch|
+
+  :Metrica: outbox.pending.count = 0;
+
+endif
+
+|OutboxRelayService|
+
+:Fin de iteracion;
+:Esperar fixedDelay = 2000ms;
+
+stop
+
+' ====================================================================
+' LEYENDA
+' ====================================================================
+legend bottom left
+  <b>Swimlanes</b>
+  OutboxRelayService  -- logica de orquestacion
+  PostgreSQL          -- operaciones de base de datos
+  RabbitMQ            -- publicacion de mensajes AMQP
+  CloudWatch          -- observabilidad y alertas
+  -----------------------------------------------
+  <b>Garantias del patron:</b>
+  At-least-once: puede haber duplicados (idempotencia en consumidores)
+  Consistencia eventual entre BD y broker
+  Resistencia a caidas del broker (eventos quedan PENDIENTES)
+  Escalabilidad horizontal via SKIP LOCKED
+  -----------------------------------------------
+  ADR-011: Transactional Outbox
+  ADR-012: SKIP LOCKED para paralelismo
+  ADR-018: ShedLock en inscription-service
+  ADR-019: DLQ para eventos envenenados
+end legend
+
+@enduml

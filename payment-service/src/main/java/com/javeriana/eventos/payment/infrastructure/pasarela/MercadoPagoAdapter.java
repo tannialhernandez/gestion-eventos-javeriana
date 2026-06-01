@@ -27,9 +27,11 @@ public class MercadoPagoAdapter implements PasarelaPagoPort {
 
     private final WebClient webClient;
     private final String accessToken;
+    private final String webhookUrl;   // m-03: inyectado via @Value, no como string literal
 
-    public MercadoPagoAdapter(String accessToken) {
+    public MercadoPagoAdapter(String accessToken, String webhookUrl) {
         this.accessToken = accessToken;
+        this.webhookUrl  = webhookUrl;
         this.webClient = WebClient.builder()
             .baseUrl(MP_API_BASE)
             .defaultHeader("Authorization", "Bearer " + accessToken)
@@ -51,7 +53,7 @@ public class MercadoPagoAdapter implements PasarelaPagoPort {
             )),
             "external_reference", inscripcionId.toString(),
             "metadata", Map.of("pago_id", pagoId.toString()),
-            "notification_url", "${mercadopago.webhook-url}",  // configurado en application.yml
+            "notification_url", webhookUrl,   // m-03: inyectado por DefaultPasarelaPagoFactory
             "expires", true,
             "expiration_date_to", java.time.Instant.now()
                 .plusSeconds(16 * 60).toString()  // 16 min (1 min más que el timeout de inscripción)

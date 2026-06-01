@@ -1,0 +1,118 @@
+version: "3.9"
+
+services:
+  event-service:
+    environment:
+      RETENTION_ENABLED: "false"
+      LOGGING_LEVEL_COM_JAVERIANA_EVENTOS: INFO
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 420s
+
+  inscription-service:
+    depends_on: !override
+      db-inscription:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      event-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      RETENTION_ENABLED: "false"
+      DB_HOST: db-inscription
+      DB_NAME: eventos_inscription
+      DB_USERNAME: eventos_user
+      DB_PASSWORD: eventos_pass
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_VHOST: /
+      SPRING_APPLICATION_JSON: >-
+        {"resilience4j":{"circuitbreaker":{"instances":{"evento-service":{"registerHealthIndicator":true,"slidingWindowType":"COUNT_BASED","slidingWindowSize":10,"minimumNumberOfCalls":5,"failureRateThreshold":50,"slowCallRateThreshold":80,"slowCallDurationThreshold":"3s","waitDurationInOpenState":"5m","permittedNumberOfCallsInHalfOpenState":3,"automaticTransitionFromOpenToHalfOpenEnabled":true,"eventConsumerBufferSize":20,"recordExceptions":["java.lang.Exception"]}}}}}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 420s
+
+  payment-service:
+    environment:
+      RETENTION_ENABLED: "false"
+      PAYMENT_WEBHOOK_SECRET: local-demo-secret
+      LOGGING_LEVEL_COM_JAVERIANA_EVENTOS_PAYMENT: INFO
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_AMQP: INFO
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 420s
+
+  rabbitmq:
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 360s
+
+  seed-load-test:
+    image: postgres:15-alpine
+    networks: [eventos-network]
+    depends_on:
+      db-event:
+        condition: service_healthy
+      db-inscription:
+        condition: service_healthy
+      db-payment:
+        condition: service_healthy
+      event-service:
+        condition: service_healthy
+      inscription-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    volumes:
+      - ./load-tests/seed:/seed:ro
+    command:
+      - sh
+      - -c
+      - >-
+        psql postgresql://eventos_user:eventos_pass@db-event:5432/eventos_event
+        -v ON_ERROR_STOP=1
+        -f /seed/seed-load-test.sql
+
+  k6:
+    build:
+      context: ./load-tests
+      dockerfile: Dockerfile
+    image: eventos-k6-dashboard:local
+    networks: [eventos-network]
+    depends_on:
+      event-service:
+        condition: service_healthy
+      inscription-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    environment:
+      EVENT_URL: http://event-service:8082
+      INSCRIPTION_URL: http://inscription-service:8083
+      PAYMENT_URL: http://payment-service:8084
+      REPORT_DIR: /reports
+      K6_TOKENS_FILE: /tmp/k6/tokens.json
+      K6_TOKEN_COUNT: 1500
+      JWT_PRIVATE_KEY_FILE: /jwt/test-private-key.b64
+      K6_WEB_DASHBOARD: "true"
+      K6_WEB_DASHBOARD_EXPORT: /reports/xk6-dashboard.html
+    volumes:
+      - ./load-tests/scripts:/load-tests/scripts:ro
+      - ./load-tests/lib:/load-tests/lib:ro
+      - ./load-tests/reports:/reports
+      - ./e2e-tests/src/test/resources/jwt/test-private-key.b64:/jwt/test-private-key.b64:ro

@@ -3,6 +3,7 @@ package com.javeriana.eventos.payment.domain.model;
 import com.javeriana.eventos.shared.domain.AggregateRoot;
 import com.javeriana.eventos.shared.domain.BusinessRuleViolationException;
 import com.javeriana.eventos.payment.domain.events.PagoConfirmadoEvent;
+import com.javeriana.eventos.payment.domain.events.PagoFallidoEvent;
 import com.javeriana.eventos.payment.domain.events.PagoReembolsadoEvent;
 
 import java.math.BigDecimal;
@@ -102,14 +103,15 @@ public class Pago extends AggregateRoot {
         this.fechaConfirmacion = Instant.now();
         this.intentosCobro++;
 
-        registerEvent(new PagoConfirmadoEvent(this.id, this.inscripcionId, referenciaExterna));
+        registerEvent(new PagoConfirmadoEvent(this.id, this.inscripcionId, referenciaExterna,
+            this.monto, this.moneda, this.fechaConfirmacion));
     }
 
     /**
      * Marca el pago como fallido. Si el número de intentos supera el límite,
      * inscription-service libera el cupo.
      */
-    public void marcarFallido(String motivo) {
+    public void marcarFallido(String motivoRechazo) {
         if (this.estado.esFinal()) {
             throw new BusinessRuleViolationException(
                 "RN-PAGO-03",
@@ -118,6 +120,10 @@ public class Pago extends AggregateRoot {
         }
         this.estado = EstadoPago.FALLIDO;
         this.intentosCobro++;
+
+        registerEvent(new PagoFallidoEvent(this.id, this.inscripcionId,
+            motivoRechazo, "Pago rechazado por la pasarela de pago",
+            this.monto, this.moneda));
     }
 
     /**
@@ -134,7 +140,8 @@ public class Pago extends AggregateRoot {
         this.estado = EstadoPago.REEMBOLSADO;
         this.fechaReembolso = Instant.now();
 
-        registerEvent(new PagoReembolsadoEvent(this.id, this.inscripcionId));
+        registerEvent(new PagoReembolsadoEvent(this.id, this.inscripcionId,
+            this.monto, this.moneda, this.fechaReembolso));
     }
 
     /**
@@ -160,7 +167,8 @@ public class Pago extends AggregateRoot {
         this.estado = EstadoPago.REEMBOLSADO;
         this.fechaReembolso = Instant.now();
 
-        registerEvent(new PagoReembolsadoEvent(this.id, this.inscripcionId));
+        registerEvent(new PagoReembolsadoEvent(this.id, this.inscripcionId,
+            this.monto, this.moneda, this.fechaReembolso));
     }
 
     // ─── Getters ───────────────────────────────────────────────────────────────

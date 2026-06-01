@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="580" viewBox="0 0 1080 580">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+    .title { font-size: 28px; font-weight: 750; }
+    .subtitle { font-size: 14px; fill: #5b667a; }
+    .label { font-size: 13px; fill: #172033; }
+    .small { font-size: 12px; fill: #5b667a; }
+    .value { font-size: 13px; font-weight: 700; }
+  </style>
+<text x="48" y="56" class="title">RNF-16: Sobrecupo cero</text>
+<text x="48" y="84" class="subtitle">50 intentos concurrentes sobre un evento con cupo maximo 10.</text>
+<rect x="150" y="170" width="156.0" height="86" rx="8" fill="#15803d"/>
+<rect x="306.0" y="170" width="624.0" height="86" rx="8" fill="#b45309"/>
+<text x="228.0" y="220" text-anchor="middle" class="value" fill="#fff">10 confirmadas</text>
+<text x="618.0" y="220" text-anchor="middle" class="value" fill="#fff">40 rechazadas</text>
+<line x1="306.0" y1="132" x2="306.0" y2="280" stroke="#dc2626" stroke-width="4"/>
+<text x="306.0" y="118" text-anchor="middle" class="value">Cupo = 10</text>
+<text x="150" y="315" class="label">Threshold K6: inscripciones_confirmadas count==10 OK</text>
+<text x="150" y="345" class="label">Threshold K6: inscripciones_rechazadas_por_cupo count==40 OK</text>
+<text x="150" y="375" class="label">HTTP 5xx: 0%</text>
+<text x="150" y="420" class="subtitle">Interpretacion: si hubiera race condition o falla del bloqueo, el bloque verde podria superar el limite rojo.</text>
+</svg>

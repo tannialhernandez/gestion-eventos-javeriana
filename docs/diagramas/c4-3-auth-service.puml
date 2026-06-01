@@ -1,0 +1,226 @@
+@startuml c4-3-auth-service
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 28
+skinparam ranksep 42
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam roundcorner 6
+scale 0.85
+
+skinparam classBackgroundColor<<RestController>> #FEF5E7
+skinparam classBorderColor<<RestController>> #A04000
+skinparam classBackgroundColor<<ApplicationSvc>> #EBF5FB
+skinparam classBorderColor<<ApplicationSvc>> #1A5276
+skinparam classBackgroundColor<<Port>> #EAFAF1
+skinparam classBorderColor<<Port>> #1E8449
+skinparam classBackgroundColor<<JpaAdapter>> #E8F8F5
+skinparam classBorderColor<<JpaAdapter>> #148F77
+skinparam classBackgroundColor<<SsoAdapter>> #E8F5E9
+skinparam classBorderColor<<SsoAdapter>> #2E7D32
+skinparam classBackgroundColor<<JwtAdapter>> #FFF3E0
+skinparam classBorderColor<<JwtAdapter>> #E65100
+skinparam classBackgroundColor<<Entity>> #EAF0FB
+skinparam classBorderColor<<Entity>> #2E5FA3
+skinparam classBackgroundColor<<ValueObject>> #EDE0F5
+skinparam classBorderColor<<ValueObject>> #7B2D8B
+skinparam classBackgroundColor<<Enumeration>> #FEF9E7
+skinparam classBorderColor<<Enumeration>> #C8A400
+
+title
+  <b><size:14>C4 Nivel 3: Vista de Componentes -- auth-service</size></b>
+  <size:11>Plataforma de Gestion de Eventos Academicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:10>ADR-012 (Hexagonal) | OAuth 2.0/OIDC delegado a SSO Javeriana | JWT RS256</size>
+end title
+
+package "infrastructure.rest" as pkg_rest #FEF5E7 {
+  class "AuthRestController" as CTRL <<RestController>> {
+    - autenticarService: AutenticarUsuarioService
+    - refrescarService: RefrescarTokenService
+    - validarService: ValidarTokenService
+    - logoutService: LogoutService
+    ==
+    + login(req: LoginRequest): TokenDto
+    ' @PostMapping /api/v1/auth/login
+    + refreshToken(req: RefreshRequest): TokenDto
+    ' @PostMapping /api/v1/auth/refresh
+    + validateToken(token: String): ValidacionDto
+    ' @PostMapping /api/v1/auth/validate
+    + logout(token: String): void
+    ' @PostMapping /api/v1/auth/logout
+  }
+}
+
+package "application.service" as pkg_app #EBF5FB {
+  class "AutenticarUsuarioService" as SVC_AUTH <<ApplicationSvc>> {
+    - ssoProviderPort: SsoProviderPort
+    - jwtIssuerPort: JwtIssuerPort
+    - tokenRepository: TokenRepository
+    ==
+    + ejecutar(cmd: LoginCommand): TokenDto
+    ' Delega credenciales al SSO Javeriana via OAuth2
+    ' Recibe usuario autenticado -> emite JWT propio
+  }
+  class "RefrescarTokenService" as SVC_REFRESH <<ApplicationSvc>> {
+    - jwtIssuerPort: JwtIssuerPort
+    - tokenRepository: TokenRepository
+    ==
+    + ejecutar(refreshToken: String): TokenDto
+    ' Valida refresh token -> emite nuevo access token
+  }
+  class "ValidarTokenService" as SVC_VALID <<ApplicationSvc>> {
+    - jwtIssuerPort: JwtIssuerPort
+    - tokenRepository: TokenRepository
+    ==
+    + validar(token: String): ClaimsDto
+    ' Verifica firma RS256 + no revocado + no expirado
+  }
+  class "LogoutService" as SVC_LOGOUT <<ApplicationSvc>> {
+    - tokenRepository: TokenRepository
+    ==
+    + ejecutar(token: String): void
+    ' Agrega token a lista de revocados (blacklist)
+  }
+}
+
+package "domain.model" as pkg_model #EAF0FB {
+  class "UsuarioAutenticado" as Usuario <<Entity>> {
+    - id: UUID
+    - username: String
+    - email: String
+    - nombre: String
+    - roles: List~Rol~
+    ==
+    + tieneRol(rol: Rol): boolean
+    + getRolesString(): List~String~
+  }
+  class "TokenJwt" as Token <<ValueObject>> {
+    - accessToken: String
+    - refreshToken: String
+    - expiresIn: long
+    - tokenType: String {= "Bearer"}
+    ==
+    + estaExpirado(): boolean
+  }
+  class "ClaimsDto" as Claims <<ValueObject>> {
+    - sub: String {userId}
+    - email: String
+    - roles: List~String~
+    - iat: long
+    - exp: long
+    ==
+    + esValido(): boolean
+  }
+  enum "Rol" as Rol <<Enumeration>> {
+    ESTUDIANTE
+    COORDINADOR
+    REVISOR
+    ADMINISTRADOR
+  }
+}
+
+package "domain.port" as pkg_port #EAFAF1 {
+  interface "SsoProviderPort" as ISso <<Port>> {
+    + autenticar(username: String,\n  password: String): UsuarioAutenticado
+    ' Delega a SSO Institucional Javeriana (OAuth2/OIDC)
+    + refrescar(refreshToken: String): UsuarioAutenticado
+  }
+  interface "JwtIssuerPort" as IJwt <<Port>> {
+    + emitir(usuario: UsuarioAutenticado): TokenJwt
+    ' RS256 -- clave privada desde Secrets Manager
+    + validar(token: String): ClaimsDto
+    + revocarRefresh(refreshToken: String): void
+  }
+  interface "TokenRepository" as ITokenRepo <<Port>> {
+    + revocar(jti: String): void
+    + estaRevocado(jti: String): boolean
+    ' Blacklist en PostgreSQL + cache en Redis
+  }
+}
+
+package "infrastructure.sso" as pkg_sso #E8F5E9 {
+  class "JaverianaOAuth2SsoAdapter" as SsoAdap <<SsoAdapter>> {
+    - oauth2RestTemplate: OAuth2RestTemplate
+    - ssoBaseUrl: String
+    ==
+    + autenticar(username: String, password: String): UsuarioAutenticado
+    ' POST {ssoBaseUrl}/oauth2/token
+    ' Content-Type: application/x-www-form-urlencoded
+    ' grant_type=password | scope=openid profile
+    + refrescar(refreshToken: String): UsuarioAutenticado
+    ' grant_type=refresh_token
+  }
+}
+
+package "infrastructure.jwt" as pkg_jwt #FFF3E0 {
+  class "Rs256JwtIssuerAdapter" as JwtAdap <<JwtAdapter>> {
+    - privateKey: RSAPrivateKey {Secrets Manager}
+    - publicKey: RSAPublicKey
+    - accessTokenTtl: Duration {= 1h}
+    - refreshTokenTtl: Duration {= 7d}
+    ==
+    + emitir(usuario: UsuarioAutenticado): TokenJwt
+    + validar(token: String): ClaimsDto
+    + revocarRefresh(refreshToken: String): void
+    ' JJWT library | RS256
+  }
+}
+
+package "infrastructure.persistence" as pkg_pers #E8F8F5 {
+  class "TokenRevocationJpaAdapter" as TokenJpa <<JpaAdapter>> {
+    - jpaRepo: TokenRevocationJpaRepository
+    ==
+    + revocar(jti: String): void
+    + estaRevocado(jti: String): boolean
+    ' Tabla: revoked_tokens(jti, revoked_at, expires_at)
+    ' Limpieza automatica de tokens expirados via @Scheduled
+  }
+}
+
+' ── RELACIONES ───────────────────────────────────────────────
+CTRL o--> SVC_AUTH    : autenticarService
+CTRL o--> SVC_REFRESH : refrescarService
+CTRL o--> SVC_VALID   : validarService
+CTRL o--> SVC_LOGOUT  : logoutService
+
+SVC_AUTH    o--> ISso      : ssoProviderPort
+SVC_AUTH    o--> IJwt      : jwtIssuerPort
+SVC_AUTH    o--> ITokenRepo : tokenRepository
+SVC_REFRESH o--> IJwt      : jwtIssuerPort
+SVC_REFRESH o--> ITokenRepo : tokenRepository
+SVC_VALID   o--> IJwt      : jwtIssuerPort
+SVC_VALID   o--> ITokenRepo : tokenRepository
+SVC_LOGOUT  o--> ITokenRepo : tokenRepository
+
+Usuario "1" --> "*" Rol : roles
+
+SsoAdap  ..|> ISso
+JwtAdap  ..|> IJwt
+TokenJpa ..|> ITokenRepo
+
+' ── LEYENDA ──────────────────────────────────────────────────
+legend right
+  Capas -- Arquitectura Hexagonal
+  |<back:#FEF5E7>  </back>| infrastructure.rest       Driving HTTP  |
+  |<back:#EBF5FB>  </back>| application.service       Use Cases     |
+  |<back:#EAF0FB>  </back>| domain.model              Entidades/VO  |
+  |<back:#EAFAF1>  </back>| domain.port               Puertos       |
+  |<back:#E8F5E9>  </back>| infrastructure.sso        SSO Javeriana |
+  |<back:#FFF3E0>  </back>| infrastructure.jwt        JWT RS256     |
+  |<back:#E8F8F5>  </back>| infrastructure.persistence JPA          |
+  ----
+  ADR-012: Arquitectura Hexagonal (Ports & Adapters)
+  ----
+  Flujo login:
+    1. AuthRestController recibe credenciales
+    2. AutenticarUsuarioService delega al SSO
+    3. JaverianaOAuth2SsoAdapter -> OAuth2 Javeriana
+    4. Rs256JwtIssuerAdapter emite JWT propio (RS256)
+    5. Token retornado al cliente
+  ----
+  Todos los demas microservicios validan JWT
+  consultando el endpoint /api/v1/auth/validate
+  o verificando la firma RS256 localmente
+end legend
+
+@enduml

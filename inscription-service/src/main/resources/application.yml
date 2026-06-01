@@ -1,26 +1,45 @@
+# =============================================================================
+# application.yml — configuración común a todos los perfiles de inscription-service
+#
+# Cada perfil (local, prod, test) sobreescribe solo lo que difiere.
+# Las credenciales de BD y broker NO van aquí — van en el perfil correspondiente.
+# =============================================================================
+
 spring:
   application:
     name: inscription-service
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/eventos_inscription
-    username: ${POSTGRES_USER:eventos_user}
-    password: ${POSTGRES_PASSWORD:eventos_pass}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
 
+  # ---------------------------------------------------------------------------
+  # Flyway — migraciones versionadas del schema
+  # ---------------------------------------------------------------------------
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+
+  # ---------------------------------------------------------------------------
+  # JPA — solo valida que el schema coincide con las entidades; nunca lo modifica
+  # ---------------------------------------------------------------------------
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  # ---------------------------------------------------------------------------
+  # RabbitMQ — Publisher Confirms (ADR-011) + reintentos del listener
+  # publisher-confirm-type=correlated: broker envía ACK/NACK por messageId
+  # publisher-returns=true: mensajes no ruteables retornan al productor
+  # ---------------------------------------------------------------------------
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: 5672
-    username: ${RABBITMQ_USER:eventos_user}
-    password: ${RABBITMQ_PASSWORD:eventos_pass}
-    virtual-host: eventos
+    publisher-confirm-type: correlated
+    publisher-returns: true
     listener:
       simple:
         retry:
@@ -32,15 +51,103 @@ spring:
 server:
   port: 8083
 
-# URLs de otros microservicios (Feign clients)
+# URLs de microservicios (Feign clients) — variables de entorno con defaults para local
 services:
   event-service:
     url: ${EVENT_SERVICE_URL:http://localhost:8082}
+    auth-token: ${EVENT_SERVICE_AUTH_TOKEN:}
   payment-service:
     url: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+
+# ---------------------------------------------------------------------------
+# Feign — timeouts para clientes HTTP a otros microservicios (hallazgo M-06)
+# Sin timeout, un hilo de Tomcat queda bloqueado indefinidamente si el
+# servicio externo no responde, agotando el pool y derrumbando el servicio.
+#
+# Valores diferenciados por naturaleza del servicio:
+#   event-service  : catálogo + cache → operación rápida → 3s
+#   payment-service: integra con gateway externo (Mercado Pago) → 8s
+# ---------------------------------------------------------------------------
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 3000
+        readTimeout: 5000
+        loggerLevel: basic
+      event-service:
+        connectTimeout: 2000
+        readTimeout: 3000
+      payment-service:
+        connectTimeout: 3000
+        readTimeout: 8000
+
+# ---------------------------------------------------------------------------
+# Resilience4j — Circuit Breaker (ADR-005, hallazgo C-03)
+#
+# Dos instancias con umbrales diferenciados por SLA del servicio:
+#   evento-service  : catálogo con cache → tolerancia menor → waitDuration 15s
+#   payment-service : integra pasarela externa → tolerancia mayor → waitDuration 30s
+#
+# failureRateThreshold=50: abre si ≥50% de las últimas 10 llamadas fallan.
+# minimumNumberOfCalls=5: no abre con menos de 5 llamadas (evita abrir por
+#   noise en arranque).
+# slowCallDurationThreshold: matching con Feign timeouts del bloque "feign:"
+# ---------------------------------------------------------------------------
+resilience4j:
+  circuitbreaker:
+    instances:
+      evento-service:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        slowCallRateThreshold: 80
+        slowCallDurationThreshold: 3s
+        waitDurationInOpenState: 15s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        eventConsumerBufferSize: 20
+        recordExceptions:
+          - java.lang.Exception
+      payment-service:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        slowCallRateThreshold: 80
+        slowCallDurationThreshold: 8s
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        eventConsumerBufferSize: 20
+        recordExceptions:
+          - java.lang.Exception
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: when-authorized
+  # Expone el estado del Circuit Breaker en /actuator/health
+  health:
+    circuitbreakers:
+      enabled: true
+
+retention:
+  enabled: true
+  cron: "0 0 3 * * *"
+  outbox-enviado-days: 30
+  outbox-fallido-days: 90
+  mensaje-procesado-days: 30
+  batch-size: 1000
+  max-batches-per-run: 100

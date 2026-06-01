@@ -1,0 +1,56 @@
+# =============================================================================
+# application-test.yml — perfil para tests de integración con Testcontainers
+#
+# Activar con: @ActiveProfiles("test") en la clase de test.
+#
+# Las coordenadas reales de BD y RabbitMQ las inyecta @DynamicPropertySource
+# en tiempo de ejecución (URLs de Testcontainers no son conocidas en build time).
+# =============================================================================
+
+spring:
+  rabbitmq:
+    # RabbitMQ oficial (rabbitmq:3-management-alpine) arranca con virtual-host "/"
+    virtual-host: /
+    listener:
+      simple:
+        # Deshabilitar auto-startup del PagoConfirmadoConsumer en tests:
+        # la cola 'pago.confirmado' no existe en el Testcontainers RabbitMQ fresco.
+        # Los tests invocan ConfirmarInscripcionUseCase directamente (no vía AMQP).
+        auto-startup: false
+
+  jpa:
+    show-sql: true
+
+  flyway:
+    enabled: true
+
+  # Excluir seguridad en tests: los tests llaman use cases directamente (no HTTP)
+  # ManagementWebSecurityAutoConfiguration depende de HttpSecurity y debe
+  # excluirse junto con SecurityAutoConfiguration para evitar UnsatisfiedDependency
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+
+# Clave pública RSA-2048 para validar JWTs en tests.
+# Misma clave que application-local.yml (el par de llaves de prueba del proyecto).
+jwt:
+  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4C3rkbm3lVOmdTFJH/fGTNz1Fk+ScJIu+SkFXJdu8D9C10X9Bmpj97owkfgX2zGbZ+jDjbvwCIDkIKxW1KzgdeGxEWSnYUBCH5fakqW1f6eA1B08yoWT1WzAB46CI6Dlu9Fd965/zN1tWzzFrpvmrmqZDpm5fVsCxsDSrRrKhO36wMJVpXMFxRNxmYIbQmw/CsKCA4oJdTaC0wKF86s5p3sneqs4tH/eTNhjyrbpufYkS6aDWOxSxtqhX5C1CRqF+65QoLyvRlTocLs69O+XRQoDYxa5teZM77stmLMqAjZCtDVpSnNaYknsaqQnS9AfPiYAKJ3dd9ql/jYF5UtF9QIDAQAB
+
+# Deshabilitar Feign durante tests (se mockeará con @MockBean)
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 1000
+        readTimeout: 1000
+
+retention:
+  enabled: false
+  cron: "0 0 3 * * *"
+  outbox-enviado-days: 30
+  outbox-fallido-days: 90
+  mensaje-procesado-days: 30
+  batch-size: 1000
+  max-batches-per-run: 100

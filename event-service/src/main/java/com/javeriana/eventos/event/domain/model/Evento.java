@@ -2,8 +2,10 @@ package com.javeriana.eventos.event.domain.model;
 
 import com.javeriana.eventos.shared.domain.AggregateRoot;
 import com.javeriana.eventos.shared.domain.BusinessRuleViolationException;
-import com.javeriana.eventos.event.domain.events.EventoPublicadoEvent;
+import com.javeriana.eventos.event.domain.events.CupoLiberadoEvent;
+import com.javeriana.eventos.event.domain.events.CupoReservadoEvent;
 import com.javeriana.eventos.event.domain.events.EventoCanceladoEvent;
+import com.javeriana.eventos.event.domain.events.EventoPublicadoEvent;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -117,7 +119,9 @@ public class Evento extends AggregateRoot {
             );
         }
         this.estado = EstadoEvento.PUBLICADO;
-        registerEvent(new EventoPublicadoEvent(this.id, this.titulo));
+        registerEvent(new EventoPublicadoEvent(
+            this.id, this.titulo, this.organizadorId,
+            this.modalidad.name(), this.fechaInicio, this.cupoMaximo));
     }
 
     /**
@@ -166,6 +170,7 @@ public class Evento extends AggregateRoot {
             );
         }
         this.cupoDisponible--;
+        registerEvent(new CupoReservadoEvent(this.id, this.cupoDisponible));
     }
 
     /**
@@ -179,6 +184,7 @@ public class Evento extends AggregateRoot {
             );
         }
         this.cupoDisponible++;
+        registerEvent(new CupoLiberadoEvent(this.id, this.cupoDisponible));
     }
 
     // ─── Validaciones privadas ──────────────────────────────────────────────────
@@ -186,6 +192,11 @@ public class Evento extends AggregateRoot {
     private void validarFechas(LocalDate inicio, LocalDate fin, LocalDateTime limiteInscripcion) {
         if (fin.isBefore(inicio)) {
             throw new IllegalArgumentException("La fecha de fin debe ser posterior a la fecha de inicio");
+        }
+        // m-01: la fecha límite de inscripción debe ser anterior al inicio del evento
+        if (!limiteInscripcion.toLocalDate().isBefore(inicio)) {
+            throw new IllegalArgumentException(
+                "La fecha límite de inscripción debe ser anterior a la fecha de inicio del evento");
         }
     }
 

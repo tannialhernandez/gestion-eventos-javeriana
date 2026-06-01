@@ -1,0 +1,124 @@
+@startuml vp-escenario-a-fanout
+!theme plain
+skinparam maxMessageSize 130
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam defaultFontSize 10
+skinparam roundcorner 5
+scale 0.85
+
+title Escenario A — Inscripción: Bloqueo Pesimista + Outbox + Fan-out\nVista de Procesos (Kruchten 4+1) | ADR-003 · ADR-011 · ADR-018
+
+actor       "Estudiante"                                as STU
+participant "React SPA\n(S3/CloudFront)"                as SPA   #FAFAFA
+participant "ALB\n(AWS)"                                as ALB   #EEEEEE
+participant "InscripcionRest\nController"               as CTRL  #BDE5FF
+participant "CrearInscripcion\nUseCase @Transactional"  as SVC   #C8EDCB
+database    "PostgreSQL\n(inscription_db)"              as PG    #FFF9C4
+participant "OutboxRelay\nService @Scheduled(2s)"       as RELAY #FFE0B2
+queue       "RabbitMQ\n(inscripcion.events)"            as MQ    #F3E5F5
+participant "InscripcionCreada\nListener (payment-svc)" as PAY   #FFD7D7
+participant "InscripcionCreada\nListener (notif-svc)"   as NOTIF #EDE7F6
+
+== Flujo síncrono — Thread HTTP worker (Tomcat) ==
+
+STU -> SPA : clic "Inscribirme"
+SPA -> ALB : POST /api/v1/inscripciones\n{usuarioId, eventoId}
+ALB -> CTRL : forward request
+activate CTRL
+CTRL -> SVC : ejecutar(CrearInscripcionCommand)
+activate SVC
+
+note over SVC,PG #C8EDCB
+  BEGIN TRANSACTION
+end note
+
+SVC -> PG : SELECT * FROM eventos\nWHERE id=:eventoId\nFOR UPDATE
+activate PG
+PG --> SVC : EventoEntity\n(fila bloqueada hasta COMMIT)
+deactivate PG
+
+SVC -> SVC : assert cuposDisponibles > 0\n(CupoInsuficienteException si no)
+
+SVC -> PG : UPDATE eventos\nSET cupos_disponibles = cupos_disponibles - 1\nWHERE id=:eventoId
+activate PG
+PG --> SVC : 1 row updated
+deactivate PG
+
+SVC -> PG : INSERT INTO inscripciones\n(usuario_id, evento_id,\n estado='PENDING',\n expira_en=NOW()+INTERVAL'15 min')
+activate PG
+PG --> SVC : InscripcionEntity saved
+deactivate PG
+
+SVC -> PG : INSERT INTO outbox\n(event_type='InscriptionCreated',\n aggregate_type='Inscripcion',\n aggregate_id=inscripcionId,\n payload=JSON{inscripcionId,eventoId,usuarioId},\n processed_at=NULL, attempts=0)
+activate PG
+PG --> SVC : OutboxEvent saved
+deactivate PG
+
+note over SVC,PG #C8EDCB
+  COMMIT
+  cupo + inscripcion + outbox — ACID atómica
+end note
+
+SVC --> CTRL : InscripcionDto {id, PENDING, expiraEn}
+deactivate SVC
+CTRL --> ALB : HTTP 201 Created {inscripcionId, expiraEn}
+ALB --> SPA : HTTP 201 Created
+SPA --> STU : "Inscripción recibida. Tenés 15 min para pagar"
+deactivate CTRL
+
+|||
+== Asíncrono — OutboxRelayService (scheduler-1, poll cada 2 s) ==
+|||
+
+activate RELAY
+RELAY -> PG : SELECT * FROM outbox\nWHERE processed_at IS NULL\nORDER BY created_at ASC LIMIT 10\nFOR UPDATE SKIP LOCKED
+activate PG
+PG --> RELAY : [{id, event_type='InscriptionCreated', payload}]
+deactivate PG
+
+RELAY -> MQ : basicPublish(\n  exchange='inscripcion.events',\n  routingKey='inscripcion.created',\n  messageId=outboxId,\n  deliveryMode=PERSISTENT)
+activate MQ
+MQ --> RELAY : publisher confirm (ack)
+deactivate MQ
+
+RELAY -> PG : UPDATE outbox\nSET processed_at=NOW(), attempts=attempts+1\nWHERE id=:outboxId
+activate PG
+PG --> RELAY : 1 row updated
+deactivate PG
+deactivate RELAY
+
+|||
+== Fan-out — RabbitMQ entrega a 2 queues independientes ==
+|||
+
+MQ -> PAY : deliver(InscriptionCreated)\n[queue: payment.inscripcion.created]\nmessageId=outboxId
+activate PAY
+PAY -> PAY : idempotency check:\nSELECT 1 FROM processed_messages\nWHERE message_id=:messageId
+
+alt messageId NO procesado
+  PAY -> PAY : BEGIN TX\nINSERT INTO payment_records\n(inscripcionId, estado='AWAITING')\nCOMMIT
+  PAY -> MQ : basicAck(deliveryTag)
+else messageId YA procesado (reentrega)
+  note right of PAY #FFB3B3
+    Descarta sin reprocesar — idempotente
+  end note
+  PAY -> MQ : basicAck(deliveryTag)
+end
+deactivate PAY
+
+MQ -> NOTIF : deliver(InscriptionCreated)\n[queue: notification.inscripcion.created]\nmessageId=outboxId
+activate NOTIF
+NOTIF -> NOTIF : idempotency check by messageId
+
+alt messageId NO procesado
+  NOTIF -> NOTIF : Strategy: seleccionar canal\n(EMAIL/SMS/PUSH según preferencia usuario)
+  NOTIF -> NOTIF : Template Method: buildNotification()\nenviar "Inscripción recibida"\n[mock → WireMock SMTP / logs]
+  NOTIF -> NOTIF : INSERT INTO processed_messages\n(message_id=outboxId)
+  NOTIF -> MQ : basicAck(deliveryTag)
+else YA procesado
+  NOTIF -> MQ : basicAck(deliveryTag)
+end
+deactivate NOTIF
+
+@enduml

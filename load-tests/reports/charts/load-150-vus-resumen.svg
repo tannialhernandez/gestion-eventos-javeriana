@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="540" viewBox="0 0 1080 540">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+    .title { font-size: 28px; font-weight: 750; }
+    .subtitle { font-size: 14px; fill: #5b667a; }
+    .label { font-size: 13px; fill: #172033; }
+    .small { font-size: 12px; fill: #5b667a; }
+    .value { font-size: 13px; font-weight: 700; }
+  </style>
+<text x="48" y="56" class="title">Load sostenido 150 VUs</text>
+<text x="48" y="84" class="subtitle">Resumen de capacidad local del escenario C.</text>
+<text x="262" y="158" text-anchor="end" class="label">VUs maximos</text>
+<rect x="280" y="130" width="650" height="36" rx="5" fill="#f8fafc" stroke="#d8dee9"/>
+<rect x="280" y="130" width="118.2" height="36" rx="5" fill="#2563eb"/>
+<text x="410.2" y="154" class="value">150.00</text>
+<text x="280" y="184" class="small">Objetivo local defendible: 150</text>
+<text x="262" y="228" text-anchor="end" class="label">HTTP requests</text>
+<rect x="280" y="200" width="650" height="36" rx="5" fill="#f8fafc" stroke="#d8dee9"/>
+<rect x="280" y="200" width="650.0" height="36" rx="5" fill="#14b8a6"/>
+<text x="942.0" y="224" class="value">825.00</text>
+<text x="280" y="254" class="small">Total del escenario</text>
+<text x="262" y="298" text-anchor="end" class="label">Throughput req/s</text>
+<rect x="280" y="270" width="650" height="36" rx="5" fill="#f8fafc" stroke="#d8dee9"/>
+<rect x="280" y="270" width="2.0" height="36" rx="5" fill="#f59e0b"/>
+<text x="294.0" y="294" class="value">2.53</text>
+<text x="280" y="324" class="small">Promedio K6</text>
+</svg>

@@ -6,6 +6,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * DTO de respuesta para evento. C-03 (Prompt 16): incluye aceptaInscripciones
+ * requerido por inscription-service (EventoServicePort.EventoInfo).
+ * Sin este campo, Jackson lo defaultea a false y bloquea todas las inscripciones.
+ */
 public record EventoResponse(
     UUID id,
     String titulo,
@@ -19,7 +24,8 @@ public record EventoResponse(
     int cupoDisponible,
     String urlImagen,
     String estado,
-    UUID organizadorId
+    UUID organizadorId,
+    boolean aceptaInscripciones   // C-03: requerido por inscription-service
 ) {
     public static EventoResponse from(Evento evento) {
         return new EventoResponse(
@@ -35,7 +41,8 @@ public record EventoResponse(
             evento.getCupoDisponible(),
             evento.getUrlImagen(),
             evento.getEstado().name(),
-            evento.getOrganizadorId()
+            evento.getOrganizadorId(),
+            evento.getEstado().aceptaInscripciones()
         );
     }
 }

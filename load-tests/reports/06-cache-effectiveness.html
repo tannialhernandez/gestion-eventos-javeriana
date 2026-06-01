@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>K6 Cache Effectiveness Redis</title>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; margin: 32px; color: #172033; }
+    h1, h2 { margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { border: 1px solid #d8dee8; border-radius: 6px; padding: 14px; background: #f8fafc; }
+    .label { color: #5b677a; font-size: 12px; text-transform: uppercase; }
+    .value { font-size: 24px; font-weight: 700; margin-top: 6px; }
+    table { border-collapse: collapse; width: 100%; margin: 18px 0 28px; }
+    th, td { border-bottom: 1px solid #e6ebf2; padding: 10px 8px; text-align: left; }
+    th { background: #f1f5f9; font-size: 13px; }
+    .ok { color: #0f7b3b; font-weight: 700; }
+    .fail { color: #b42318; font-weight: 700; }
+    code { background: #eef2f7; padding: 2px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>K6 Cache Effectiveness Redis</h1>
+  <p>Generado: 2026-05-30T04:21:26.287Z</p>
+  <div class="grid">
+    <div class="card"><div class="label">p95 HTTP</div><div class="value">23.98 ms</div></div>
+    <div class="card"><div class="label">p99 HTTP</div><div class="value">- ms</div></div>
+    <div class="card"><div class="label">Error rate</div><div class="value">0.00</div></div>
+    <div class="card"><div class="label">Checks</div><div class="value">1.00</div></div>
+  </div>
+  <h2>Thresholds</h2>
+  <table>
+    <thead><tr><th>Metrica</th><th>Threshold</th><th>Resultado</th></tr></thead>
+    <tbody>
+        <tr>
+          <td>cache_hit_rate_estimado</td>
+          <td><code>rate>0.95</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>http_req_duration{name:catalogo_warm}</td>
+          <td><code>p(95)<300</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>catalogo_warm_duration</td>
+          <td><code>p(95)<300</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>checks</td>
+          <td><code>rate==1</code></td>
+          <td class="ok">OK</td>
+        </tr>
+        <tr>
+          <td>http_req_failed</td>
+          <td><code>rate<0.01</code></td>
+          <td class="ok">OK</td>
+        </tr></tbody>
+  </table>
+  <h2>Metricas</h2>
+  <table>
+    <thead><tr><th>Metrica</th><th>count</th><th>rate</th><th>avg</th><th>p95</th><th>p99</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>http_req_connecting</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.01</td>
+        <td>0.00</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>vus_max</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>iteration_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>7806.02</td>
+        <td>7806.02</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>catalogo_warm_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>11.71</td>
+        <td>23.56</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>checks</td>
+        <td>-</td>
+        <td>1.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_sending</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.05</td>
+        <td>0.09</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_reqs</td>
+        <td>203.00</td>
+        <td>26.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration{expected_response:true}</td>
+        <td>-</td>
+        <td>-</td>
+        <td>16.57</td>
+        <td>23.98</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>iterations</td>
+        <td>1.00</td>
+        <td>0.13</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>vus</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>redis_get_total</td>
+        <td>201.00</td>
+        <td>25.75</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>data_received</td>
+        <td>1811379.00</td>
+        <td>232037.87</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_failed</td>
+        <td>-</td>
+        <td>0.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_blocked</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.04</td>
+        <td>0.05</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration</td>
+        <td>-</td>
+        <td>-</td>
+        <td>16.57</td>
+        <td>23.98</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_receiving</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.82</td>
+        <td>2.09</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>cache_hits_estimados_total</td>
+        <td>200.00</td>
+        <td>25.62</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>data_sent</td>
+        <td>23723.00</td>
+        <td>3038.92</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_tls_handshaking</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>cache_hit_rate_estimado</td>
+        <td>-</td>
+        <td>1.00</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_waiting</td>
+        <td>-</td>
+        <td>-</td>
+        <td>15.71</td>
+        <td>22.86</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>redis_setex_total</td>
+        <td>1.00</td>
+        <td>0.13</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>http_req_duration{name:catalogo_warm}</td>
+        <td>-</td>
+        <td>-</td>
+        <td>11.71</td>
+        <td>23.56</td>
+        <td>-</td>
+      </tr></tbody>
+  </table>
+</body>
+</html>

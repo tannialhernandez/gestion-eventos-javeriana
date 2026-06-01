@@ -1,0 +1,114 @@
+@startuml vista-desarrollo-dependency-rule
+' Vista de Desarrollo (Kruchten 4+1)
+' Dependency Rule — Arquitectura Hexagonal
+' Plataforma de Gestión de Eventos Académicos — Javeriana 2026
+
+!theme plain
+top to bottom direction
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 11
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowFontSize 9
+skinparam packageStyle rectangle
+skinparam nodesep 20
+skinparam ranksep 30
+
+title
+  <b><size:13>Vista de Desarrollo — Dependency Rule (Hexagonal)</size></b>
+  <size:10>Las dependencias de código solo apuntan hacia adentro · infrastructure → application → domain</size>
+end title
+
+' ── Capa Domain ───────────────────────────────────────────────────
+package "**DOMAIN**\n«núcleo hexagonal»\n\nSolo Java SE + Lombok\nSIN dependencias de frameworks" as DOM #FFD7D7 {
+  package "domain.model" as DM #FFBFBF {
+    class "Aggregate Roots\nEntities\nValue Objects\nEnumerations" as MODEL
+  }
+  package "domain.port" as DP #FFBFBF {
+    interface "Repository «Port»\nPublisher «Port»\nGateway «Port»" as PORTS <<interface>>
+  }
+  package "domain.service" as DS #FFBFBF {
+    class "Domain Services\n(lógica de negocio pura)" as DSVC
+  }
+}
+
+' ── Capa Application ──────────────────────────────────────────────
+package "**APPLICATION**\n«casos de uso»\n\nOrquesta domain + ports\nSolo @Transactional (@Scheduled como excepción)" as APP #D7E8FF {
+  class "Application Services\n@Transactional\n@Scheduled @SchedulerLock\n─\nCommands (objetos de entrada)\nDTOs de salida" as APPSVC
+}
+
+' ── Capa Infrastructure ───────────────────────────────────────────
+package "**INFRASTRUCTURE**\n«adaptadores primarios y secundarios»\n\nPuede importar todo" as INF #FFE8D7 {
+  package "[Driving Adapters] — primarios" as DRIVING #FFCBA0 {
+    class "REST Controllers @RestController\nAMQP Listeners @RabbitListener\n(inician el flujo de negocio)" as DRIV_CLS
+  }
+  package "[Driven Adapters] — secundarios" as DRIVEN #FFCBA0 {
+    class "JPA Adapters @Repository\nAMQP Publishers\nEmail Adapters\nGateway Adapters (MercadoPago)\n(implementan ports del domain)" as DRIVN_CLS
+  }
+  package "Config" as CFG #FFCBA0 {
+    class "Spring Beans\nRabbitMQ Topology\nShedLock · Security · Flyway" as CFG_CLS
+  }
+}
+
+' ── Reglas de dependencia (flechas solo hacia adentro) ─────────────
+APP -down-> DOM        : «importa»\nmodel + port + service
+DRIVING -right-> APP  : «invoca»\nApplication Services
+DRIVEN ..up..> PORTS  : «implementa»\n(inversión de dependencia)
+CFG .right.> APP      : «configura»\nbeans
+
+' ── Forbidden dependencies ─────────────────────────────────────────
+note as FORBIDDEN #FFFACD
+  <b>PROHIBIDO — ArchUnit lo verifica en CI:</b>
+
+  ✗  domain NO importa:
+     · org.springframework.*
+     · jakarta.persistence.*
+     · com.rabbitmq.*
+     · java.sql.*
+
+  ✗  application NO importa:
+     · infrastructure.*
+     · jakarta.persistence.*
+     · com.rabbitmq.*
+     · org.springframework.web.*
+
+  ✗  REST controllers NO acceden
+     directamente a domain.model.*
+     (solo a Application Services)
+end note
+
+FORBIDDEN -[hidden]right-> DOM
+
+' ── Ejemplo concreto: CrearInscripcionService ──────────────────────
+note bottom of APP
+  <b>Ejemplo: CrearInscripcionService</b>
+  @Transactional
+  public void crear(CrearInscripcionCommand cmd) {
+      Evento evento = eventoRepository.findByIdWithLock(cmd.eventoId())
+          .orElseThrow(...);                   // eventoRepository: Port
+      evento.decrementarCupo();               // lógica de dominio pura
+      Inscripcion ins = new Inscripcion(...); // Aggregate Root
+      inscripcionRepository.save(ins);        // InscripcionRepository: Port
+      outboxRepository.save(                  // OutboxRepository: Port
+          OutboxEvent.of(ins));
+  }
+  // Spring inyecta los Adapters que implementan los Ports (DI)
+end note
+
+' ── Leyenda ──────────────────────────────────────────────────────
+legend bottom right
+  <b>Dependency Rule — Hexagonal Architecture</b>
+  ──────────────────────────────────────────────
+  |<back:#FFD7D7> </back>| domain — núcleo sin dependencias |
+  |<back:#D7E8FF> </back>| application — casos de uso |
+  |<back:#FFE8D7> </back>| infrastructure — adaptadores |
+  ──────────────────────────────────────────────
+  ──→  dependencia de código
+  ···→  implementa (inversión)
+  ──────────────────────────────────────────────
+  ADR-012 Arquitectura Hexagonal
+  ADR-S03 ArchUnit enforcement
+end legend
+
+@enduml

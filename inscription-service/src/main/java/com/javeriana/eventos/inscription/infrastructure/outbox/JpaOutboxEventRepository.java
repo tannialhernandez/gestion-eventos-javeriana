@@ -1,12 +1,22 @@
 package com.javeriana.eventos.inscription.infrastructure.outbox;
 
 import com.javeriana.eventos.inscription.domain.port.out.OutboxEventRepository;
-import com.javeriana.eventos.shared.infrastructure.outbox.OutboxEvent;
+import com.javeriana.eventos.shared.domain.outbox.EstadoOutbox;
+import com.javeriana.eventos.shared.domain.outbox.OutboxEvent;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
+/**
+ * Adaptador JPA para el puerto OutboxEventRepository (inscription-service).
+ *
+ * buscarNoPublicados usa SELECT FOR UPDATE SKIP LOCKED para garantizar que
+ * instancias paralelas del relay no procesen el mismo evento (ADR-012).
+ */
 @Repository
 public class JpaOutboxEventRepository implements OutboxEventRepository {
 
@@ -17,35 +27,52 @@ public class JpaOutboxEventRepository implements OutboxEventRepository {
     }
 
     @Override
-    public void guardar(OutboxEvent event) {
-        OutboxEventEntity entity = new OutboxEventEntity();
-        entity.setId(event.getId());
-        entity.setAggregateId(event.getAggregateId());
-        entity.setEventType(event.getEventType());
-        entity.setPayload(event.getPayload());
-        entity.setPublished(false);
-        entity.setCreatedAt(event.getCreatedAt());
+    public OutboxEvent guardar(OutboxEvent evento) {
+        OutboxEventEntity entity = OutboxEventMapper.toEntity(evento);
         springDataRepo.save(entity);
+        return evento;
     }
 
+    /**
+     * REQUIRED: el relay siempre llama desde una TX activa, heredando el lock.
+     * REQUIRED permite también que los tests futuros llamen sin TX propia.
+     */
     @Override
-    public List<OutboxEvent> buscarNoPublicados() {
-        return springDataRepo.findPendingEvents()
+    @Transactional(propagation = Propagation.REQUIRED)
+    public List<OutboxEvent> buscarNoPublicados(int limite) {
+        return springDataRepo.findPendingForUpdate(limite)
             .stream()
-            .map(e -> {
-                OutboxEvent o = new OutboxEvent(e.getAggregateId(), e.getEventType(), e.getPayload());
-                // Preservar el ID original para poder marcar como publicado
-                return o;
-            })
-            .collect(Collectors.toList());
+            .map(OutboxEventMapper::toDomain)
+            .toList();
     }
 
     @Override
-    public void marcarComoPublicado(OutboxEvent event) {
-        springDataRepo.findById(event.getId()).ifPresent(entity -> {
-            entity.setPublished(true);
-            entity.setPublishedAt(event.getPublishedAt());
+    public void marcarProcesado(UUID id) {
+        springDataRepo.findById(id).ifPresent(entity -> {
+            entity.setEstado(EstadoOutbox.ENVIADO);
+            entity.setEnviadoEn(Instant.now());
             springDataRepo.save(entity);
         });
+    }
+
+    @Override
+    public void incrementarIntentos(UUID id) {
+        springDataRepo.findById(id).ifPresent(entity -> {
+            entity.setIntentos(entity.getIntentos() + 1);
+            springDataRepo.save(entity);
+        });
+    }
+
+    @Override
+    public void marcarFallido(UUID id) {
+        springDataRepo.findById(id).ifPresent(entity -> {
+            entity.setEstado(EstadoOutbox.FALLIDO);
+            springDataRepo.save(entity);
+        });
+    }
+
+    @Override
+    public long contarPendientes() {
+        return springDataRepo.countByEstado(EstadoOutbox.PENDIENTE);
     }
 }

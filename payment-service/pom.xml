@@ -32,6 +32,12 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Flyway: migraciones versionadas del schema (ADR reemplaza ddl-auto:update) -->
+        <!-- Spring Boot 3.2.4 gestiona Flyway 9.22.x — flyway-database-postgresql es Flyway 10+ -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
@@ -43,6 +49,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Métricas Prometheus — expone /actuator/prometheus para scraping -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
         <!-- Circuit Breaker -->
@@ -124,6 +135,34 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+            <!-- Failsafe: ejecuta tests de integración (*IT.java) en fase integration-test -->
+            <!-- Surefire solo corre *Test.java; PagoFlowEndToEndIT requiere Failsafe -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <!-- API_VERSION: nombre correcto en el docker-java shadeado de Testcontainers
+                             (distinto de DOCKER_API_VERSION del docker-java standalone).
+                             Docker Engine 29.x (Colima) requiere API >= 1.44.
+                             Socket: /var/run/docker.sock → ~/.docker/run/docker.sock → Colima.
+                             Setup one-time sin root: mkdir -p ~/.docker/run &&
+                               ln -sf ~/.colima/default/docker.sock ~/.docker/run/docker.sock -->
+                        <API_VERSION>1.44</API_VERSION>
+                    </environmentVariables>
+                    <!-- JaCoCo 0.8.11 no soporta Java 25 (class major 69). Limpiamos argLine
+                         para el JVM forked de Failsafe. Fix permanente: jacoco.version >= 0.8.13. -->
+                    <argLine/>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

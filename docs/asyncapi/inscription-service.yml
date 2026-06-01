@@ -1,0 +1,345 @@
+asyncapi: 3.0.0
+
+info:
+  title: inscription-service — Catálogo de Eventos AMQP
+  version: 1.0.0
+  description: |
+    Eventos de dominio publicados por inscription-service al exchange RabbitMQ
+    `eventos.topic`. Todos los eventos son v1 (ADR-020).
+
+    ## Headers AMQP comunes
+    - `messageId`: UUID del evento (para idempotencia del consumidor, ADR-009)
+    - `eventType`: tipo canónico del evento (ADR-014)
+    - `aggregateType`: `Inscripcion`
+    - `aggregateId`: UUID de la inscripción
+    - `x-correlation-id`: trazabilidad E2E (Prompt 13)
+    - `x-schema-version`: versión del contrato, actualmente `v1` (ADR-020)
+
+  contact:
+    name: Plataforma de Gestión de Eventos Académicos
+    email: plataforma@javeriana.edu.co
+
+  license:
+    name: MIT
+
+defaultContentType: application/json
+
+servers:
+  rabbitmq-local:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ local vía Docker Compose
+
+  rabbitmq-prod:
+    host: "${RABBITMQ_HOST}:5672"
+    protocol: amqp
+    description: RabbitMQ en producción (AWS)
+
+# ─── Canales ──────────────────────────────────────────────────────────────────
+
+channels:
+  inscripcionCreada:
+    address: inscripcion.creada
+    description: |
+      Emitido cuando un participante crea una inscripción (estado PENDIENTE_PAGO).
+      Permite a notification-service enviar recordatorios de pago antes de que
+      expire el plazo de 15 minutos.
+    servers:
+      - $ref: "#/servers/rabbitmq-local"
+      - $ref: "#/servers/rabbitmq-prod"
+    messages:
+      inscripcionCreadaMessage:
+        $ref: "#/components/messages/InscripcionCreada"
+
+  inscripcionConfirmada:
+    address: inscripcion.confirmada
+    description: |
+      Emitido cuando payment-service confirma el pago exitoso.
+      notification-service envía el email de confirmación con el código QR.
+    servers:
+      - $ref: "#/servers/rabbitmq-local"
+      - $ref: "#/servers/rabbitmq-prod"
+    messages:
+      inscripcionConfirmadaMessage:
+        $ref: "#/components/messages/InscripcionConfirmada"
+
+  inscripcionExpirada:
+    address: inscripcion.expirada
+    description: |
+      Emitido cuando el plazo de pago (15 minutos) transcurre sin confirmación.
+      notification-service notifica al usuario que su inscripción expiró.
+    servers:
+      - $ref: "#/servers/rabbitmq-local"
+      - $ref: "#/servers/rabbitmq-prod"
+    messages:
+      inscripcionExpiradaMessage:
+        $ref: "#/components/messages/InscripcionExpirada"
+
+# ─── Operaciones ─────────────────────────────────────────────────────────────
+
+operations:
+  publicarInscripcionCreada:
+    action: send
+    channel:
+      $ref: "#/channels/inscripcionCreada"
+    description: OutboxRelayService publica al confirmar la persistencia de la inscripción.
+
+  publicarInscripcionConfirmada:
+    action: send
+    channel:
+      $ref: "#/channels/inscripcionConfirmada"
+    description: OutboxRelayService publica al procesar el webhook de confirmación de pago.
+
+  publicarInscripcionExpirada:
+    action: send
+    channel:
+      $ref: "#/channels/inscripcionExpirada"
+    description: OutboxRelayService publica cuando el InscripcionExpirationJob detecta el timeout.
+
+# ─── Componentes ──────────────────────────────────────────────────────────────
+
+components:
+  messages:
+
+    InscripcionCreada:
+      name: INSCRIPCION_CREADA
+      title: Inscripción Creada v1
+      summary: Inscripción en estado PENDIENTE_PAGO creada por un participante.
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/CabecerasComunes"
+      payload:
+        $ref: "#/components/schemas/PayloadInscripcionCreada"
+      examples:
+        - name: inscripcion-creada-ejemplo
+          summary: Inscripción de $150.000 COP con plazo de 15 minutos
+          payload:
+            eventId: "550e8400-e29b-41d4-a716-446655440001"
+            aggregateId: "a5f3b2c1-d4e5-f6a7-b8c9-d0e1f2a3b4c5"
+            aggregateType: "Inscripcion"
+            eventType: "INSCRIPCION_CREADA"
+            eventoId: "7d4f1e2a-b3c4-d5e6-f7a8-b9c0d1e2f3a4"
+            usuarioId: "3c8b9a1d-e2f3-a4b5-c6d7-e8f9a0b1c2d3"
+            checkoutUrl: "https://pagos.mercadopago.com/checkout/v1/redirect?pref_id=123456789"
+            monto: "150000.00"
+            moneda: "COP"
+            expiraEn: "2026-05-27T18:15:00Z"
+            occurredAt: "2026-05-27T18:00:00Z"
+            schemaVersion: "v1"
+
+    InscripcionConfirmada:
+      name: INSCRIPCION_CONFIRMADA
+      title: Inscripción Confirmada v1
+      summary: Pago verificado. Incluye código QR para acceso físico al evento.
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/CabecerasComunes"
+      payload:
+        $ref: "#/components/schemas/PayloadInscripcionConfirmada"
+      examples:
+        - name: inscripcion-confirmada-ejemplo
+          payload:
+            eventId: "550e8400-e29b-41d4-a716-446655440002"
+            aggregateId: "a5f3b2c1-d4e5-f6a7-b8c9-d0e1f2a3b4c5"
+            aggregateType: "Inscripcion"
+            eventType: "INSCRIPCION_CONFIRMADA"
+            eventoId: "7d4f1e2a-b3c4-d5e6-f7a8-b9c0d1e2f3a4"
+            usuarioId: "3c8b9a1d-e2f3-a4b5-c6d7-e8f9a0b1c2d3"
+            codigoQr: "QR-c0d1e2f3-a5f3b2c1"
+            occurredAt: "2026-05-27T18:05:00Z"
+            schemaVersion: "v1"
+
+    InscripcionExpirada:
+      name: INSCRIPCION_EXPIRADA
+      title: Inscripción Expirada v1
+      summary: Plazo de 15 minutos superado sin confirmación de pago.
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/CabecerasComunes"
+      payload:
+        $ref: "#/components/schemas/PayloadInscripcionExpirada"
+      examples:
+        - name: inscripcion-expirada-ejemplo
+          payload:
+            eventId: "550e8400-e29b-41d4-a716-446655440003"
+            aggregateId: "a5f3b2c1-d4e5-f6a7-b8c9-d0e1f2a3b4c5"
+            aggregateType: "Inscripcion"
+            eventType: "INSCRIPCION_EXPIRADA"
+            eventoId: "7d4f1e2a-b3c4-d5e6-f7a8-b9c0d1e2f3a4"
+            usuarioId: "3c8b9a1d-e2f3-a4b5-c6d7-e8f9a0b1c2d3"
+            occurredAt: "2026-05-27T18:20:00Z"
+            schemaVersion: "v1"
+
+  schemas:
+
+    CabecerasComunes:
+      type: object
+      required:
+        - messageId
+        - eventType
+        - aggregateType
+        - aggregateId
+        - x-schema-version
+      properties:
+        messageId:
+          type: string
+          format: uuid
+          description: UUID del OutboxEvent. Usado para idempotencia por consumidores (ADR-009).
+        eventType:
+          type: string
+          enum: [INSCRIPCION_CREADA, INSCRIPCION_CONFIRMADA, INSCRIPCION_EXPIRADA]
+          description: Tipo canónico del evento (ADR-014).
+        aggregateType:
+          type: string
+          const: Inscripcion
+        aggregateId:
+          type: string
+          format: uuid
+          description: UUID de la inscripción.
+        x-correlation-id:
+          type: string
+          description: Correlation ID para trazabilidad E2E (Prompt 13).
+        x-schema-version:
+          type: string
+          const: "v1"
+          description: Versión del contrato (ADR-020). Siempre v1 en esta release.
+
+    PayloadInscripcionCreada:
+      type: object
+      required:
+        - eventId
+        - aggregateId
+        - aggregateType
+        - eventType
+        - eventoId
+        - usuarioId
+        - checkoutUrl
+        - monto
+        - moneda
+        - expiraEn
+        - occurredAt
+        - schemaVersion
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        aggregateId:
+          type: string
+          format: uuid
+          description: inscripcionId
+        aggregateType:
+          type: string
+          const: Inscripcion
+        eventType:
+          type: string
+          const: INSCRIPCION_CREADA
+        eventoId:
+          type: string
+          format: uuid
+          description: UUID del evento académico al que se inscribió el usuario.
+        usuarioId:
+          type: string
+          format: uuid
+          description: UUID del participante.
+        checkoutUrl:
+          type: string
+          format: uri
+          description: URL de pago de MercadoPago/Simulador para redirigir al usuario.
+        monto:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]{2}$"
+          description: Monto a pagar (string para evitar pérdida de precisión decimal).
+          example: "150000.00"
+        moneda:
+          type: string
+          enum: [COP, USD]
+          description: Moneda del monto.
+        expiraEn:
+          type: string
+          format: date-time
+          description: Timestamp de expiración del plazo de pago (ISO-8601 UTC).
+        occurredAt:
+          type: string
+          format: date-time
+        schemaVersion:
+          type: string
+          const: "v1"
+
+    PayloadInscripcionConfirmada:
+      type: object
+      required:
+        - eventId
+        - aggregateId
+        - aggregateType
+        - eventType
+        - eventoId
+        - usuarioId
+        - codigoQr
+        - occurredAt
+        - schemaVersion
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        aggregateId:
+          type: string
+          format: uuid
+        aggregateType:
+          type: string
+          const: Inscripcion
+        eventType:
+          type: string
+          const: INSCRIPCION_CONFIRMADA
+        eventoId:
+          type: string
+          format: uuid
+        usuarioId:
+          type: string
+          format: uuid
+        codigoQr:
+          type: string
+          description: Token QR para acceso físico al evento (formato QR-{uuid}-{prefix}).
+          example: "QR-c0d1e2f3-a5f3b2"
+        occurredAt:
+          type: string
+          format: date-time
+        schemaVersion:
+          type: string
+          const: "v1"
+
+    PayloadInscripcionExpirada:
+      type: object
+      required:
+        - eventId
+        - aggregateId
+        - aggregateType
+        - eventType
+        - eventoId
+        - usuarioId
+        - occurredAt
+        - schemaVersion
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        aggregateId:
+          type: string
+          format: uuid
+        aggregateType:
+          type: string
+          const: Inscripcion
+        eventType:
+          type: string
+          const: INSCRIPCION_EXPIRADA
+        eventoId:
+          type: string
+          format: uuid
+        usuarioId:
+          type: string
+          format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+        schemaVersion:
+          type: string
+          const: "v1"

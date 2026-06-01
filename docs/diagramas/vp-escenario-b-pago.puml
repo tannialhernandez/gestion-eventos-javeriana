@@ -1,0 +1,132 @@
+@startuml vp-escenario-b-pago
+!theme plain
+skinparam maxMessageSize 130
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam defaultFontSize 10
+skinparam roundcorner 5
+scale 0.85
+
+title Escenario B — Confirmación de Pago + Fan-out\nVista de Procesos (Kruchten 4+1) | ADR-011 ⚠️PENDIENTE en payment-svc
+
+participant "Cliente\n(React SPA)"                         as CLI   #FAFAFA
+participant "ALB\n(AWS)"                                   as ALB   #EEEEEE
+participant "PagoController\n(payment-svc)"                as PCTL  #FFE0B2
+participant "ConfirmarPago\nUseCase @Transactional"        as PSVC  #FFE0B2
+participant "WireMock\n(mock pasarela pago)"               as WIRE  #E0E0E0
+database    "PostgreSQL\n(payment_db)"                     as PPG   #FFF9C4
+participant "OutboxRelay\n(payment-svc)\n⚠️ PENDIENTE"    as PRLY  #FFB3B3
+queue       "RabbitMQ\n(pago.events)"                      as MQ    #F3E5F5
+participant "PaymentConfirmed\nListener (inscription-svc)" as ILIST #BDE5FF
+participant "ConfirmarInscripcion\nUseCase @Transactional" as ISVC  #C8EDCB
+database    "PostgreSQL\n(inscription_db)"                 as IPG   #FFF9C4
+participant "PaymentConfirmed\nListener (notif-svc)"       as NLIST #EDE7F6
+
+== Confirmación de pago por el cliente ==
+
+CLI -> ALB : POST /api/v1/pagos/{id}/confirmar\n{metodoPago, token}
+ALB -> PCTL : forward request
+activate PCTL
+PCTL -> PSVC : confirmarPago(pagoId, token)
+activate PSVC
+
+note over PSVC,PPG #C8EDCB
+  BEGIN TRANSACTION
+end note
+
+PSVC -> WIRE : POST /mock/gateway/charge\n{amount, token, inscripcionId}
+activate WIRE
+WIRE --> PSVC : HTTP 200\n{status:'approved',\n transactionId:'mock-txn-123'}
+deactivate WIRE
+
+PSVC -> PSVC : pago.confirmar()\nestado: PENDING → CONFIRMED
+
+PSVC -> PPG : UPDATE pagos\nSET estado='CONFIRMED',\n transaction_id='mock-txn-123',\n confirmed_at=NOW()\nWHERE id=:pagoId
+activate PPG
+PPG --> PSVC : 1 row updated
+deactivate PPG
+
+PSVC -> PPG : INSERT INTO outbox\n(event_type='PaymentConfirmed',\n aggregate_id=inscripcionId,\n payload=JSON{inscripcionId,txnId,amount},\n processed_at=NULL)
+activate PPG
+PPG --> PSVC : OutboxEvent persisted
+deactivate PPG
+
+note over PSVC,PPG #C8EDCB
+  COMMIT — pago + outbox ACID atómica
+end note
+
+PSVC --> PCTL : ok
+deactivate PSVC
+PCTL --> ALB : HTTP 200 OK {pagoId, CONFIRMED}
+ALB --> CLI : HTTP 200 OK
+deactivate PCTL
+
+|||
+== ⚠️ PENDIENTE: OutboxRelayService (payment-svc) ==
+|||
+
+note over PRLY #FFB3B3
+  ⚠️ PENDIENTE DE IMPLEMENTAR
+  OutboxRelayService (payment-service)
+  rama: feat/payment-outbox-e2e
+
+  Flujo pendiente:
+    SELECT * FROM outbox
+    WHERE processed_at IS NULL
+    LIMIT 10 FOR UPDATE SKIP LOCKED
+    → basicPublish(exchange='pago.events',
+        routingKey='pago.confirmed',
+        messageId=outboxId)
+    → UPDATE outbox SET processed_at=NOW()
+end note
+
+PRLY -[#red,dashed]-> MQ : [⚠️ PENDIENTE]\nbasicPublish(\n  routingKey='pago.confirmed',\n  messageId=outboxId)
+
+|||
+== Fan-out — inscription-service + notification-service ==
+|||
+
+MQ -> ILIST : deliver(PaymentConfirmed)\n[queue: inscripcion.pago.confirmado]\nmessageId=outboxId
+activate ILIST
+ILIST -> ILIST : idempotency check by messageId
+ILIST -> ISVC : ejecutar(inscripcionId, transactionId)
+activate ISVC
+
+note over ISVC,IPG #C8EDCB
+  BEGIN TRANSACTION
+end note
+
+ISVC -> IPG : SELECT * FROM inscripciones\nWHERE id=:inscripcionId\nFOR UPDATE
+activate IPG
+IPG --> ISVC : InscripcionEntity {estado='PENDING'}
+deactivate IPG
+
+ISVC -> ISVC : inscripcion.confirmar()\nPENDING → CONFIRMADA
+
+ISVC -> IPG : UPDATE inscripciones\nSET estado='CONFIRMADA',\n confirmada_en=NOW(),\n referencia_pago=:txnId\nWHERE id=:inscripcionId
+activate IPG
+IPG --> ISVC : 1 row updated
+deactivate IPG
+
+ISVC -> IPG : INSERT INTO outbox\n(event_type='InscriptionConfirmed',\n aggregate_id=inscripcionId,\n payload=JSON)
+activate IPG
+IPG --> ISVC : 1 row inserted
+deactivate IPG
+
+note over ISVC,IPG #C8EDCB
+  COMMIT
+end note
+
+ISVC --> ILIST : ok
+deactivate ISVC
+ILIST -> MQ : basicAck(deliveryTag)
+deactivate ILIST
+
+MQ -> NLIST : deliver(PaymentConfirmed)\n[queue: notification.pago.confirmado]\nmessageId=outboxId
+activate NLIST
+NLIST -> NLIST : idempotency check by messageId
+NLIST -> NLIST : Strategy → canal EMAIL\nTemplate Method → buildNotification()\nenviar "Pago confirmado — inscripción activa"\n[WireMock SMTP / logs]
+NLIST -> MQ : basicAck(deliveryTag)
+deactivate NLIST
+
+@enduml

@@ -1,0 +1,135 @@
+@startuml despliegue-aws-sprites
+' ============================================================
+' Vista Física — Despliegue AWS us-east-1 (Producción)
+' Plataforma de Gestión de Eventos Académicos — Javeriana 2026
+' Kruchten Physical View / C4 Nivel 4 Deployment
+' Sprites: awslib v14 (stdlib PlantUML 1.2024.3)
+' Renderizar: Alt+D en VS Code (extensión PlantUML jebbs)
+' ============================================================
+
+!include <awslib/AWSCommon>
+!include <awslib/AWSSimplified.puml>
+!include <awslib/Compute/EC2.puml>
+!include <awslib/Database/RDS.puml>
+!include <awslib/Database/ElastiCache.puml>
+!include <awslib/NetworkingContentDelivery/ElasticLoadBalancing.puml>
+!include <awslib/NetworkingContentDelivery/CloudFront.puml>
+!include <awslib/NetworkingContentDelivery/Route53.puml>
+!include <awslib/NetworkingContentDelivery/VirtualPrivateCloud.puml>
+!include <awslib/Storage/SimpleStorageService.puml>
+!include <awslib/ApplicationIntegration/MQ.puml>
+!include <awslib/SecurityIdentityCompliance/SecretsManager.puml>
+!include <awslib/ManagementGovernance/CloudWatch.puml>
+!include <awslib/Containers/ElasticContainerRegistry.puml>
+
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #AAAAAA
+  RoundCorner 8
+}
+skinparam component {
+  BackgroundColor #F5F5F5
+  BorderColor #999999
+  RoundCorner 5
+}
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam ArrowColor #555555
+
+title
+  <b><size:14>Vista Física — Despliegue AWS us-east-1 (Producción)</size></b>
+  <size:10>Plataforma de Gestión de Eventos Académicos · Javeriana 2026 · Kruchten Physical View / C4 Deployment</size>
+end title
+
+actor "Estudiante /\nCoordinador" as USR #DDEEFF
+actor "GitHub Actions\n(CI/CD)" as GHA #DDFFDD
+
+' ── AWS Global Services (fuera de VPC) ──────────────────────────────
+rectangle "  <b>AWS Global Services</b>  \n(Route53 · CloudFront · S3 · ECR)" as GLOBAL #F0F8FF {
+  Route53(r53, "<b>Amazon Route53</b>\nevents.javeriana.edu.co", " ")
+  CloudFront(cf, "<b>Amazon CloudFront</b>\nCDN + TLS (ACM)\nOrigin: S3 (OAC)", " ")
+  SimpleStorageService(s3, "<b>S3 events-frontend-prod</b>\nReact SPA estática\nbucket privado + OAC", " ")
+  ElasticContainerRegistry(ecr, "<b>Amazon ECR</b>\nevents-registry\n4 repos Docker", " ")
+}
+
+' ── VPC ─────────────────────────────────────────────────────────────
+rectangle "  <b>VPC events-vpc  (10.0.0.0/16)</b>  " as VPC #FFFDE7 {
+
+  rectangle "<b>Internet Gateway</b>  igw-events" as IGW #FFF3E0
+
+  ' ── Subnets públicas ────────────────────────────────────────────
+  rectangle "  <b>Public Subnet AZ-1a</b>  (10.0.1.0/24) · RT-public" as PUB1 #E3F2FD {
+    ElasticLoadBalancing(alb, "<b>ALB events-alb</b>\nHTTPS:443 · cert ACM\nPath routing → :8081-8084\nsg-alb", " ")
+    rectangle "<b>NAT Gateway</b>  nat-events\nEIP fija — egress privada" as NAT #FFF3E0
+  }
+
+  rectangle "  <b>Public Subnet AZ-1b</b>  (10.0.2.0/24) · RT-public" as PUB2 #E3F2FD {
+    ElasticLoadBalancing(alb2, "ALB node AZ-1b\nHA del balanceador", " ")
+  }
+
+  ' ── Subnet privada principal ─────────────────────────────────────
+  rectangle "  <b>Private Subnet AZ-1a</b>  (10.0.11.0/24) · RT-private (0.0.0.0/0 → NAT)" as PRIV1 #FCE4EC {
+
+    EC2(ec2, "<b>EC2 t3.small</b>\nevents-app-server\nAmazon Linux 2023\nsg-ec2 · IAM: events-ec2-role", "2 vCPU / 2 GB RAM")
+
+    rectangle "  <b>Docker Engine</b> · red bridge: events-net\n  Docker Compose v2 · /opt/events/docker-compose.yml  " as DOCKER #EDE7F6 {
+      component "<b>event-service :8081</b>\nGestión catálogo  [100%]" as ES
+      component "<b>inscription-service :8082</b>\nInscripciones + Outbox + ShedLock  [100%]" as IS
+      component "<b>payment-service :8083</b>\nProcesamiento pagos  [70%]" as PS
+      component "<b>notification-service :8084</b>\nNotificaciones  [en impl.]" as NS
+      component "<b>wiremock :8089</b>\nMock pasarela pagos" as WM
+    }
+
+    RDS(rds, "<b>RDS db.t4g.micro</b>\nevents-rds · PostgreSQL 15\nMulti-AZ OFF · sg-rds · :5432 · 20 GB gp3\nevent_db | inscription_db\npayment_db | notification_db", " ")
+
+    ElastiCache(cache, "<b>ElastiCache cache.t4g.micro</b>\nevents-cache · Redis 7\nsingle-node · sg-redis · :6379\nIdempotency keys + sessions", " ")
+
+    MQ(mq, "<b>Amazon MQ mq.t3.micro</b>\nevents-broker · RabbitMQ 3.x\nsingle-instance · sg-mq · AMQPS:5671\nevents.direct / events.dlq", " ")
+
+    SecretsManager(sm, "<b>AWS Secrets Manager</b>\nrds/master · rabbitmq/creds\njwt-secret · payment-api-key", " ")
+
+    CloudWatch(cw, "<b>CloudWatch</b>\nLogs (14 días) · Metrics · Alarms\nCPU>80% · 5xx>1% · RDS-conn>80%\nMQ-depth>1000 · Dashboard: events-prod", " ")
+  }
+
+  rectangle "  <b>Private Subnet AZ-1b</b>  (10.0.12.0/24)" as PRIV2 #FCE4EC {
+    rectangle "<b>RDS Standby</b>  [deshabilitado]\nMulti-AZ OFF por presupuesto\n⚠ ADR-004 — gap de disponibilidad" as RDSSB #FFEBEE
+  }
+}
+
+' ── Relaciones runtime ───────────────────────────────────────────────
+USR --> r53  : HTTPS
+r53 --> cf   : alias\nevents.javeriana.edu.co
+r53 --> alb  : alias\napi.events.javeriana.edu.co
+cf  --> s3   : HTTPS OAC
+alb --> ec2  : HTTP path routing\n/events/* → 8081\n/inscriptions/* → 8082\n/payments/* → 8083\n/notifications/* → 8084
+
+ec2 --> rds   : JDBC :5432\n(HikariCP)
+ec2 --> cache : TCP :6379
+ec2 --> mq    : AMQPS :5671
+ec2 --> sm    : HTTPS SDK\nGetSecretValue en startup
+ec2 --> cw    : CloudWatch Agent\nlogs + custom metrics (EMF)
+NAT --> IGW   : egress internet
+
+PS  --> WM    : HTTP :8089 mock
+
+' ── CI/CD (punteado) ────────────────────────────────────────────────
+GHA ..> ecr  : docker push\nBuild → tag → push
+GHA ..> ec2  : SSM Run Command\ndocker compose up -d <svc>
+GHA ..> s3   : aws s3 sync ./dist
+GHA ..> cf   : CloudFront invalidation
+
+note bottom of DOCKER
+  Volúmenes: /opt/logs/<servicio> → CloudWatch Agent
+  Secretos: inyectados vía entrypoint script + AWS SDK
+  Health check: curl /actuator/health (30s interval)
+  restart: unless-stopped
+end note
+
+note right of PRIV2
+  ADR-004: Single-AZ aceptado
+  por presupuesto ≤ 100 USD.
+  Evolución: RDS Multi-AZ
+  (ver Sección 12 del SAD).
+end note
+
+@enduml

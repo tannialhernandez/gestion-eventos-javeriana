@@ -1,0 +1,238 @@
+@startuml c4-3-payment-service
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 28
+skinparam ranksep 42
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam roundcorner 6
+scale 0.85
+
+skinparam classBackgroundColor<<RestController>> #FEF5E7
+skinparam classBorderColor<<RestController>> #A04000
+skinparam classBackgroundColor<<RabbitListener>> #F3E5F5
+skinparam classBorderColor<<RabbitListener>> #7D3C98
+skinparam classBackgroundColor<<ApplicationSvc>> #EBF5FB
+skinparam classBorderColor<<ApplicationSvc>> #1A5276
+skinparam classBackgroundColor<<Port>> #EAFAF1
+skinparam classBorderColor<<Port>> #1E8449
+skinparam classBackgroundColor<<JpaAdapter>> #E8F8F5
+skinparam classBorderColor<<JpaAdapter>> #148F77
+skinparam classBackgroundColor<<GatewayAdapter>> #FFF8E1
+skinparam classBorderColor<<GatewayAdapter>> #F57F17
+skinparam classBackgroundColor<<RabbitPublisher>> #F9EBEA
+skinparam classBorderColor<<RabbitPublisher>> #7D3C98
+skinparam classBackgroundColor<<AggregateRoot>> #EDE0F5
+skinparam classBorderColor<<AggregateRoot>> #7B2D8B
+skinparam classBackgroundColor<<Entity>> #EAF0FB
+skinparam classBorderColor<<Entity>> #2E5FA3
+skinparam classBackgroundColor<<Enumeration>> #FEF9E7
+skinparam classBorderColor<<Enumeration>> #C8A400
+
+
+title
+  <b><size:14>C4 Nivel 3: Vista de Componentes -- payment-service</size></b>
+  <size:11>Plataforma de Gestión de Eventos Académicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:10>ADRs: ADR-011 (Outbox [PENDIENTE]) | ADR-012 (Hexagonal) | Estado: 70%</size>
+end title
+
+' ── infrastructure.rest ----
+package "infrastructure.rest  [Driving Adapter HTTP]" as pkg_rest #FEF5E7 {
+  class "PagoRestController" as CTRL <<RestController>> {
+    - iniciarPagoService: IniciarPagoService
+    - procesarWebhookService: ProcesarWebhookService
+    ==
+    + iniciarPago(req: IniciarPagoRequest): PagoDto
+    ' @PostMapping /api/v1/pagos
+    + consultarPago(id: UUID): PagoDto
+    ' @GetMapping /api/v1/pagos/{id}
+    + webhookPasarela(payload: WebhookPayload): void
+    ' @PostMapping /api/v1/pagos/webhook (callback mock WireMock)
+  }
+}
+
+' ── infrastructure.messaging (Driving) ----
+package "infrastructure.messaging  [Driving Adapter AMQP]" as pkg_listener #F3E5F5 {
+  class "InscripcionEventConsumerListener" as LISTENER <<RabbitListener>> {
+    - iniciarPagoService: IniciarPagoService
+    ==
+    + onInscripcionCreada(event: InscripcionCreadaEvent): void
+    ' queue: payment.inscripcion.created
+    ' Idempotencia: check messageId
+  }
+}
+
+' ── application.service ----
+package "application.service  [Application Layer]" as pkg_app #EBF5FB {
+  class "IniciarPagoService" as SVC_INIT <<ApplicationSvc>> {
+    - pagoRepository: PagoRepository
+    - pasarelaPort: PasarelaPagoPort
+    - outboxRepository: OutboxRepository
+    ==
+    + ejecutar(cmd: IniciarPagoCommand): PagoDto
+    ' @Transactional | WireMock call
+  }
+  class "ProcesarWebhookService" as SVC_WEBHOOK <<ApplicationSvc>> {
+    - pagoRepository: PagoRepository
+    - outboxRepository: OutboxRepository
+    ==
+    + procesarCallbackPasarela(payload: WebhookPayload): void
+    ' @Transactional | idempotency-key check
+  }
+  class "ConfirmarPagoService" as SVC_CONF <<ApplicationSvc>> {
+    - pagoRepository: PagoRepository
+    - outboxRepository: OutboxRepository
+    ==
+    + ejecutar(pagoId: UUID, txnId: String): void
+    ' @Transactional | pago.confirmar() + INSERT outbox
+  }
+  class "OutboxRelayService\n[PENDIENTE]" as SVC_RELAY <<ApplicationSvc>> {
+    - outboxRepository: OutboxRepository
+    - eventPublisher: EventPublisher
+    ==
+    + procesarEventosPendientes(): void
+    ' [!] PENDIENTE -- rama feat/payment-outbox-e2e
+    ' @Scheduled(fixedDelay=2_000) + @SchedulerLock
+  }
+}
+
+' ── domain.model ----
+package "domain.model" as pkg_model #EDE0F5 {
+  class "Pago\n[AggregateRoot]" as Pago <<AggregateRoot>> {
+    - id: UUID
+    - inscripcionId: UUID
+    - monto: BigDecimal
+    - estado: EstadoPago
+    - transactionId: String
+    - creadoEn: LocalDateTime
+    ==
+    + confirmar(txnId: String): void
+    + fallar(motivo: String): void
+    + estaPendiente(): boolean
+  }
+  class "OutboxEvent\n[Entity]" as OutboxEvt <<Entity>> {
+    - id: UUID
+    - eventType: String
+    - payload: String {JSON}
+    - processedAt: LocalDateTime
+    - attempts: int
+    ==
+    + marcarProcesado(): void
+    + incrementarIntentos(): void
+  }
+  enum "EstadoPago" as Estado <<Enumeration>> {
+    PENDIENTE
+    CONFIRMADO
+    FALLIDO
+    EXPIRADO
+  }
+}
+
+' ── domain.port ----
+package "domain.port" as pkg_port #EAFAF1 {
+  interface "PagoRepository" as IPagoRepo <<Port>> {
+    + guardar(pago: Pago): Pago
+    + buscarPorId(id: UUID): Optional~Pago~
+    + buscarPorInscripcion(inscripcionId: UUID): Optional~Pago~
+  }
+  interface "PasarelaPagoPort" as IPasarela <<Port>> {
+    + procesarCobro(monto: BigDecimal, token: String): ResultadoCobro
+    ' WireMock stub: POST /mock/gateway/charge
+  }
+  interface "OutboxRepository" as IOutboxRepo <<Port>> {
+    + guardar(e: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List~OutboxEvent~
+    + marcarProcesado(id: UUID): void
+  }
+  interface "EventPublisher" as IPublisher <<Port>> {
+    + publicar(evento: OutboxEvent): void
+    ' [!] PENDIENTE conectar con OutboxRelayService
+  }
+}
+
+' ── infrastructure.persistence ----
+package "infrastructure.persistence  [Driven Adapter JPA]" as pkg_pers #E8F8F5 {
+  class "PagoJpaAdapter" as PagoJpa <<JpaAdapter>> {
+    - jpaRepo: PagoJpaRepository
+    ==
+    + guardar(pago: Pago): Pago
+    + buscarPorId(id: UUID): Optional~Pago~
+    + buscarPorInscripcion(inscripcionId: UUID): Optional~Pago~
+  }
+  class "OutboxJpaAdapter" as OutboxJpa <<JpaAdapter>> {
+    - jpaRepo: OutboxJpaRepository
+    ==
+    + guardar(e: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List~OutboxEvent~
+    + marcarProcesado(id: UUID): void
+  }
+}
+
+' ── infrastructure.gateway ----
+package "infrastructure.gateway  [Driven Adapter WireMock]" as pkg_gw #FFF8E1 {
+  class "WireMockPasarelaAdapter" as WireAdap <<GatewayAdapter>> {
+    - restTemplate: RestTemplate
+    ==
+    + procesarCobro(monto: BigDecimal, token: String): ResultadoCobro
+    ' HTTP POST /mock/gateway/charge
+    ' stub: { status:"approved", transactionId:"mock-txn" }
+    ' timeout: connectTimeout=3s, readTimeout=5s
+  }
+}
+
+' ── infrastructure.messaging (Driven) ----
+package "infrastructure.messaging  [Driven Adapter AMQP]" as pkg_pub #F9EBEA {
+  class "RabbitMqPaymentPublisher\n[PENDIENTE]" as RabbitPub <<RabbitPublisher>> {
+    - rabbitTemplate: RabbitTemplate
+    ==
+    + publicar(evento: OutboxEvent): void
+    ' [!] PENDIENTE -- conectar con OutboxRelayService
+    ' exchange: pago.events
+    ' routingKey: pago.confirmed | pago.failed
+  }
+}
+
+' ── RELACIONES ----
+CTRL     o--> SVC_INIT     : iniciarPagoService
+CTRL     o--> SVC_WEBHOOK  : procesarWebhookService
+LISTENER o--> SVC_INIT     : iniciarPagoService
+
+SVC_INIT    o--> IPagoRepo   : pagoRepository
+SVC_INIT    o--> IPasarela   : pasarelaPort
+SVC_INIT    o--> IOutboxRepo : outboxRepository
+SVC_WEBHOOK o--> IPagoRepo   : pagoRepository
+SVC_WEBHOOK o--> IOutboxRepo : outboxRepository
+SVC_CONF    o--> IPagoRepo   : pagoRepository
+SVC_CONF    o--> IOutboxRepo : outboxRepository
+SVC_RELAY   o--> IOutboxRepo : outboxRepository
+SVC_RELAY   o--> IPublisher  : eventPublisher
+
+Pago "1" --> "1" Estado : estado
+
+PagoJpa     ..|> IPagoRepo
+OutboxJpa   ..|> IOutboxRepo
+WireAdap    ..|> IPasarela
+RabbitPub   ..|> IPublisher
+
+' ── LEYENDA ----
+legend right
+  <b>Capas -- Arquitectura Hexagonal</b>
+  |<back:#FEF5E7>  </back>| infrastructure.rest       «Driving HTTP»  |
+  |<back:#F3E5F5>  </back>| infrastructure.messaging  «Driving AMQP»  |
+  |<back:#EBF5FB>  </back>| application.service       «Use Cases»     |
+  |<back:#EDE0F5>  </back>| domain.model              Entidades       |
+  |<back:#EAFAF1>  </back>| domain.port               Puertos         |
+  |<back:#E8F8F5>  </back>| infrastructure.persistence JPA Adapters   |
+  |<back:#FFF8E1>  </back>| infrastructure.gateway    WireMock Client |
+  |<back:#F9EBEA>  </back>| infrastructure.messaging  «Driven AMQP»   |
+  ----
+  <b>ADRs aplicables:</b>
+  ADR-011: Transactional Outbox [!] PENDIENTE
+  ADR-012: Arquitectura Hexagonal (Ports & Adapters)
+  ----
+  [!] Estado: 70% -- OutboxRelayService y
+     RabbitMqPaymentPublisher pendientes
+     (rama feat/payment-outbox-e2e)
+end legend
+
+@enduml

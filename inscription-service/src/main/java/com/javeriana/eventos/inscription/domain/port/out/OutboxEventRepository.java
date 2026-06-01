@@ -1,21 +1,33 @@
 package com.javeriana.eventos.inscription.domain.port.out;
 
-import com.javeriana.eventos.shared.infrastructure.outbox.OutboxEvent;
+import com.javeriana.eventos.shared.domain.outbox.OutboxEvent;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
- * Port de salida para el Outbox Pattern.
+ * Puerto de salida para el Outbox Pattern (ADR-011).
  *
- * Los eventos de dominio se persisten en outbox_events dentro de la misma
- * transacción que la operación de negocio. El OutboxRelayService los lee
- * periódicamente y los publica en RabbitMQ.
+ * Interface pura: sin anotaciones Spring ni dependencias JPA.
+ * Los adaptadores en infrastructure implementan los detalles de persistencia.
  */
 public interface OutboxEventRepository {
 
-    void guardar(OutboxEvent event);
+    /** Persiste un nuevo evento en outbox y devuelve el evento guardado. */
+    OutboxEvent guardar(OutboxEvent evento);
 
-    List<OutboxEvent> buscarNoPublicados();
+    /** Lee hasta `limite` eventos PENDIENTES, ordenados por creadoEn ASC. */
+    List<OutboxEvent> buscarNoPublicados(int limite);
 
-    void marcarComoPublicado(OutboxEvent event);
+    /** Marca el evento como ENVIADO y registra enviadoEn = ahora. */
+    void marcarProcesado(UUID id);
+
+    /** Incrementa el contador de intentos fallidos. */
+    void incrementarIntentos(UUID id);
+
+    /** Marca el evento como FALLIDO (agotados los reintentos). */
+    void marcarFallido(UUID id);
+
+    /** Cuenta eventos en estado PENDIENTE. Usado por el Gauge de Micrometer. */
+    long contarPendientes();
 }

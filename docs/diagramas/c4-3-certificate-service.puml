@@ -1,0 +1,252 @@
+@startuml c4-3-certificate-service
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 28
+skinparam ranksep 42
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam roundcorner 6
+scale 0.85
+
+skinparam classBackgroundColor<<RestController>> #FEF5E7
+skinparam classBorderColor<<RestController>> #A04000
+skinparam classBackgroundColor<<RabbitListener>> #F3E5F5
+skinparam classBorderColor<<RabbitListener>> #7D3C98
+skinparam classBackgroundColor<<ApplicationSvc>> #EBF5FB
+skinparam classBorderColor<<ApplicationSvc>> #1A5276
+skinparam classBackgroundColor<<Port>> #EAFAF1
+skinparam classBorderColor<<Port>> #1E8449
+skinparam classBackgroundColor<<JpaAdapter>> #E8F8F5
+skinparam classBorderColor<<JpaAdapter>> #148F77
+skinparam classBackgroundColor<<PdfAdapter>> #FFF8E1
+skinparam classBorderColor<<PdfAdapter>> #E65100
+skinparam classBackgroundColor<<StorageAdapter>> #E3F2FD
+skinparam classBorderColor<<StorageAdapter>> #1565C0
+skinparam classBackgroundColor<<CryptoAdapter>> #F3E5F5
+skinparam classBorderColor<<CryptoAdapter>> #4A148C
+skinparam classBackgroundColor<<RabbitPublisher>> #F9EBEA
+skinparam classBorderColor<<RabbitPublisher>> #7D3C98
+skinparam classBackgroundColor<<AggregateRoot>> #EDE0F5
+skinparam classBorderColor<<AggregateRoot>> #7B2D8B
+skinparam classBackgroundColor<<Entity>> #EAF0FB
+skinparam classBorderColor<<Entity>> #2E5FA3
+skinparam classBackgroundColor<<Enumeration>> #FEF9E7
+skinparam classBorderColor<<Enumeration>> #C8A400
+
+title
+  <b><size:14>C4 Nivel 3: Vista de Componentes -- certificate-service</size></b>
+  <size:11>Plataforma de Gestion de Eventos Academicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:10>ADR-012 (Hexagonal) | PDF + QR + HMAC-SHA256 + S3</size>
+end title
+
+package "infrastructure.rest" as pkg_rest #FEF5E7 {
+  class "CertificadoRestController" as CTRL <<RestController>> {
+    - generarService: GenerarCertificadoService
+    - verificarService: VerificarCertificadoService
+    ==
+    + generarCertificado(inscripcionId: UUID): CertificadoDto
+    ' @PostMapping /api/v1/certificados
+    + obtenerCertificado(id: UUID): CertificadoDto
+    ' @GetMapping /api/v1/certificados/{id}
+    + verificarQr(codigo: String): VerificacionDto
+    ' @GetMapping /api/v1/certificados/verificar/{codigo}
+  }
+}
+
+package "infrastructure.messaging.driving" as pkg_listener #F3E5F5 {
+  class "EventoFinalizadoConsumerListener" as LISTENER <<RabbitListener>> {
+    - generarMasivoService: GenerarCertificadosMasivosService
+    ==
+    + onEventoFinalizado(event: EventoFinalizadoEvent,\n  messageId: String): void
+    ' queue: certificado.evento.finalizado
+    ' Dispara generacion masiva de certificados
+  }
+}
+
+package "application.service" as pkg_app #EBF5FB {
+  class "GenerarCertificadoService" as SVC_GEN <<ApplicationSvc>> {
+    - certificadoRepository: CertificadoRepository
+    - pdfGeneratorPort: PdfGeneratorPort
+    - storagePort: StoragePort
+    - hmacSignerPort: HmacSignerPort
+    - eventPublisher: EventPublisher
+    ==
+    + ejecutar(inscripcionId: UUID): CertificadoDto
+    ' @Transactional
+    ' Genera PDF -> firma QR -> sube S3 -> persiste -> outbox
+  }
+  class "GenerarCertificadosMasivosService" as SVC_MASIVO <<ApplicationSvc>> {
+    - certificadoRepository: CertificadoRepository
+    - generarCertificadoService: GenerarCertificadoService
+    ==
+    + ejecutar(eventoId: UUID): void
+    ' Procesa todas las inscripciones confirmadas del evento
+  }
+  class "VerificarCertificadoService" as SVC_VER <<ApplicationSvc>> {
+    - certificadoRepository: CertificadoRepository
+    - hmacSignerPort: HmacSignerPort
+    ==
+    + verificar(codigoQr: String): VerificacionDto
+    ' Valida firma HMAC-SHA256 del codigo QR
+  }
+  class "RegistrarAsistenciaService" as SVC_ASIST <<ApplicationSvc>> {
+    - certificadoRepository: CertificadoRepository
+    ==
+    + registrar(eventoId: UUID, usuarioId: UUID): void
+  }
+}
+
+package "domain.model" as pkg_model #EDE0F5 {
+  class "Certificado" as Certificado <<AggregateRoot>> {
+    - id: UUID
+    - inscripcionId: UUID
+    - eventoId: UUID
+    - usuarioId: UUID
+    - codigoQr: String {HMAC-SHA256}
+    - urlPdf: String {S3 signed URL}
+    - generadoEn: LocalDateTime
+    - estado: EstadoCertificado
+    ==
+    + marcarGenerado(urlPdf: String, codigo: String): void
+    + marcarError(motivo: String): void
+    + estaGenerado(): boolean
+  }
+  class "AsistenciaRegistro" as Asistencia <<Entity>> {
+    - id: UUID
+    - eventoId: UUID
+    - usuarioId: UUID
+    - registradoEn: LocalDateTime
+    ==
+  }
+  enum "EstadoCertificado" as EstCert <<Enumeration>> {
+    PENDIENTE
+    GENERANDO
+    GENERADO
+    ERROR
+  }
+}
+
+package "domain.port" as pkg_port #EAFAF1 {
+  interface "CertificadoRepository" as ICertRepo <<Port>> {
+    + guardar(c: Certificado): Certificado
+    + buscarPorId(id: UUID): Optional~Certificado~
+    + buscarPorInscripcion(inscripcionId: UUID): Optional~Certificado~
+    + buscarPorEvento(eventoId: UUID): List~Certificado~
+  }
+  interface "PdfGeneratorPort" as IPdf <<Port>> {
+    + generar(datos: DatosCertificado): byte[]
+    ' Genera PDF con nombre, evento, fecha, QR
+  }
+  interface "StoragePort" as IStorage <<Port>> {
+    + subir(nombre: String, contenido: byte[]): String
+    ' Retorna URL firmada de S3
+    + obtenerUrlFirmada(nombre: String): String
+  }
+  interface "HmacSignerPort" as IHmac <<Port>> {
+    + firmar(datos: String): String
+    ' HMAC-SHA256 con clave secreta
+    + verificar(datos: String, firma: String): boolean
+  }
+  interface "EventPublisher" as IPublisher <<Port>> {
+    + publicar(evento: OutboxEvent): void
+  }
+}
+
+package "infrastructure.persistence" as pkg_pers #E8F8F5 {
+  class "CertificadoJpaAdapter" as CertJpa <<JpaAdapter>> {
+    - jpaRepo: CertificadoJpaRepository
+    ==
+    + guardar(c: Certificado): Certificado
+    + buscarPorId(id: UUID): Optional~Certificado~
+    + buscarPorEvento(eventoId: UUID): List~Certificado~
+  }
+}
+
+package "infrastructure.pdf" as pkg_pdf #FFF8E1 {
+  class "ITextPdfGeneratorAdapter" as PdfAdap <<PdfAdapter>> {
+    - plantillaHtml: String
+    ==
+    + generar(datos: DatosCertificado): byte[]
+    ' iText 7 + plantilla HTML con QR embebido
+  }
+}
+
+package "infrastructure.storage" as pkg_s3 #E3F2FD {
+  class "S3StorageAdapter" as S3Adap <<StorageAdapter>> {
+    - s3Client: AmazonS3
+    - bucketName: String
+    ==
+    + subir(nombre: String, contenido: byte[]): String
+    + obtenerUrlFirmada(nombre: String): String
+    ' AWS S3 pre-signed URL | TTL=1h
+  }
+}
+
+package "infrastructure.crypto" as pkg_crypto #F3E5F5 {
+  class "HmacSha256SignerAdapter" as HmacAdap <<CryptoAdapter>> {
+    - secretKey: String {desde Secrets Manager}
+    ==
+    + firmar(datos: String): String
+    + verificar(datos: String, firma: String): boolean
+  }
+}
+
+package "infrastructure.messaging.driven" as pkg_pub #F9EBEA {
+  class "RabbitMqCertificadoPublisher" as RabbitPub <<RabbitPublisher>> {
+    - rabbitTemplate: RabbitTemplate
+    ==
+    + publicar(evento: OutboxEvent): void
+    ' exchange: certificado.events
+    ' routingKey: certificado.generado
+  }
+}
+
+' ── RELACIONES ───────────────────────────────────────────────
+CTRL     o--> SVC_GEN   : generarService
+CTRL     o--> SVC_VER   : verificarService
+LISTENER o--> SVC_MASIVO : generarMasivoService
+
+SVC_GEN     o--> ICertRepo  : certificadoRepository
+SVC_GEN     o--> IPdf       : pdfGeneratorPort
+SVC_GEN     o--> IStorage   : storagePort
+SVC_GEN     o--> IHmac      : hmacSignerPort
+SVC_GEN     o--> IPublisher : eventPublisher
+SVC_MASIVO  o--> ICertRepo  : certificadoRepository
+SVC_MASIVO  o--> SVC_GEN    : generarCertificadoService
+SVC_VER     o--> ICertRepo  : certificadoRepository
+SVC_VER     o--> IHmac      : hmacSignerPort
+SVC_ASIST   o--> ICertRepo  : certificadoRepository
+
+Certificado "1" --> "1" EstCert : estado
+
+CertJpa   ..|> ICertRepo
+PdfAdap   ..|> IPdf
+S3Adap    ..|> IStorage
+HmacAdap  ..|> IHmac
+RabbitPub ..|> IPublisher
+
+' ── LEYENDA ──────────────────────────────────────────────────
+legend right
+  Capas -- Arquitectura Hexagonal
+  |<back:#FEF5E7>  </back>| infrastructure.rest      Driving HTTP   |
+  |<back:#F3E5F5>  </back>| infrastructure.messaging Driving AMQP   |
+  |<back:#EBF5FB>  </back>| application.service      Use Cases      |
+  |<back:#EDE0F5>  </back>| domain.model             Entidades      |
+  |<back:#EAFAF1>  </back>| domain.port              Puertos        |
+  |<back:#E8F8F5>  </back>| infrastructure.persistence JPA          |
+  |<back:#FFF8E1>  </back>| infrastructure.pdf       iText 7        |
+  |<back:#E3F2FD>  </back>| infrastructure.storage   AWS S3         |
+  |<back:#F3E5F5>  </back>| infrastructure.crypto    HMAC-SHA256    |
+  |<back:#F9EBEA>  </back>| infrastructure.messaging Driven AMQP    |
+  ----
+  ADR-012: Arquitectura Hexagonal (Ports & Adapters)
+  ----
+  Flujo: GenerarCertificadoService
+    1. Genera PDF (iText7)
+    2. Firma codigo QR (HMAC-SHA256)
+    3. Sube a AWS S3 (URL firmada)
+    4. Persiste Certificado en PostgreSQL
+    5. Publica CertificadoGenerado via Outbox
+end legend
+
+@enduml

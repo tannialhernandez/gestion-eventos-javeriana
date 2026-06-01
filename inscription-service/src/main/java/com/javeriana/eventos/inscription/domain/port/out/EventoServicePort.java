@@ -19,11 +19,27 @@ public interface EventoServicePort {
 
     void liberarCupo(UUID eventoId);
 
+    /**
+     * Obtiene los datos de precio de una tarifa (M-03).
+     * Elimina el monto hardcodeado de 100.000 COP en CrearInscripcionService.
+     *
+     * @param tarifaId UUID de la tarifa seleccionada por el usuario
+     * @return TarifaInfo con monto y moneda reales para crear la preferencia de pago
+     */
+    TarifaInfo obtenerTarifa(UUID tarifaId);
+
     record EventoInfo(
         UUID id,
         String titulo,
         String estado,
         int cupoDisponible,
         boolean aceptaInscripciones
+    ) {}
+
+    record TarifaInfo(
+        UUID id,
+        java.math.BigDecimal monto,
+        String moneda,        // "COP", "USD"
+        String descripcion
     ) {}
 }

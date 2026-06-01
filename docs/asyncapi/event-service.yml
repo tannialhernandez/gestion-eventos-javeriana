@@ -1,0 +1,311 @@
+asyncapi: 3.0.0
+info:
+  title: Event Service - Catalogo de Eventos de Dominio
+  version: 1.0.0
+  description: |
+    Eventos publicados por event-service hacia el exchange eventos.topic (RabbitMQ).
+
+    Estrategia de versionado: ADR-020 (x-schema-version: v1 en headers AMQP).
+    Correlation-ID propagado en header x-correlation-id (Prompt 13 / SAD 8.3).
+
+    Routing keys:
+      evento.publicado     -> InscriptionService consume para actualizar catalogo
+      evento.cancelado     -> NotificationService (futuro) para notificar participantes
+      evento.cupo.liberado -> InscriptionService para liberar reserva
+      evento.cupo.reservado -> InscriptionService para confirmar reserva
+
+servers:
+  local:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ local (Docker Compose)
+  produccion:
+    host: rabbitmq.eventos-javeriana.edu.co:5672
+    protocol: amqp
+    description: RabbitMQ produccion
+
+channels:
+  evento.publicado:
+    address: evento.publicado
+    description: Emitido cuando un evento pasa de BORRADOR a PUBLICADO.
+    messages:
+      EventoPublicado:
+        $ref: '#/components/messages/EventoPublicado'
+
+  evento.cancelado:
+    address: evento.cancelado
+    description: Emitido cuando un organizador cancela un evento.
+    messages:
+      EventoCancelado:
+        $ref: '#/components/messages/EventoCancelado'
+
+  evento.cupo.liberado:
+    address: evento.cupo.liberado
+    description: Emitido cuando inscription-service libera un cupo (inscripcion expirada/cancelada).
+    messages:
+      CupoLiberado:
+        $ref: '#/components/messages/CupoLiberado'
+
+  evento.cupo.reservado:
+    address: evento.cupo.reservado
+    description: Emitido cuando inscription-service reserva un cupo al confirmar inscripcion.
+    messages:
+      CupoReservado:
+        $ref: '#/components/messages/CupoReservado'
+
+operations:
+  publishEventoPublicado:
+    action: send
+    channel:
+      $ref: '#/channels/evento.publicado'
+    description: event-service publica cuando se ejecuta POST /api/v1/eventos/{id}/publicar
+  publishEventoCancelado:
+    action: send
+    channel:
+      $ref: '#/channels/evento.cancelado'
+    description: event-service publica cuando se ejecuta POST /api/v1/eventos/{id}/cancelar
+  publishCupoLiberado:
+    action: send
+    channel:
+      $ref: '#/channels/evento.cupo.liberado'
+    description: event-service publica cuando inscription-service llama POST /api/v1/eventos/{id}/cupos/liberar
+  publishCupoReservado:
+    action: send
+    channel:
+      $ref: '#/channels/evento.cupo.reservado'
+    description: event-service publica cuando inscription-service llama POST /api/v1/eventos/{id}/cupos/reservar
+
+components:
+  messages:
+    EventoPublicado:
+      name: EventoPublicado
+      title: Evento Publicado
+      summary: Un evento academico ha sido publicado y es visible en el catalogo.
+      headers:
+        type: object
+        properties:
+          x-schema-version:
+            type: string
+            const: "v1"
+            description: Version del esquema del payload (ADR-020)
+          x-correlation-id:
+            type: string
+            format: uuid
+            description: ID de correlacion para trazabilidad distribuida (SAD 8.3)
+          eventType:
+            type: string
+            const: "EVENTO_PUBLICADO"
+            description: Tipo de evento (ADR-014 — en header, no en body)
+          aggregateType:
+            type: string
+            const: "Evento"
+          aggregateId:
+            type: string
+            format: uuid
+      payload:
+        type: object
+        required:
+          - eventId
+          - aggregateId
+          - aggregateType
+          - eventType
+          - eventoId
+          - titulo
+          - organizadorId
+          - fechaInicio
+          - modalidad
+          - cupoMaximo
+          - occurredAt
+          - schemaVersion
+        properties:
+          eventId:
+            type: string
+            format: uuid
+            description: ID unico del evento de dominio
+          aggregateId:
+            type: string
+            format: uuid
+            description: ID del agregado Evento
+          aggregateType:
+            type: string
+            const: "Evento"
+          eventType:
+            type: string
+            const: "EVENTO_PUBLICADO"
+          eventoId:
+            type: string
+            format: uuid
+          titulo:
+            type: string
+            maxLength: 300
+          organizadorId:
+            type: string
+            format: uuid
+          fechaInicio:
+            type: string
+            format: date
+          modalidad:
+            type: string
+            enum: [PRESENCIAL, VIRTUAL, HIBRIDA]
+          cupoMaximo:
+            type: integer
+            minimum: 1
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: string
+            const: "v1"
+      examples:
+        - name: EventoPublicadoExample
+          payload:
+            eventId: "660e8400-e29b-41d4-a716-446655440000"
+            aggregateId: "7d4f1e2a-1111-2222-3333-444455556666"
+            aggregateType: "Evento"
+            eventType: "EVENTO_PUBLICADO"
+            eventoId: "7d4f1e2a-1111-2222-3333-444455556666"
+            titulo: "Congreso de Arquitectura de Software 2026"
+            organizadorId: "8a9b1c2d-3333-4444-5555-666677778888"
+            fechaInicio: "2026-08-15"
+            modalidad: "HIBRIDA"
+            cupoMaximo: 300
+            occurredAt: "2026-05-27T18:00:00Z"
+            schemaVersion: "v1"
+
+    EventoCancelado:
+      name: EventoCancelado
+      title: Evento Cancelado
+      summary: Un evento academico ha sido cancelado por su organizador.
+      headers:
+        type: object
+        properties:
+          x-schema-version:
+            type: string
+            const: "v1"
+          x-correlation-id:
+            type: string
+            format: uuid
+          eventType:
+            type: string
+            const: "EVENTO_CANCELADO"
+      payload:
+        type: object
+        required:
+          - eventId
+          - aggregateId
+          - eventoId
+          - titulo
+          - motivo
+          - occurredAt
+          - schemaVersion
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          aggregateId:
+            type: string
+            format: uuid
+          aggregateType:
+            type: string
+            const: "Evento"
+          eventType:
+            type: string
+            const: "EVENTO_CANCELADO"
+          eventoId:
+            type: string
+            format: uuid
+          titulo:
+            type: string
+          motivo:
+            type: string
+            maxLength: 500
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: string
+            const: "v1"
+
+    CupoLiberado:
+      name: CupoLiberado
+      title: Cupo Liberado
+      summary: Un cupo de evento fue liberado (inscripcion expirada o cancelada).
+      headers:
+        type: object
+        properties:
+          x-schema-version:
+            type: string
+            const: "v1"
+          eventType:
+            type: string
+            const: "CUPO_LIBERADO"
+      payload:
+        type: object
+        required:
+          - eventId
+          - aggregateId
+          - eventoId
+          - cupoDisponible
+          - occurredAt
+          - schemaVersion
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          aggregateId:
+            type: string
+            format: uuid
+          eventoId:
+            type: string
+            format: uuid
+          cupoDisponible:
+            type: integer
+            description: Cupos disponibles despues de liberar
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: string
+            const: "v1"
+
+    CupoReservado:
+      name: CupoReservado
+      title: Cupo Reservado
+      summary: Un cupo de evento fue reservado al confirmar una inscripcion.
+      headers:
+        type: object
+        properties:
+          x-schema-version:
+            type: string
+            const: "v1"
+          eventType:
+            type: string
+            const: "CUPO_RESERVADO"
+      payload:
+        type: object
+        required:
+          - eventId
+          - aggregateId
+          - eventoId
+          - cupoDisponible
+          - occurredAt
+          - schemaVersion
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          aggregateId:
+            type: string
+            format: uuid
+          eventoId:
+            type: string
+            format: uuid
+          cupoDisponible:
+            type: integer
+            description: Cupos disponibles despues de reservar
+          occurredAt:
+            type: string
+            format: date-time
+          schemaVersion:
+            type: string
+            const: "v1"

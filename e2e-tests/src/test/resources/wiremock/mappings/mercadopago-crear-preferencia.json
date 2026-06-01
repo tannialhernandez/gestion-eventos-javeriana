@@ -1,0 +1,61 @@
+{
+  "mappings": [
+    {
+      "name": "MercadoPago - crear preferencia (éxito)",
+      "request": {
+        "method": "POST",
+        "urlPath": "/checkout/preferences"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "id": "MOCK-PREF-001",
+          "init_point": "https://www.mercadopago.com/checkout/v1/redirect?pref_id=MOCK-PREF-001",
+          "status": "active"
+        }
+      }
+    },
+    {
+      "name": "MercadoPago - reembolso (éxito)",
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/v1/payments/.*/refunds"
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "id": "MOCK-REFUND-001",
+          "status": "approved"
+        }
+      }
+    },
+    {
+      "name": "MercadoPago - crear preferencia (gateway caído)",
+      "request": {
+        "method": "POST",
+        "urlPath": "/checkout/preferences",
+        "headers": {
+          "X-Force-Gateway-Error": {
+            "equalTo": "true"
+          }
+        }
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "error": "service_unavailable",
+          "message": "Gateway temporalmente no disponible"
+        }
+      }
+    }
+  ]
+}

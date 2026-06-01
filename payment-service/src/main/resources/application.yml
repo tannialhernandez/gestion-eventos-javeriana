@@ -1,42 +1,70 @@
+# =============================================================================
+# application.yml — configuración común a todos los perfiles de payment-service
+#
+# Cada perfil (local, prod, test) sobreescribe solo lo que difiere.
+# Las credenciales de BD y broker NO van aquí — van en el perfil correspondiente.
+# =============================================================================
+
 spring:
   application:
     name: payment-service
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/eventos_payment
-    username: ${POSTGRES_USER:eventos_user}
-    password: ${POSTGRES_PASSWORD:eventos_pass}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
 
+  # ---------------------------------------------------------------------------
+  # Flyway — migraciones versionadas del schema
+  # Reemplaza hibernate.ddl-auto:update (ver auditoría Entrega 3, hallazgo #5)
+  # ---------------------------------------------------------------------------
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+
+  # ---------------------------------------------------------------------------
+  # JPA — solo valida que el schema coincide con las entidades; nunca lo modifica
+  # ---------------------------------------------------------------------------
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+    open-in-view: false
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  # ---------------------------------------------------------------------------
+  # RabbitMQ — Publisher Confirms (ADR-011 mejorado)
+  # publisher-confirm-type=correlated: broker envía ACK/NACK por messageId
+  # publisher-returns=true: mensajes no ruteables retornan al productor
+  # ---------------------------------------------------------------------------
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: 5672
-    username: ${RABBITMQ_USER:eventos_user}
-    password: ${RABBITMQ_PASSWORD:eventos_pass}
-    virtual-host: eventos
+    publisher-confirm-type: correlated
+    publisher-returns: true
 
 server:
   port: 8084
 
+# ---------------------------------------------------------------------------
+# Negocio — configuración de pasarela y ventanas de expiración
+# ---------------------------------------------------------------------------
 payment:
   gateway:
     provider: ${PAYMENT_GATEWAY_PROVIDER:simulador}
+    # C-01 (Prompt 18/19): secret HMAC-SHA256 para validar firmas de webhooks.
+    # Si está vacío → validación omitida (solo aceptable con SimuladorPasarelaAdapter).
+    # En prod: ${PAYMENT_WEBHOOK_SECRET} inyectado por AWS Secrets Manager.
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}
   expiration:
-    # RN-10 (SRS §9.3.3, srs-seccion9-modelo-datos-seccion10-trazabilidad.md):
-    # "fecha_expiracion_pago = fecha_inscripcion + 15 minutos"
+    # RN-10 (SRS §9.3.3): deadline pago = fecha_inscripcion + 15 minutos
     window-seconds: 900
-    # Margen de 60s para tolerar la latencia entre el job de expiración de
-    # inscription-service (corre cada 60s) y la llegada del webhook a payment-service.
-    # Race condition documentada en docs/follow-ups/payment-refund-async.md.
+    # Margen para latencia entre job de expiración de inscription-service (cada 60s)
+    # y la llegada del webhook a payment-service.
     grace-period-seconds: 60
 
+# ---------------------------------------------------------------------------
+# Resilience4j — circuit breaker para llamadas a la pasarela externa
+# ---------------------------------------------------------------------------
 resilience4j:
   circuitbreaker:
     instances:
@@ -54,8 +82,27 @@ resilience4j:
       pasarela-pago:
         timeout-duration: 5s
 
+# ---------------------------------------------------------------------------
+# Actuator — endpoints expuestos para health checks, métricas y Prometheus
+# ---------------------------------------------------------------------------
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: when-authorized
+
+retention:
+  enabled: true
+  cron: "0 0 3 * * *"
+  outbox-enviado-days: 30
+  outbox-fallido-days: 90
+  mensaje-procesado-days: 30
+  batch-size: 1000
+  max-batches-per-run: 100

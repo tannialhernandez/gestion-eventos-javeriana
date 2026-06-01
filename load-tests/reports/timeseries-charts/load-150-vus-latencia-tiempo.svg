@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="620" viewBox="0 0 1180 620">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+    .title { font-size: 28px; font-weight: 750; }
+    .subtitle { font-size: 14px; fill: #5b667a; }
+    .axis { font-size: 12px; fill: #5b667a; }
+    .legend { font-size: 13px; fill: #172033; }
+  </style>
+<text x="48" y="56" class="title">Load 150 VUs: latencia p95 en el tiempo</text>
+<text x="48" y="84" class="subtitle">Buckets de 10 segundos desde la salida JSONL de K6.</text>
+<line x1="100" y1="490.0" x2="1040" y2="490.0" stroke="#d8dee9"/>
+<text x="88" y="494.0" text-anchor="end" class="axis">0</text>
+<line x1="100" y1="418.0" x2="1040" y2="418.0" stroke="#d8dee9"/>
+<text x="88" y="422.0" text-anchor="end" class="axis">186</text>
+<line x1="100" y1="346.0" x2="1040" y2="346.0" stroke="#d8dee9"/>
+<text x="88" y="350.0" text-anchor="end" class="axis">371</text>
+<line x1="100" y1="274.0" x2="1040" y2="274.0" stroke="#d8dee9"/>
+<text x="88" y="278.0" text-anchor="end" class="axis">557</text>
+<line x1="100" y1="202.0" x2="1040" y2="202.0" stroke="#d8dee9"/>
+<text x="88" y="206.0" text-anchor="end" class="axis">743</text>
+<line x1="100" y1="130.0" x2="1040" y2="130.0" stroke="#d8dee9"/>
+<text x="88" y="134.0" text-anchor="end" class="axis">928</text>
+<text x="100.0" y="518" text-anchor="middle" class="axis">0s</text>
+<text x="288.0" y="518" text-anchor="middle" class="axis">64s</text>
+<text x="476.0" y="518" text-anchor="middle" class="axis">128s</text>
+<text x="664.0" y="518" text-anchor="middle" class="axis">192s</text>
+<text x="852.0" y="518" text-anchor="middle" class="axis">256s</text>
+<text x="1040.0" y="518" text-anchor="middle" class="axis">320s</text>
+<text x="100" y="548" class="axis">Tiempo desde inicio</text>
+<text x="24" y="114" class="axis">ms / VUs</text>
+<line x1="100" y1="490" x2="1040" y2="490" stroke="#172033" stroke-width="1.4"/>
+<line x1="100" y1="130" x2="100" y2="490" stroke="#172033" stroke-width="1.4"/>
+<path d="M100.0,332.5 L129.4,479.9 L158.8,466.4 L188.1,441.7 L217.5,184.9 L246.9,471.8 L276.2,479.3 L305.6,478.4 L335.0,479.6 L364.4,261.3 L393.8,460.9 L423.1,486.1 L452.5,484.9 L481.9,485.4 L511.2,459.5 L540.6,381.7 L570.0,478.6 L599.4,477.7 L628.8,486.0 L658.1,485.2 L687.5,475.3 L716.9,482.6 L746.2,486.3 L775.6,485.7 L805.0,484.9 L834.4,486.0 L863.8,465.3 L893.1,482.1 L922.5,478.9 L951.9,487.4" fill="none" stroke="#2563eb" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="100.0" cy="332.5" r="4" fill="#2563eb"/>
+<circle cx="951.9" cy="487.4" r="4" fill="#2563eb"/>
+<rect x="910" y="130" width="16" height="16" rx="3" fill="#2563eb"/>
+<text x="934" y="143" class="legend">http_req_duration p95</text>
+<path d="M100.0,488.3 L129.4,481.8 L158.8,475.3 L188.1,468.9 L217.5,462.6 L246.9,456.0 L276.2,449.5 L305.6,443.0 L335.0,436.2 L364.4,431.9 L393.8,431.8 L423.1,431.8 L452.5,431.8 L481.9,431.8 L511.2,431.8 L540.6,431.8 L570.0,431.8 L599.4,431.8 L628.8,431.8 L658.1,431.8 L687.5,431.8 L716.9,431.8 L746.2,431.8 L775.6,431.8 L805.0,431.8 L834.4,431.8 L863.8,431.8 L893.1,433.1 L922.5,436.0 L951.9,442.6 L981.2,459.4 L1010.6,477.1 L1040.0,486.6" fill="none" stroke="#0f766e" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="100.0" cy="488.3" r="4" fill="#0f766e"/>
+<circle cx="1040.0" cy="486.6" r="4" fill="#0f766e"/>
+<rect x="910" y="160" width="16" height="16" rx="3" fill="#0f766e"/>
+<text x="934" y="173" class="legend">VUs promedio</text>
+</svg>

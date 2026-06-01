@@ -1,0 +1,116 @@
+@startuml escenario-b-confirmacion-pago
+!theme plain
+skinparam maxMessageSize 140
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam defaultFontSize 10
+skinparam sequenceArrowThickness 1.5
+skinparam roundcorner 5
+scale 0.9
+
+title Escenario B: Confirmación de Pago\npayment-service → inscription-service vía RabbitMQ\nVista de Procesos — Kruchten 4+1
+
+participant "MercadoPago\nWebhook"                          as MP    #E0E0E0
+participant "PaymentController\n(payment-service)"          as PCTL  #FFE0B2
+participant "ConfirmarPagoService\n@Transactional"          as PSVC  #FFE0B2
+database    "PostgreSQL\n(payment_db)"                      as PPG   #FFF9C4
+participant "OutboxRelayService\n(payment-service)"         as PRLY  #FFB3B3
+queue       "RabbitMQ\n(Amazon MQ)"                        as MQ    #F3E5F5
+participant "EventoConsumer\nListener\n(inscription-svc)"   as ELIST #BDE5FF
+participant "ConfirmarInscripcion\nService @Transactional"  as ISVC  #C8EDCB
+database    "PostgreSQL\n(inscription_db)"                  as IPG   #FFF9C4
+
+== Webhook de MercadoPago → payment-service ==
+
+MP -> PCTL : POST /webhooks/mercadopago\n{payment_id, status='approved',\n x-idempotency-key, inscripcionId}
+activate PCTL
+
+PCTL -> PCTL : verificar x-idempotency-key\n(¿webhook ya procesado?)
+PCTL -> PSVC : confirmarPago(paymentId, inscripcionId)
+activate PSVC
+
+note over PSVC,PPG #C8EDCB
+  BEGIN TRANSACTION
+end note
+
+PSVC -> PPG : UPDATE payments\nSET status='CONFIRMED',\n confirmed_at=NOW()\nWHERE external_payment_id = :paymentId
+activate PPG
+PPG --> PSVC : 1 row updated
+deactivate PPG
+
+note over PRLY #FFB3B3
+  ⚠️ PENDIENTE DE IMPLEMENTAR
+  INSERT INTO outbox (
+    event_type = 'PagoConfirmado',
+    aggregate_id = :inscripcionId,
+    payload = JSON{inscripcionId, referenciaPago},
+    processed_at = NULL
+  )
+  dentro de la misma transacción
+end note
+
+note over PSVC,PPG #C8EDCB
+  COMMIT
+end note
+
+PSVC --> PCTL : ok
+deactivate PSVC
+PCTL --> MP : HTTP 200 OK
+deactivate PCTL
+
+note over PRLY #FFB3B3
+  ⚠️ PENDIENTE DE IMPLEMENTAR
+  OutboxRelayService (payment-service)
+  · SELECT FROM outbox ... SKIP LOCKED
+  · publish to RabbitMQ exchange 'pago.events'
+  · UPDATE outbox SET processed_at=NOW()
+end note
+
+|||
+== Publicación a RabbitMQ (cuando OutboxRelay esté implementado) ==
+|||
+
+PRLY -[#red,dashed]-> MQ : [PENDIENTE] basicPublish(\n  exchange='pago.events',\n  routingKey='pago.confirmado',\n  body=PagoConfirmadoEvent,\n  messageId=outboxId)
+
+|||
+== Consumo en inscription-service ==
+|||
+
+MQ -> ELIST : deliver(PagoConfirmadoEvent\n{inscripcionId, referenciaPago}\nmessageId=<outboxId>)
+activate ELIST
+ELIST -> ELIST : check idempotencia:\nSELECT 1 FROM processed_messages\nWHERE message_id = :messageId
+
+ELIST -> ISVC : ejecutar(inscripcionId, referenciaPago)
+activate ISVC
+
+note over ISVC,IPG #C8EDCB
+  BEGIN TRANSACTION
+end note
+
+ISVC -> IPG : SELECT * FROM inscripciones\nWHERE id = :inscripcionId
+activate IPG
+IPG --> ISVC : InscripcionEntity {estado='PENDING'}
+deactivate IPG
+
+ISVC -> ISVC : inscripcion.confirmar()\nestado: PENDING → CONFIRMED\nconfirmadaEn = NOW()
+
+ISVC -> IPG : UPDATE inscripciones\nSET estado='CONFIRMED',\n confirmada_en=NOW(),\n referencia_pago=:referencia\nWHERE id = :inscripcionId
+activate IPG
+IPG --> ISVC : 1 row updated
+deactivate IPG
+
+ISVC -> IPG : INSERT INTO outbox\n(event_type='InscripcionConfirmada',\n aggregate_id=inscripcionId,\n payload=JSON)
+activate IPG
+IPG --> ISVC : 1 row inserted
+deactivate IPG
+
+note over ISVC,IPG #C8EDCB
+  COMMIT
+end note
+
+ISVC --> ELIST : ok
+deactivate ISVC
+ELIST -> MQ : channel.basicAck(deliveryTag)
+deactivate ELIST
+
+@enduml

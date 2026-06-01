@@ -1,0 +1,381 @@
+@startuml c4-code-inscription-service
+' C4 Nivel 4: Vista de Código - Inscription Service (Core de Concurrencia)
+' Plataforma de Gestión de Eventos Académicos - Arquitectura Hexagonal
+'
+' Materializa:
+'   ADR-012 — Bloqueo Pesimista (SELECT FOR UPDATE)
+'   ADR-008 — Transactional Outbox
+'   ADR-018 — ShedLock para jobs distribuidos
+'
+' Generado: 2026-05-20
+' Herramienta fuente: Structurizr MCP (inscription-service.dsl)
+
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 35
+skinparam ranksep 55
+skinparam backgroundColor #F9F9F9
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam defaultFontSize 10
+
+' ============================================================
+' PALETA: Arquitectura Hexagonal por capa
+' ============================================================
+skinparam class {
+  BackgroundColor<<AggregateRoot>>   #EDE0F5
+  BorderColor<<AggregateRoot>>       #7B2D8B
+  HeaderBackgroundColor<<AggregateRoot>> #9B59B6
+
+  BackgroundColor<<Entity>>          #EAF0FB
+  BorderColor<<Entity>>              #2E5FA3
+  HeaderBackgroundColor<<Entity>>    #3C7DD9
+
+  BackgroundColor<<Enumeration>>     #FEF9E7
+  BorderColor<<Enumeration>>         #C8A400
+  HeaderBackgroundColor<<Enumeration>> #F0C040
+
+  BackgroundColor<<DomainService>>   #FDEDEC
+  BorderColor<<DomainService>>       #B03A2E
+  HeaderBackgroundColor<<DomainService>> #E74C3C
+
+  BackgroundColor<<Port>>            #EAFAF1
+  BorderColor<<Port>>                #1E8449
+  HeaderBackgroundColor<<Port>>      #27AE60
+
+  BackgroundColor<<ApplicationService>> #EBF5FB
+  BorderColor<<ApplicationService>>  #1A5276
+  HeaderBackgroundColor<<ApplicationService>> #2980B9
+
+  BackgroundColor<<RestController>>  #FEF5E7
+  BorderColor<<RestController>>      #A04000
+  HeaderBackgroundColor<<RestController>> #E67E22
+
+  BackgroundColor<<RabbitListener>>  #F9EBEA
+  BorderColor<<RabbitListener>>      #7D3C98
+  HeaderBackgroundColor<<RabbitListener>> #8E44AD
+
+  BackgroundColor<<JpaAdapter>>      #E8F8F5
+  BorderColor<<JpaAdapter>>          #148F77
+  HeaderBackgroundColor<<JpaAdapter>> #1ABC9C
+
+  BackgroundColor<<JpaRepository>>   #E8F6F3
+  BorderColor<<JpaRepository>>       #0E6655
+  HeaderBackgroundColor<<JpaRepository>> #117A65
+
+  FontColor #FFFFFF
+}
+
+title
+  <b><size:16>C4 Nivel 4: Vista de Código — Inscription Service (Core de Concurrencia)</size></b>
+  <size:13>Plataforma de Gestión de Eventos Académicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:11><color:#9B59B6>ADR-012: SELECT FOR UPDATE</color>  |  <color:#2980B9>ADR-008: Transactional Outbox</color>  |  <color:#8E44AD>ADR-018: ShedLock</color></size>
+end title
+
+' ============================================================
+' PAQUETE: domain.model
+' ============================================================
+package "com.javeriana.eventos.inscripciones\n.domain.model" as pkg_domain_model #EDE0F5 {
+
+  class Inscripcion <<AggregateRoot>> {
+    - id: UUID
+    - usuarioId: UUID
+    - eventoId: UUID
+    - estado: EstadoInscripcion
+    - creadaEn: LocalDateTime
+    - expiraEn: LocalDateTime
+    - confirmadaEn: LocalDateTime {nullable}
+    - referenciaPago: String {nullable}
+    ==
+    + confirmar(): void
+    + cancelar(motivo: String): void
+    + expirar(): void
+    + estaPendiente(): boolean
+    + haExpirado(): boolean
+  }
+
+  class Evento <<Entity>> {
+    - id: UUID
+    - nombre: String
+    - aforoMaximo: int
+    - cuposDisponibles: int
+    - estado: EstadoEvento
+    - inicioEn: LocalDateTime
+    ==
+    + tieneCupoDisponible(): boolean
+    + decrementarCupo(): void
+    + incrementarCupo(): void
+    + estaActivo(): boolean
+  }
+
+  enum EstadoInscripcion <<Enumeration>> {
+    PENDIENTE
+    CONFIRMADA
+    CANCELADA
+    EXPIRADA
+  }
+
+  enum EstadoEvento <<Enumeration>> {
+    BORRADOR
+    PUBLICADO
+    AGOTADO
+    FINALIZADO
+    CANCELADO
+  }
+
+  class PoliticaCancelacion <<DomainService>> {
+    ==
+    + puedeCancelarse(inscripcion: Inscripcion,\n  evento: Evento): boolean
+    + aplicaReembolso(inscripcion: Inscripcion,\n  evento: Evento): boolean
+  }
+
+  class OutboxEvent <<Entity>> {
+    - id: UUID
+    - aggregateType: String
+    - aggregateId: UUID
+    - eventType: String
+    - payload: String {JSON}
+    - createdAt: LocalDateTime
+    - processedAt: LocalDateTime {nullable}
+    - attempts: int
+    ==
+    + marcarProcesado(): void
+    + incrementarIntentos(): void
+  }
+}
+
+' ============================================================
+' PAQUETE: domain.port
+' ============================================================
+package "com.javeriana.eventos.inscripciones\n.domain.port" as pkg_domain_port #EAFAF1 {
+
+  interface InscripcionRepository <<Port>> {
+    + guardar(inscripcion: Inscripcion): Inscripcion
+    + buscarPorId(id: UUID): Optional<Inscripcion>
+    + buscarPendientesExpiradas(\n  antesDe: LocalDateTime): List<Inscripcion>
+    + existeInscripcionActiva(\n  usuarioId: UUID, eventoId: UUID): boolean
+  }
+
+  interface EventoRepository <<Port>> {
+    + buscarPorIdConBloqueoPesimista(\n  id: UUID): Optional<Evento>
+    + guardar(evento: Evento): Evento
+  }
+
+  interface OutboxRepository <<Port>> {
+    + guardar(evento: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List<OutboxEvent>
+    + marcarProcesado(id: UUID): void
+  }
+
+  interface EventPublisher <<Port>> {
+    + publicar(evento: OutboxEvent): void
+  }
+}
+
+' ============================================================
+' PAQUETE: application.service
+' ============================================================
+package "com.javeriana.eventos.inscripciones\n.application.service" as pkg_application #EBF5FB {
+
+  class CrearInscripcionService <<ApplicationService>> {
+    ' @Transactional
+    - inscripcionRepository: InscripcionRepository
+    - eventoRepository: EventoRepository
+    - outboxRepository: OutboxRepository
+    ==
+    + ejecutar(comando: CrearInscripcionCommand): InscripcionDto
+    - validarReglasNegocio(\n  usuarioId: UUID, eventoId: UUID): void
+    - crearInscripcion(\n  usuarioId: UUID, evento: Evento): Inscripcion
+    - registrarEventoOutbox(\n  inscripcion: Inscripcion): void
+  }
+
+  class ConfirmarInscripcionService <<ApplicationService>> {
+    ' @Transactional
+    - inscripcionRepository: InscripcionRepository
+    - outboxRepository: OutboxRepository
+    ==
+    + ejecutar(inscripcionId: UUID,\n  referenciaPago: String): void
+  }
+
+  class CancelarInscripcionService <<ApplicationService>> {
+    ' @Transactional
+    - inscripcionRepository: InscripcionRepository
+    - eventoRepository: EventoRepository
+    - outboxRepository: OutboxRepository
+    - politicaCancelacion: PoliticaCancelacion
+    ==
+    + ejecutar(inscripcionId: UUID,\n  motivo: String): void
+  }
+
+  class ExpirarInscripcionesPendientesService <<ApplicationService>> {
+    ' @Scheduled(fixedDelay=60000)  @SchedulerLock
+    - inscripcionRepository: InscripcionRepository
+    - cancelarInscripcionService: CancelarInscripcionService
+    ==
+    + ejecutar(): void
+  }
+
+  class OutboxRelayService <<ApplicationService>> {
+    ' @Scheduled(fixedDelay=2000)  @SchedulerLock
+    - outboxRepository: OutboxRepository
+    - eventPublisher: EventPublisher
+    ==
+    + procesarEventosPendientes(): void
+    - procesarLote(eventos: List<OutboxEvent>): void
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.rest
+' ============================================================
+package "com.javeriana.eventos.inscripciones\n.infrastructure.rest" as pkg_rest #FEF5E7 {
+
+  class InscripcionRestController <<RestController>> {
+    ' @RestController
+    - crearInscripcionService: CrearInscripcionService
+    - cancelarInscripcionService: CancelarInscripcionService
+    ==
+    + crear(request: CrearInscripcionRequest):\n  ResponseEntity<InscripcionDto>
+    ' @PostMapping("/api/v1/inscripciones")
+    + obtener(id: UUID): ResponseEntity<InscripcionDto>
+    ' @GetMapping("/api/v1/inscripciones/{id}")
+    + cancelar(id: UUID): ResponseEntity<Void>
+    ' @DeleteMapping("/api/v1/inscripciones/{id}")
+  }
+
+  class EventoConsumerListener <<RabbitListener>> {
+    ' @Component  @RabbitListener
+    - confirmarInscripcionService: ConfirmarInscripcionService
+    - cancelarInscripcionService: CancelarInscripcionService
+    ==
+    + alPagoConfirmado(evento: PagoConfirmadoEvent): void
+    ' @RabbitListener(queues="inscripcion.pago.confirmado")
+    + alPagoExpirado(evento: PagoExpiradoEvent): void
+    ' @RabbitListener(queues="inscripcion.pago.expirado")
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.persistence
+' ============================================================
+package "com.javeriana.eventos.inscripciones\n.infrastructure.persistence" as pkg_persistence #E8F8F5 {
+
+  class InscripcionJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: InscripcionJpaRepository
+    ==
+    + guardar(inscripcion: Inscripcion): Inscripcion
+    + buscarPorId(id: UUID): Optional<Inscripcion>
+    + buscarPendientesExpiradas(\n  antesDe: LocalDateTime): List<Inscripcion>
+    + existeInscripcionActiva(\n  usuarioId: UUID, eventoId: UUID): boolean
+  }
+
+  interface InscripcionJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<InscripcionEntity, UUID>
+    + findByUsuarioIdAndEventoIdAndEstadoIn(\n  usuarioId: UUID, eventoId: UUID,\n  estados: List<EstadoInscripcion>): Optional<InscripcionEntity>
+    + findByEstadoAndExpiraEnBefore(\n  estado: EstadoInscripcion,\n  antesDe: LocalDateTime): List<InscripcionEntity>
+  }
+
+  class EventoJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: EventoJpaRepository
+    ==
+    + buscarPorIdConBloqueoPesimista(\n  id: UUID): Optional<Evento>
+    + guardar(evento: Evento): Evento
+  }
+
+  interface EventoJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<EventoEntity, UUID>
+    + findByIdForUpdate(id: UUID): Optional<EventoEntity>
+    ' @Lock(LockModeType.PESSIMISTIC_WRITE)
+    ' @Query("SELECT e FROM EventoEntity e WHERE e.id = :id")
+  }
+
+  class OutboxJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: OutboxJpaRepository
+    ==
+    + guardar(evento: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List<OutboxEvent>
+    + marcarProcesado(id: UUID): void
+  }
+
+  interface OutboxJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<OutboxEventEntity, UUID>
+    + findByProcessedAtIsNullOrderByCreatedAtAsc(\n  pageable: Pageable): List<OutboxEventEntity>
+    + markAsProcessed(\n  id: UUID,\n  processedAt: LocalDateTime): void
+    ' @Modifying @Query("UPDATE OutboxEventEntity ...")
+  }
+}
+
+' ============================================================
+' RELACIONES: Domain Model
+' ============================================================
+Inscripcion      "1" -->  "1" EstadoInscripcion : estado
+Evento           "1" -->  "1" EstadoEvento       : estado
+PoliticaCancelacion ..>        Inscripcion        : usa en parámetro
+PoliticaCancelacion ..>        Evento             : usa en parámetro
+
+' ============================================================
+' RELACIONES: Application Services -> Ports
+' ============================================================
+CrearInscripcionService     "1" o--> "1" InscripcionRepository : inscripcionRepository
+CrearInscripcionService     "1" o--> "1" EventoRepository      : eventoRepository\n⚡ SELECT FOR UPDATE [ADR-012]
+CrearInscripcionService     "1" o--> "1" OutboxRepository      : outboxRepository\n📦 Outbox [ADR-008]
+
+ConfirmarInscripcionService "1" o--> "1" InscripcionRepository : inscripcionRepository
+ConfirmarInscripcionService "1" o--> "1" OutboxRepository      : outboxRepository
+
+CancelarInscripcionService  "1" o--> "1" InscripcionRepository : inscripcionRepository
+CancelarInscripcionService  "1" o--> "1" EventoRepository      : eventoRepository
+CancelarInscripcionService  "1" o--> "1" OutboxRepository      : outboxRepository
+CancelarInscripcionService  "1" o--> "1" PoliticaCancelacion   : politicaCancelacion
+
+ExpirarInscripcionesPendientesService "1" o--> "1" InscripcionRepository     : inscripcionRepository
+ExpirarInscripcionesPendientesService "1" o--> "1" CancelarInscripcionService : cancelarService
+
+OutboxRelayService "1" o--> "1" OutboxRepository : outboxRepository
+OutboxRelayService "1" o--> "1" EventPublisher   : eventPublisher
+
+' ============================================================
+' RELACIONES: Infrastructure REST -> Application
+' ============================================================
+InscripcionRestController  "1" o--> "1" CrearInscripcionService     : crearInscripcionService
+InscripcionRestController  "1" o--> "1" CancelarInscripcionService  : cancelarInscripcionService
+
+EventoConsumerListener     "1" o--> "1" ConfirmarInscripcionService : confirmarInscripcionService
+EventoConsumerListener     "1" o--> "1" CancelarInscripcionService  : cancelarInscripcionService
+
+' ============================================================
+' RELACIONES: Driven Adapters -> Ports (Implementación)
+' ============================================================
+InscripcionJpaAdapter ..|> InscripcionRepository
+EventoJpaAdapter      ..|> EventoRepository
+OutboxJpaAdapter      ..|> OutboxRepository
+
+InscripcionJpaAdapter "1" o--> "1" InscripcionJpaRepository : jpaRepository
+EventoJpaAdapter      "1" o--> "1" EventoJpaRepository      : jpaRepository
+OutboxJpaAdapter      "1" o--> "1" OutboxJpaRepository       : jpaRepository
+
+' ============================================================
+' LEYENDA
+' ============================================================
+legend right
+  <b>Capas — Arquitectura Hexagonal</b>
+  |<back:#9B59B6><color:white>  «Aggregate Root»   </color></back>| Raíz de agregado (Dominio)         |
+  |<back:#3C7DD9><color:white>  «Entity»            </color></back>| Entidad de dominio                 |
+  |<back:#F0C040>  «Enumeration»  </back>| Enumeración de dominio             |
+  |<back:#E74C3C><color:white>  «Domain Service»   </color></back>| Servicio de dominio puro           |
+  |<back:#27AE60><color:white>  «Port»              </color></back>| Puerto / Interfaz de dominio       |
+  |<back:#2980B9><color:white>  «Application Svc»  </color></back>| Servicio de aplicación (caso uso)  |
+  |<back:#E67E22><color:white>  «@RestController»  </color></back>| Adaptador primario REST            |
+  |<back:#8E44AD><color:white>  «@RabbitListener»  </color></back>| Adaptador primario RabbitMQ        |
+  |<back:#1ABC9C><color:white>  «@Repository»       </color></back>| Adaptador secundario JPA           |
+  |<back:#117A65><color:white>  «JpaRepository»    </color></back>| Repositorio Spring Data JPA        |
+  ====
+  ⚡ <b>ADR-012</b> — buscarPorIdConBloqueoPesimista() → SELECT FOR UPDATE
+  📦 <b>ADR-008</b> — OutboxEvent + OutboxRelayService → Transactional Outbox
+  🔒 <b>ADR-018</b> — @SchedulerLock en jobs programados → ShedLock
+end legend
+
+@enduml

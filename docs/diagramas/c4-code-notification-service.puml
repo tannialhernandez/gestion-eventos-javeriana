@@ -1,0 +1,428 @@
+@startuml c4-code-notification-service
+' C4 Nivel 4: Vista de Codigo - Notification Service (Observer + Strategy multi-canal)
+' Plataforma de Gestion de Eventos Academicos - Arquitectura Hexagonal
+'
+' Materializa:
+'   ADR-006 -- RabbitMQ como message broker (consumer puro)
+'   ADR-012 -- Arquitectura Hexagonal (Ports & Adapters)
+'   ADR-019 -- DLQ para mensajes fallidos (SMTP timeout)
+'
+' Estado: En implementacion
+' PATRON CLAVE: Observer (RabbitListeners) + Strategy (canales de notificacion)
+' EXTENSIBILIDAD: agregar canal SMS/PUSH implementando NotificationStrategy
+'
+' Generado: 2026-05-22
+
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 35
+skinparam ranksep 55
+skinparam backgroundColor #F9F9F9
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam defaultFontSize 10
+
+skinparam class {
+  BackgroundColor<<Entity>>                   #EAF0FB
+  BorderColor<<Entity>>                       #2E5FA3
+  HeaderBackgroundColor<<Entity>>             #3C7DD9
+
+  BackgroundColor<<Enumeration>>              #FEF9E7
+  BorderColor<<Enumeration>>                  #C8A400
+  HeaderBackgroundColor<<Enumeration>>        #F0C040
+
+  BackgroundColor<<ValueObject>>              #F5EEF8
+  BorderColor<<ValueObject>>                  #6C3483
+  HeaderBackgroundColor<<ValueObject>>        #8E44AD
+
+  BackgroundColor<<Port>>                     #EAFAF1
+  BorderColor<<Port>>                         #1E8449
+  HeaderBackgroundColor<<Port>>               #27AE60
+
+  BackgroundColor<<Strategy>>                 #EBF5FB
+  BorderColor<<Strategy>>                     #1A5276
+  HeaderBackgroundColor<<Strategy>>           #2980B9
+
+  BackgroundColor<<ApplicationService>>       #EBF5FB
+  BorderColor<<ApplicationService>>           #1A5276
+  HeaderBackgroundColor<<ApplicationService>> #2980B9
+
+  BackgroundColor<<RabbitListener>>           #F9EBEA
+  BorderColor<<RabbitListener>>               #7D3C98
+  HeaderBackgroundColor<<RabbitListener>>     #8E44AD
+
+  BackgroundColor<<JpaAdapter>>               #E8F8F5
+  BorderColor<<JpaAdapter>>                   #148F77
+  HeaderBackgroundColor<<JpaAdapter>>         #1ABC9C
+
+  BackgroundColor<<JpaRepository>>            #E8F6F3
+  BorderColor<<JpaRepository>>                #0E6655
+  HeaderBackgroundColor<<JpaRepository>>      #117A65
+
+  BackgroundColor<<EmailAdapter>>             #FEF9E7
+  BorderColor<<EmailAdapter>>                 #784212
+  HeaderBackgroundColor<<EmailAdapter>>       #D35400
+
+  FontColor #FFFFFF
+}
+
+title
+  <b><size:16>C4 Nivel 4: Vista de Codigo -- Notification Service (Observer + Strategy Multi-Canal)</size></b>
+  <size:13>Plataforma de Gestion de Eventos Academicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:11><color:#8E44AD>ADR-006: RabbitMQ consumer puro</color>  |  <color:#E67E22>ADR-012: Hexagonal</color>  |  <color:#E74C3C>ADR-019: DLQ SMTP</color>  |  <color:#2980B9>GoF: Observer + Strategy</color></size>
+end title
+
+' ============================================================
+' PAQUETE: domain.model
+' ============================================================
+package "com.javeriana.eventos.notification\n.domain.model" as pkg_domain_model #EDE0F5 {
+
+  class Notificacion <<Entity>> {
+    - id: UUID
+    - destinatario: String {email/telefono}
+    - tipo: TipoNotificacion
+    - canal: CanalNotificacion
+    - estado: EstadoNotificacion
+    - plantillaId: String
+    - datosContexto: String {JSON}
+    - intentos: int
+    - creadaEn: LocalDateTime
+    - enviadaEn: LocalDateTime {nullable}
+    - errorMensaje: String {nullable}
+    ==
+    + marcarEnviada(): void
+    + marcarFallida(error: String): void
+    + incrementarIntentos(): void
+    + puedeReintentar(): boolean
+    + debeReintentarse(): boolean
+  }
+
+  enum TipoNotificacion <<Enumeration>> {
+    INSCRIPCION_PENDIENTE
+    INSCRIPCION_CONFIRMADA
+    INSCRIPCION_CANCELADA
+    INSCRIPCION_EXPIRADA
+    PAGO_CONFIRMADO
+    PAGO_RECHAZADO
+    CERTIFICADO_DISPONIBLE
+  }
+
+  enum CanalNotificacion <<Enumeration>> {
+    EMAIL
+    SMS
+    PUSH
+  }
+
+  enum EstadoNotificacion <<Enumeration>> {
+    PENDIENTE
+    ENVIADA
+    FALLIDA
+    DEAD_LETTER
+  }
+
+  class PlantillaEmail <<ValueObject>> {
+    - nombre: String
+    - asunto: String
+    - rutaTemplate: String {Thymeleaf .html}
+    ==
+    + getNombre(): String
+    + getAsunto(): String
+    + getRutaTemplate(): String
+  }
+}
+
+' ============================================================
+' PAQUETE: domain.port
+' ============================================================
+package "com.javeriana.eventos.notification\n.domain.port" as pkg_domain_port #EAFAF1 {
+
+  interface NotificacionRepository <<Port>> {
+    + guardar(notificacion: Notificacion): Notificacion
+    + buscarPorId(id: UUID): Optional<Notificacion>
+    + buscarFallidas(maxIntentos: int): List<Notificacion>
+    + buscarPorTipoYDestinatario(\n  tipo: TipoNotificacion,\n  destinatario: String): Optional<Notificacion>
+  }
+
+  interface EmailSenderPort <<Port>> {
+    ' ADR-012: puerto que invierte dependencia de JavaMailSender
+    + enviar(destinatario: String,\n  plantilla: PlantillaEmail,\n  contexto: Map<String, Object>): void
+  }
+
+  interface NotificationStrategy <<Port>> {
+    ' GoF Strategy: cada canal implementa este puerto
+    + enviar(notificacion: Notificacion): void
+    + soportaCanal(canal: CanalNotificacion): boolean
+  }
+}
+
+' ============================================================
+' PAQUETE: application.service
+' ============================================================
+package "com.javeriana.eventos.notification\n.application.service" as pkg_application #EBF5FB {
+
+  class EnviarNotificacionService <<ApplicationService>> {
+    ' @Transactional
+    - notificacionRepository: NotificacionRepository
+    - strategies: List<NotificationStrategy>
+    ==
+    + enviar(tipo: TipoNotificacion,\n  destinatario: String,\n  datosContexto: Map): void
+    - seleccionarEstrategia(\n  canal: CanalNotificacion): NotificationStrategy
+    - determinarCanal(\n  tipo: TipoNotificacion): CanalNotificacion
+  }
+
+  class RegistrarNotificacionService <<ApplicationService>> {
+    ' @Transactional
+    - notificacionRepository: NotificacionRepository
+    ==
+    + registrar(tipo: TipoNotificacion,\n  destinatario: String,\n  datosContexto: Map): Notificacion
+  }
+
+  class ReintentarEnvioService <<ApplicationService>> {
+    ' @Scheduled(fixedDelay=60000)
+    - notificacionRepository: NotificacionRepository
+    - enviarNotificacionService: EnviarNotificacionService
+    ==
+    + procesarFallidas(): void
+    - procesarNotificacion(\n  notificacion: Notificacion): void
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.strategy
+' ============================================================
+' GoF STRATEGY: Context = EnviarNotificacionService
+'   Strategy interface = NotificationStrategy (Port)
+'   ConcreteStrategies = Email / Sms / Push Adapter
+package "com.javeriana.eventos.notification\n.infrastructure.strategy\n«GoF Strategy — ConcreteStrategies»" as pkg_strategy #EBF5FB {
+
+  class EmailNotificationStrategy <<Strategy>> {
+    ' ConcreteStrategy A: canal EMAIL
+    - emailSenderPort: EmailSenderPort
+    - plantillas: Map<TipoNotificacion, PlantillaEmail>
+    ==
+    + enviar(notificacion: Notificacion): void
+    + soportaCanal(canal: CanalNotificacion): boolean
+    - resolverPlantilla(\n  tipo: TipoNotificacion): PlantillaEmail
+    - construirContexto(\n  datosContexto: String): Map<String, Object>
+  }
+
+  class SmsNotificationStrategy <<Strategy>> {
+    ' ConcreteStrategy B: canal SMS (extensible)
+    ==
+    + enviar(notificacion: Notificacion): void
+    + soportaCanal(canal: CanalNotificacion): boolean
+  }
+
+  class PushNotificationStrategy <<Strategy>> {
+    ' ConcreteStrategy C: canal PUSH (extensible)
+    ==
+    + enviar(notificacion: Notificacion): void
+    + soportaCanal(canal: CanalNotificacion): boolean
+  }
+}
+
+note as GOF_STRATEGY
+  <b>GoF STRATEGY</b>
+  Context: EnviarNotificacionService
+  Strategy (Port): NotificationStrategy
+  ConcreteStrategies:
+  -- EmailNotificationStrategy (activo)
+  -- SmsNotificationStrategy (extensible)
+  -- PushNotificationStrategy (extensible)
+  Seleccion: seleccionarEstrategia(canal)
+  -- itera List<NotificationStrategy>
+  -- y llama soportaCanal()
+  Agregar Telegram = nueva clase,
+  cero cambios en Context ni Observers.
+end note
+GOF_STRATEGY .. pkg_strategy
+
+' ============================================================
+' PAQUETE: infrastructure.messaging
+' GoF OBSERVER: cada Listener es un ConcreteObserver que reacciona
+' a un evento AMQP sin conocer al publicador (inscription/payment-service)
+' ============================================================
+package "com.javeriana.eventos.notification\n.infrastructure.messaging\n«GoF Observer — ConcreteObservers»" as pkg_messaging #F9EBEA {
+
+  class InscripcionConfirmadaListener <<RabbitListener>> {
+    ' queue: notification.inscription.confirmed
+    - registrarNotificacionService: RegistrarNotificacionService
+    - enviarNotificacionService: EnviarNotificacionService
+    ==
+    + onInscripcionConfirmada(\n  event: InscripcionCreadaEvent): void
+  }
+
+  class PagoConfirmadoListener <<RabbitListener>> {
+    ' queue: notification.payment.confirmed
+    - registrarNotificacionService: RegistrarNotificacionService
+    - enviarNotificacionService: EnviarNotificacionService
+    ==
+    + onPagoConfirmado(\n  event: PaymentConfirmedEvent): void
+  }
+
+  class PagoRechazadoListener <<RabbitListener>> {
+    ' queue: notification.payment.rejected
+    - registrarNotificacionService: RegistrarNotificacionService
+    - enviarNotificacionService: EnviarNotificacionService
+    ==
+    + onPagoRechazado(\n  event: PaymentFailedEvent): void
+  }
+
+  class InscripcionExpiradaListener <<RabbitListener>> {
+    ' queue: notification.inscription.expired
+    - registrarNotificacionService: RegistrarNotificacionService
+    - enviarNotificacionService: EnviarNotificacionService
+    ==
+    + onInscripcionExpirada(\n  event: InscripcionExpiradaEvent): void
+  }
+}
+
+note as GOF_OBSERVER
+  <b>GoF OBSERVER</b>
+  Subject: Amazon MQ (RabbitMQ)
+  ConcreteObservers: *Listener
+  -- Cada listener se suscribe a
+  -- una queue especifica.
+  -- Reacciona sin acoplar a
+  -- inscription-service ni
+  -- payment-service.
+  -- Agregar nuevo evento = nuevo
+  -- @RabbitListener, cero cambios
+  -- en los publicadores.
+end note
+GOF_OBSERVER .. pkg_messaging
+
+' ============================================================
+' PAQUETE: infrastructure.email
+' ============================================================
+package "com.javeriana.eventos.notification\n.infrastructure.email" as pkg_email #FEF9E7 {
+
+  class JavaMailSenderAdapter <<EmailAdapter>> {
+    ' implements EmailSenderPort
+    ' ADR-012: invierte dependencia de Spring JavaMailSender
+    ' WireMock SMTP en perfil local/test
+    - javaMailSender: JavaMailSender
+    - templateEngine: TemplateEngine
+    ==
+    + enviar(destinatario: String,\n  plantilla: PlantillaEmail,\n  contexto: Map<String, Object>): void
+    - renderizarHtml(plantilla: PlantillaEmail,\n  contexto: Map): String
+    - construirMensaje(destinatario: String,\n  asunto: String, html: String): MimeMessage
+  }
+
+  note right of JavaMailSenderAdapter
+    Perfil local/test:
+    SMTP host = wiremock:8025
+    Thymeleaf renderiza .html
+    desde resources/templates/
+
+    Perfil prod:
+    SMTP host = AWS SES endpoint
+    Credenciales desde Secrets Manager
+  end note
+}
+
+' ============================================================
+' PAQUETE: infrastructure.persistence
+' ============================================================
+package "com.javeriana.eventos.notification\n.infrastructure.persistence" as pkg_persistence #E8F8F5 {
+
+  class NotificacionJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: NotificacionJpaRepository
+    ==
+    + guardar(notificacion: Notificacion): Notificacion
+    + buscarPorId(id: UUID): Optional<Notificacion>
+    + buscarFallidas(maxIntentos: int): List<Notificacion>
+    + buscarPorTipoYDestinatario(\n  tipo: TipoNotificacion,\n  destinatario: String): Optional<Notificacion>
+  }
+
+  interface NotificacionJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<NotificacionEntity, UUID>
+    + findByEstadoAndIntentosLessThan(\n  estado: EstadoNotificacion,\n  maxIntentos: int): List<NotificacionEntity>
+    + findByTipoAndDestinatario(\n  tipo: TipoNotificacion,\n  destinatario: String): Optional<NotificacionEntity>
+  }
+}
+
+' ============================================================
+' RELACIONES: Domain Model
+' ============================================================
+Notificacion "1" --> "1" TipoNotificacion    : tipo
+Notificacion "1" --> "1" CanalNotificacion   : canal
+Notificacion "1" --> "1" EstadoNotificacion  : estado
+
+' ============================================================
+' RELACIONES: Application -> Ports
+' ============================================================
+EnviarNotificacionService   "1" o--> "1" NotificacionRepository  : notificacionRepository
+EnviarNotificacionService   "1" o--> "*" NotificationStrategy    : strategies\n«GoF Strategy: Context -> Strategy»
+
+RegistrarNotificacionService "1" o--> "1" NotificacionRepository : notificacionRepository
+
+ReintentarEnvioService      "1" o--> "1" NotificacionRepository  : notificacionRepository
+ReintentarEnvioService      "1" o--> "1" EnviarNotificacionService: enviarNotificacionService
+
+' ============================================================
+' RELACIONES: Strategy -> Ports
+' ============================================================
+EmailNotificationStrategy "1" o--> "1" EmailSenderPort : emailSenderPort
+
+' ============================================================
+' RELACIONES: Listeners -> Application (Observer pattern)
+' ============================================================
+InscripcionConfirmadaListener "1" o--> "1" RegistrarNotificacionService : registrarNotificacionService
+InscripcionConfirmadaListener "1" o--> "1" EnviarNotificacionService    : enviarNotificacionService
+
+PagoConfirmadoListener        "1" o--> "1" RegistrarNotificacionService : registrarNotificacionService
+PagoConfirmadoListener        "1" o--> "1" EnviarNotificacionService    : enviarNotificacionService
+
+PagoRechazadoListener         "1" o--> "1" RegistrarNotificacionService : registrarNotificacionService
+PagoRechazadoListener         "1" o--> "1" EnviarNotificacionService    : enviarNotificacionService
+
+InscripcionExpiradaListener   "1" o--> "1" RegistrarNotificacionService : registrarNotificacionService
+InscripcionExpiradaListener   "1" o--> "1" EnviarNotificacionService    : enviarNotificacionService
+
+' ============================================================
+' RELACIONES: Driven Adapters -> Ports
+' ============================================================
+NotificacionJpaAdapter    ..|> NotificacionRepository
+JavaMailSenderAdapter     ..|> EmailSenderPort
+EmailNotificationStrategy ..|> NotificationStrategy
+SmsNotificationStrategy   ..|> NotificationStrategy
+PushNotificationStrategy  ..|> NotificationStrategy
+
+NotificacionJpaAdapter "1" o--> "1" NotificacionJpaRepository : jpaRepository
+
+' ============================================================
+' LEYENDA
+' ============================================================
+legend right
+  <b>Capas -- Arquitectura Hexagonal</b>
+  |<back:#3C7DD9><color:white>  Entity           </color></back>| Entidad de dominio                  |
+  |<back:#F0C040>  Enumeration   </back>| Enumeracion de dominio              |
+  |<back:#8E44AD><color:white>  ValueObject      </color></back>| Objeto de valor (inmutable)         |
+  |<back:#27AE60><color:white>  Port             </color></back>| Puerto / Interfaz del hexagono      |
+  |<back:#2980B9><color:white>  ApplicationSvc   </color></back>| Servicio de aplicacion (caso uso)   |
+  |<back:#2980B9><color:white>  Strategy         </color></back>| GoF Strategy (canal de notif.)      |
+  |<back:#8E44AD><color:white>  RabbitListener   </color></back>| Adaptador primario AMQP (Observer)  |
+  |<back:#D35400><color:white>  EmailAdapter     </color></back>| Adaptador SMTP (WireMock / SES)     |
+  |<back:#1ABC9C><color:white>  JpaAdapter       </color></back>| Adaptador secundario JPA            |
+  |<back:#117A65><color:white>  JpaRepository    </color></back>| Repositorio Spring Data JPA         |
+  ====
+  <b>GoF Observer:</b>
+    *Listener reacciona a eventos AMQP
+    sin conocer al publicador
+    Desacoplamiento entre servicios
+  <b>GoF Strategy:</b>
+    NotificationStrategy por canal
+    Agregar SMS/PUSH = nueva clase
+    Sin modificar EnviarNotificacionService
+  ====
+  [ADR-006] Consumer puro RabbitMQ
+            4 listeners x 4 tipos de evento
+  [ADR-012] Hexagonal: EmailSenderPort
+            desacopla de JavaMailSender
+  [ADR-019] DLQ si SMTP falla 3 veces
+            notification.*.dlq en RabbitMQ
+end legend
+
+@enduml

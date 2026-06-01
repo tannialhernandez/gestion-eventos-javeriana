@@ -1,0 +1,99 @@
+@startuml escenario-c-expiracion-job
+!theme plain
+skinparam defaultFontSize 10
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam activityBackgroundColor #F9F9F9
+skinparam activityBorderColor #AAAAAA
+skinparam activityDiamondBackgroundColor #FFF9C4
+skinparam activityDiamondBorderColor #DAA520
+skinparam arrowColor #555555
+scale 0.9
+
+title Escenario C: Job de Expiración de Inscripciones\n@Scheduled(fixedDelay=60000) + SKIP LOCKED + Transactional Outbox\nVista de Procesos — Kruchten 4+1
+
+start
+
+#FFE0B2:ExpirarInscripcionesPendientesService.ejecutar()
+  disparado por @Scheduled(fixedDelay=60_000 ms);
+
+#BDE5FF:ShedLock: intenta adquirir lock distribuido
+  UPDATE shedlock SET lock_until=NOW()+90s, locked_at=NOW()
+  WHERE name='expiracion-job'
+  AND (lock_until <= NOW() OR locked_by = :thisNode);
+
+if (¿lock adquirido?) then (NO — otro nodo lo tiene)
+  #FFB3B3:log: "job omitido: otro nodo activo";
+  stop
+else (SÍ)
+endif
+
+#C8EDCB:SELECT id, evento_id FROM inscripciones
+  WHERE estado = 'PENDING'
+  AND expira_en < NOW()
+  ORDER BY expira_en ASC
+  LIMIT 50
+  FOR UPDATE SKIP LOCKED;
+
+if (¿lote vacío?) then (SÍ — nada que expirar)
+  #BDE5FF:ShedLock libera lock;
+  stop
+else (NO)
+endif
+
+while (para cada inscripcion del lote) is (quedan registros)
+
+  #C8EDCB:BEGIN TRANSACTION;
+
+  #FFF9C4:SELECT * FROM eventos
+    WHERE id = :eventoId
+    FOR UPDATE
+    (bloqueo fila evento — recuperar cupo);
+
+  #C8EDCB:inscripcion.expirar()
+    estado: PENDING → EXPIRED
+    expira_en ya alcanzado;
+
+  #C8EDCB:UPDATE inscripciones
+    SET estado = 'EXPIRED'
+    WHERE id = :inscripcionId;
+
+  #C8EDCB:evento.incrementarCupo()
+    cupos_disponibles = cupos_disponibles + 1;
+
+  #C8EDCB:UPDATE eventos
+    SET cupos_disponibles = cupos_disponibles + 1
+    WHERE id = :eventoId;
+
+  #FFE0B2:INSERT INTO outbox
+    (aggregate_type='Inscripcion',
+     aggregate_id=:inscripcionId,
+     event_type='InscripcionExpirada',
+     payload=JSON{inscripcionId, eventoId, usuarioId},
+     processed_at=NULL);
+
+  if (¿COMMIT exitoso?) then (SÍ)
+    #C8EDCB:COMMIT;
+  else (NO — deadlock / fallo)
+    #FFB3B3:ROLLBACK;
+    #FFB3B3:log error, continuar con siguiente;
+  endif
+
+endwhile (fin del lote)
+
+#BDE5FF:ShedLock libera lock
+  UPDATE shedlock SET lock_until=NOW()
+  WHERE name='expiracion-job';
+
+note right #F3E5F5
+  OutboxRelayService (hilo independiente)
+  detecta en próximo poll (2 s) los eventos
+  InscripcionExpirada insertados y los
+  publica a RabbitMQ:
+  exchange='inscripcion.events'
+  routingKey='inscripcion.expired'
+end note
+
+stop
+
+@enduml

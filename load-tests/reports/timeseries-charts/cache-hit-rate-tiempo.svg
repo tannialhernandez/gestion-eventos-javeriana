@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="620" viewBox="0 0 1180 620">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+    .title { font-size: 28px; font-weight: 750; }
+    .subtitle { font-size: 14px; fill: #5b667a; }
+    .axis { font-size: 12px; fill: #5b667a; }
+    .legend { font-size: 13px; fill: #172033; }
+  </style>
+<text x="48" y="56" class="title">Cache Redis: hit rate en el tiempo</text>
+<text x="48" y="84" class="subtitle">Tasa acumulada de hits estimados y p95 de catalogo warm.</text>
+<line x1="100" y1="490.0" x2="1040" y2="490.0" stroke="#d8dee9"/>
+<text x="88" y="494.0" text-anchor="end" class="axis">0</text>
+<line x1="100" y1="418.0" x2="1040" y2="418.0" stroke="#d8dee9"/>
+<text x="88" y="422.0" text-anchor="end" class="axis">22</text>
+<line x1="100" y1="346.0" x2="1040" y2="346.0" stroke="#d8dee9"/>
+<text x="88" y="350.0" text-anchor="end" class="axis">44</text>
+<line x1="100" y1="274.0" x2="1040" y2="274.0" stroke="#d8dee9"/>
+<text x="88" y="278.0" text-anchor="end" class="axis">66</text>
+<line x1="100" y1="202.0" x2="1040" y2="202.0" stroke="#d8dee9"/>
+<text x="88" y="206.0" text-anchor="end" class="axis">88</text>
+<line x1="100" y1="130.0" x2="1040" y2="130.0" stroke="#d8dee9"/>
+<text x="88" y="134.0" text-anchor="end" class="axis">110</text>
+<text x="100.0" y="518" text-anchor="middle" class="axis">0.0s</text>
+<text x="288.0" y="518" text-anchor="middle" class="axis">1.4s</text>
+<text x="476.0" y="518" text-anchor="middle" class="axis">2.8s</text>
+<text x="664.0" y="518" text-anchor="middle" class="axis">4.2s</text>
+<text x="852.0" y="518" text-anchor="middle" class="axis">5.5s</text>
+<text x="1040.0" y="518" text-anchor="middle" class="axis">6.9s</text>
+<text x="100" y="548" class="axis">Tiempo desde inicio</text>
+<text x="24" y="114" class="axis">% / ms</text>
+<line x1="100" y1="490" x2="1040" y2="490" stroke="#172033" stroke-width="1.4"/>
+<line x1="100" y1="130" x2="100" y2="490" stroke="#172033" stroke-width="1.4"/>
+<path d="M1040.0,164.4" fill="none" stroke="#15803d" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1040.0" cy="164.4" r="4" fill="#15803d"/>
+<rect x="910" y="130" width="16" height="16" rx="3" fill="#15803d"/>
+<text x="934" y="143" class="legend">Hit rate acumulado %</text>
+<path d="M100.0,409.3 L778.3,470.3" fill="none" stroke="#2563eb" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="100.0" cy="409.3" r="4" fill="#2563eb"/>
+<circle cx="778.3" cy="470.3" r="4" fill="#2563eb"/>
+<rect x="910" y="160" width="16" height="16" rx="3" fill="#2563eb"/>
+<text x="934" y="173" class="legend">Catalogo warm p95</text>
+</svg>

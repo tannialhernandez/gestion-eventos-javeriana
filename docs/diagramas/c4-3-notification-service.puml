@@ -1,0 +1,239 @@
+@startuml c4-3-notification-service
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 28
+skinparam ranksep 42
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam roundcorner 6
+scale 0.85
+
+skinparam classBackgroundColor<<RabbitListener>> #F3E5F5
+skinparam classBorderColor<<RabbitListener>> #7D3C98
+skinparam classBackgroundColor<<ApplicationSvc>> #EBF5FB
+skinparam classBorderColor<<ApplicationSvc>> #1A5276
+skinparam classBackgroundColor<<Port>> #EAFAF1
+skinparam classBorderColor<<Port>> #1E8449
+skinparam classBackgroundColor<<JpaAdapter>> #E8F8F5
+skinparam classBorderColor<<JpaAdapter>> #148F77
+skinparam classBackgroundColor<<SenderAdapter>> #FFF8E1
+skinparam classBorderColor<<SenderAdapter>> #E65100
+skinparam classBackgroundColor<<Entity>> #EAF0FB
+skinparam classBorderColor<<Entity>> #2E5FA3
+skinparam classBackgroundColor<<Enumeration>> #FEF9E7
+skinparam classBorderColor<<Enumeration>> #C8A400
+skinparam classBackgroundColor<<Strategy>> #FFF3E0
+skinparam classBorderColor<<Strategy>> #BF360C
+skinparam classBackgroundColor<<DomainService>> #FDEDEC
+skinparam classBorderColor<<DomainService>> #B03A2E
+
+
+title
+  <b><size:14>C4 Nivel 3: Vista de Componentes -- notification-service</size></b>
+  <size:11>Plataforma de Gestión de Eventos Académicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:10>ADRs: ADR-012 (Hexagonal) | Patrones: Observer | Strategy | Template Method | Estado: en implementación</size>
+end title
+
+' ── infrastructure.messaging (Driving) ----
+package "infrastructure.messaging  [Driving Adapter AMQP]" as pkg_listener #F3E5F5 {
+  class "NotificationEventListener" as LISTENER <<RabbitListener>> {
+    - inscripcionCreadaService: NotificarInscripcionCreadaService
+    - pagoConfirmadoService: NotificarPagoConfirmadoService
+    - pagoFallidoService: NotificarPagoFallidoService
+    - expiracionService: NotificarInscripcionExpiradaService
+    ==
+    + onInscripcionCreada(event, @Header messageId): void
+    ' queue: notification.inscripcion.created
+    + onPagoConfirmado(event, @Header messageId): void
+    ' queue: notification.pago.confirmado
+    + onPagoFallido(event, @Header messageId): void
+    ' queue: notification.pago.fallido
+    + onInscripcionExpirada(event, @Header messageId): void
+    ' queue: notification.inscripcion.expirada
+    ' Idempotencia: ProcessedMessageRepository check
+  }
+}
+
+' ── application.service ----
+package "application.service  [Application Layer]" as pkg_app #EBF5FB {
+  class "NotificarInscripcionCreadaService" as SVC_INSC <<ApplicationSvc>> {
+    - notificacionRepo: NotificacionRepository
+    - processedMsgRepo: ProcessedMessageRepository
+    - senderPort: NotificationSenderPort
+    - strategySelector: NotificationStrategySelector
+    ==
+    + ejecutar(event: InscripcionCreadaEvent, messageId: String): void
+    ' Template Method: validar->construir->enviar->registrar
+  }
+  class "NotificarPagoConfirmadoService" as SVC_PAGO <<ApplicationSvc>> {
+    - notificacionRepo: NotificacionRepository
+    - processedMsgRepo: ProcessedMessageRepository
+    - senderPort: NotificationSenderPort
+    - strategySelector: NotificationStrategySelector
+    ==
+    + ejecutar(event: PagoConfirmadoEvent, messageId: String): void
+  }
+  class "NotificarPagoFallidoService" as SVC_FALLIDO <<ApplicationSvc>> {
+    - senderPort: NotificationSenderPort
+    - strategySelector: NotificationStrategySelector
+    ==
+    + ejecutar(event: PagoFallidoEvent, messageId: String): void
+  }
+  class "NotificarInscripcionExpiradaService" as SVC_EXP <<ApplicationSvc>> {
+    - senderPort: NotificationSenderPort
+    - strategySelector: NotificationStrategySelector
+    ==
+    + ejecutar(event: InscripcionExpiradaEvent, messageId: String): void
+  }
+}
+
+' ── domain.model ----
+package "domain.model" as pkg_model #EAF0FB {
+  class "Notificacion\n[Entity]" as Notif <<Entity>> {
+    - id: UUID
+    - destinatarioId: UUID
+    - canal: CanalNotificacion
+    - tipo: TipoNotificacion
+    - contenido: String
+    - estado: EstadoNotificacion
+    - creadoEn: LocalDateTime
+    ==
+    + enviar(): void
+    + marcarFallida(motivo: String): void
+  }
+  enum "CanalNotificacion" as Canal <<Enumeration>> {
+    EMAIL
+    SMS
+    PUSH
+  }
+  enum "TipoNotificacion" as Tipo <<Enumeration>> {
+    INSCRIPCION_CREADA
+    PAGO_CONFIRMADO
+    PAGO_FALLIDO
+    INSCRIPCION_EXPIRADA
+  }
+  class "NotificationStrategySelector\n[DomainService]" as Selector <<DomainService>> {
+    ==
+    + seleccionar(canal: CanalNotificacion): NotificationStrategy
+    ' Factory Method: devuelve la Strategy correcta
+  }
+  interface "NotificationStrategy\n[Strategy]" as IStrategy <<Strategy>> {
+    + enviar(destinatario: String, asunto: String, cuerpo: String): void
+  }
+  class "EmailNotificationStrategy" as EmailStrat <<Strategy>> {
+    ==
+    + enviar(destinatario, asunto, cuerpo): void
+    ' -> WireMock SMTP stub
+  }
+  class "SmsNotificationStrategy" as SmsStrat <<Strategy>> {
+    ==
+    + enviar(destinatario, asunto, cuerpo): void
+    ' -> mock log (SMS pendiente)
+  }
+  class "PushNotificationStrategy" as PushStrat <<Strategy>> {
+    ==
+    + enviar(destinatario, asunto, cuerpo): void
+    ' -> mock log (Push pendiente)
+  }
+}
+
+' ── domain.port ----
+package "domain.port" as pkg_port #EAFAF1 {
+  interface "NotificacionRepository" as INotifRepo <<Port>> {
+    + guardar(n: Notificacion): Notificacion
+    + buscarPorDestinatario(id: UUID): List~Notificacion~
+  }
+  interface "ProcessedMessageRepository" as IProcRepo <<Port>> {
+    + existePorMessageId(messageId: String): boolean
+    + registrar(messageId: String): void
+  }
+  interface "NotificationSenderPort" as ISenderPort <<Port>> {
+    + enviar(notificacion: Notificacion): void
+  }
+}
+
+' ── infrastructure.persistence ----
+package "infrastructure.persistence  [Driven Adapter JPA]" as pkg_pers #E8F8F5 {
+  class "NotificacionJpaAdapter" as NotifJpa <<JpaAdapter>> {
+    - jpaRepo: NotificacionJpaRepository
+    ==
+    + guardar(n: Notificacion): Notificacion
+    + buscarPorDestinatario(id: UUID): List~Notificacion~
+  }
+  class "ProcessedMessageJpaAdapter" as ProcJpa <<JpaAdapter>> {
+    - jpaRepo: ProcessedMessageJpaRepository
+    ==
+    + existePorMessageId(messageId: String): boolean
+    + registrar(messageId: String): void
+    ' INSERT INTO processed_messages ... ON CONFLICT DO NOTHING
+  }
+}
+
+' ── infrastructure.sender ----
+package "infrastructure.sender  [Driven Adapter]" as pkg_sender #FFF8E1 {
+  class "WireMockEmailSenderAdapter" as EmailAdap <<SenderAdapter>> {
+    - restTemplate: RestTemplate
+    - strategySelector: NotificationStrategySelector
+    ==
+    + enviar(notificacion: Notificacion): void
+    ' Delega a EmailStrategy -> HTTP POST /mock/smtp/send
+    ' WireMock SMTP stub (mock de envío)
+  }
+}
+
+' ── RELACIONES ----
+LISTENER o--> SVC_INSC    : inscripcionCreadaService
+LISTENER o--> SVC_PAGO    : pagoConfirmadoService
+LISTENER o--> SVC_FALLIDO : pagoFallidoService
+LISTENER o--> SVC_EXP     : expiracionService
+
+SVC_INSC    o--> INotifRepo  : notificacionRepository
+SVC_INSC    o--> IProcRepo   : processedMessageRepository
+SVC_INSC    o--> ISenderPort : senderPort
+SVC_INSC    o--> Selector    : strategySelector
+SVC_PAGO    o--> INotifRepo  : notificacionRepository
+SVC_PAGO    o--> IProcRepo   : processedMessageRepository
+SVC_PAGO    o--> ISenderPort : senderPort
+SVC_PAGO    o--> Selector    : strategySelector
+SVC_FALLIDO o--> ISenderPort : senderPort
+SVC_FALLIDO o--> Selector    : strategySelector
+SVC_EXP     o--> ISenderPort : senderPort
+SVC_EXP     o--> Selector    : strategySelector
+
+Selector --> IStrategy : selecciona
+EmailStrat ..|> IStrategy
+SmsStrat   ..|> IStrategy
+PushStrat  ..|> IStrategy
+
+Notif "1" --> "1" Canal : canal
+Notif "1" --> "1" Tipo  : tipo
+
+NotifJpa ..|> INotifRepo
+ProcJpa  ..|> IProcRepo
+EmailAdap ..|> ISenderPort
+
+' ── LEYENDA ----
+legend right
+  <b>Capas -- Arquitectura Hexagonal</b>
+  |<back:#F3E5F5>  </back>| infrastructure.messaging «Driving AMQP» |
+  |<back:#EBF5FB>  </back>| application.service «Use Cases»         |
+  |<back:#EAF0FB>  </back>| domain.model  Entidades / Strategies     |
+  |<back:#EAFAF1>  </back>| domain.port   Puertos / Interfaces       |
+  |<back:#E8F8F5>  </back>| infrastructure.persistence JPA Adapters |
+  |<back:#FFF8E1>  </back>| infrastructure.sender WireMock SMTP      |
+  ----
+  <b>ADRs aplicables:</b>
+  ADR-012: Arquitectura Hexagonal (Ports & Adapters)
+  ----
+  <b>Patrones GoF aplicados:</b>
+  Observer: NotificationEventListener (AMQP)
+  Strategy: NotificationStrategy por canal
+  Template Method: NotificarXxxService.ejecutar()
+  Factory Method: NotificationStrategySelector
+  Repository: NotificacionRepository
+  ----
+  [!] Estado: en implementación
+     SMS y Push son mocks (log only)
+end legend
+
+@enduml

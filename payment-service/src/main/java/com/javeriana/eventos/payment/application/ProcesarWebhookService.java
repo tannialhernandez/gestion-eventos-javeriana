@@ -1,6 +1,10 @@
 package com.javeriana.eventos.payment.application;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.javeriana.eventos.payment.application.observer.PagoAuditObserver;
+import com.javeriana.eventos.payment.domain.events.SerializacionPayloadException;
+import com.javeriana.eventos.payment.domain.model.EstadoPago;
 import com.javeriana.eventos.payment.domain.model.Pago;
 import com.javeriana.eventos.payment.domain.port.in.ProcesarWebhookUseCase;
 import com.javeriana.eventos.payment.domain.port.out.OutboxEventRepository;
@@ -8,7 +12,7 @@ import com.javeriana.eventos.payment.domain.port.out.PagoRepository;
 import com.javeriana.eventos.payment.domain.port.out.PasarelaPagoFactory;
 import com.javeriana.eventos.payment.domain.port.out.PasarelaPagoPort;
 import com.javeriana.eventos.shared.domain.DomainEvent;
-import com.javeriana.eventos.shared.infrastructure.outbox.OutboxEvent;
+import com.javeriana.eventos.shared.domain.outbox.OutboxEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,27 +20,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Procesa webhooks de la pasarela de pago.
  *
- * Garantías (docs/comportamiento-runtime-inscripcion-pago.md §4, §5, §7):
- *
+ * Garantías:
  * 1. IDEMPOTENCIA (RN-13): verifica referencia_externa antes de procesar.
- *    Si el pago ya está en estado final → DUPLICADO sin reprocessing.
+ * 2. PAGO TARDÍO (RN-10): reembolso + PagoReembolsadoEvent al outbox.
+ * 3. OUTBOX PATTERN (ADR-11): eventos en la misma TX (aprobado, tardío, rechazado).
+ * 4. FACTORY METHOD: PasarelaPagoFactory resuelve el adaptador concreto.
  *
- * 2. PAGO TARDÍO (RN-10): si el webhook llega tras (window + grace), la
- *    inscripción ya expiró. Se emite reembolso y PagoReembolsadoEvent al outbox.
- *    Ventana configurable en application.yml (payment.expiration.*).
- *
- * 3. OUTBOX PATTERN (ADR-11): eventos persistidos en la misma transacción.
- *    OutboxRelayService los publica a RabbitMQ de forma asíncrona.
- *
- * 4. FACTORY METHOD (ADR-Factory): PasarelaPagoFactory resuelve el adaptador
- *    concreto por config, sin acoplamiento a MercadoPago ni Simulador aquí.
+ * Hallazgo #6 CERRADO: payload del evento ahora incluye monto y moneda.
+ * Hallazgo #7 CERRADO: procesarRechazado ahora emite PagoFallidoEvent al outbox.
  */
 @Service
 @Transactional
@@ -44,10 +41,6 @@ public class ProcesarWebhookService implements ProcesarWebhookUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(ProcesarWebhookService.class);
 
-    // RN-10 (SRS §9.3.3): deadline pago = fecha_inscripcion + 15 minutos.
-    // grace-period: margen para la latencia entre el job de expiración de
-    // inscription-service (cada 60s) y la llegada del webhook.
-    // Ver docs/follow-ups/payment-refund-async.md para la decisión completa.
     @Value("${payment.expiration.window-seconds:900}")
     private int expirationWindowSeconds;
 
@@ -58,24 +51,26 @@ public class ProcesarWebhookService implements ProcesarWebhookUseCase {
     private final PasarelaPagoFactory pasarelaFactory;
     private final OutboxEventRepository outboxRepository;
     private final ObjectMapper objectMapper;
+    private final PagoAuditObserver auditObserver;
 
     public ProcesarWebhookService(PagoRepository pagoRepository,
                                    PasarelaPagoFactory pasarelaFactory,
                                    OutboxEventRepository outboxRepository,
-                                   ObjectMapper objectMapper) {
+                                   ObjectMapper objectMapper,
+                                   PagoAuditObserver auditObserver) {
         this.pagoRepository = pagoRepository;
         this.pasarelaFactory = pasarelaFactory;
         this.outboxRepository = outboxRepository;
         this.objectMapper = objectMapper;
+        this.auditObserver = auditObserver;
     }
 
     @Override
     public ResultadoWebhook procesar(WebhookPayload payload) {
 
-        // Factory Method — adaptador resuelto por config, no hardcodeado
         PasarelaPagoPort pasarela = pasarelaFactory.crearPasarela();
 
-        // ── Paso 1: Idempotencia (RN-13) ─────────────────────────────────────
+        // ── Idempotencia (RN-13) ──────────────────────────────────────────────
         Optional<Pago> pagoExistente =
             pagoRepository.buscarPorReferenciaExterna(payload.referenciaExterna());
 
@@ -86,13 +81,13 @@ public class ProcesarWebhookService implements ProcesarWebhookUseCase {
             return ResultadoWebhook.DUPLICADO;
         }
 
-        // ── Paso 2: Buscar pago por inscripción ───────────────────────────────
+        // ── Buscar pago por inscripción ───────────────────────────────────────
         UUID inscripcionId = UUID.fromString(payload.inscripcionId());
         Pago pago = pagoRepository.buscarPorInscripcionId(inscripcionId)
             .orElseThrow(() -> new IllegalArgumentException(
                 "No existe pago para inscripción: " + inscripcionId));
 
-        // ── Paso 3: Procesar según estado de la pasarela ─────────────────────
+        // ── Procesar según estado de la pasarela ─────────────────────────────
         return switch (payload.estado()) {
             case "approved" -> procesarAprobado(pago, payload, pasarela);
             case "rejected" -> procesarRechazado(pago, payload);
@@ -107,7 +102,6 @@ public class ProcesarWebhookService implements ProcesarWebhookUseCase {
     private ResultadoWebhook procesarAprobado(Pago pago,
                                                WebhookPayload payload,
                                                PasarelaPagoPort pasarela) {
-        // RN-10: detectar pago tardío por tiempo transcurrido desde la creación
         Instant deadline = pago.getFechaCreacion()
             .plusSeconds((long) expirationWindowSeconds + gracePeriodSeconds);
 
@@ -115,15 +109,14 @@ public class ProcesarWebhookService implements ProcesarWebhookUseCase {
             return procesarPagoTardio(pago, payload, pasarela);
         }
 
-        // ── Camino feliz: confirmar ───────────────────────────────────────────
+        EstadoPago estadoAnterior = pago.getEstado();
         pago.confirmar(payload.referenciaExterna(), payload.metadatosJson());
         pagoRepository.guardar(pago);
+        auditObserver.registrarTransicion(pago, estadoAnterior.name(),
+            "PASARELA:" + pago.getPasarela(), "Pago aprobado por pasarela");
 
         for (DomainEvent event : pago.pullDomainEvents()) {
-            outboxRepository.guardar(crearOutboxEvent(event, Map.of(
-                "inscripcionId", pago.getInscripcionId().toString(),
-                "referenciaExterna", payload.referenciaExterna()
-            )));
+            outboxRepository.guardar(crearOutboxEvent(event));
         }
 
         log.info("[webhook] Pago {} CONFIRMADO para inscripción {}.",
@@ -135,25 +128,22 @@ public class ProcesarWebhookService implements ProcesarWebhookUseCase {
     private ResultadoWebhook procesarPagoTardio(Pago pago,
                                                  WebhookPayload payload,
                                                  PasarelaPagoPort pasarela) {
-        log.warn("[webhook] Pago TARDÍO: inscripcion={} creado={} deadline superado ({}s+{}s). Reembolsando.",
+        log.warn("[webhook] Pago TARDIO: inscripcion={} creado={} deadline superado ({}s+{}s). Reembolsando.",
             pago.getInscripcionId(), pago.getFechaCreacion(),
             expirationWindowSeconds, gracePeriodSeconds);
 
-        // TODO[DEUDA-TÉCNICA]: pasarela.reembolsar() se llama ANTES del COMMIT de BD.
-        // Si la BD falla tras un reembolso exitoso en pasarela → estado divergente.
-        // Solución correcta: reembolso disparado por consumer del PagoReembolsadoEvent.
-        // Ver docs/follow-ups/payment-refund-async.md para diseño y análisis completo.
+        // TODO[DEUDA-TECNICA]: pasarela.reembolsar() se llama ANTES del COMMIT de BD.
+        // Solicion correcta: reembolso disparado por consumer del PagoReembolsadoEvent.
         pasarela.reembolsar(payload.referenciaExterna(), pago.getMonto());
 
-        // RN-PAGO-05 (propuesta): desde INICIADO/PROCESANDO → REEMBOLSADO
+        EstadoPago estadoAnterior = pago.getEstado();
         pago.reembolsarPorExpiracion();
         pagoRepository.guardar(pago);
+        auditObserver.registrarTransicion(pago, estadoAnterior.name(),
+            "SISTEMA", "Reembolso automatico por expiracion de inscripcion");
 
         for (DomainEvent event : pago.pullDomainEvents()) {
-            outboxRepository.guardar(crearOutboxEvent(event, Map.of(
-                "inscripcionId", pago.getInscripcionId().toString(),
-                "referenciaExterna", payload.referenciaExterna()
-            )));
+            outboxRepository.guardar(crearOutboxEvent(event));
         }
 
         log.info("[webhook] Reembolso emitido: pago={} inscripcion={}.",
@@ -163,29 +153,36 @@ public class ProcesarWebhookService implements ProcesarWebhookUseCase {
     }
 
     private ResultadoWebhook procesarRechazado(Pago pago, WebhookPayload payload) {
-        pago.marcarFallido("Rechazado por pasarela");
+        EstadoPago estadoAnterior = pago.getEstado();
+        pago.marcarFallido("RECHAZADO_POR_PASARELA");
         pagoRepository.guardar(pago);
+        auditObserver.registrarTransicion(pago, estadoAnterior.name(),
+            "PASARELA", "Pago rechazado por la pasarela");
 
-        log.warn("[webhook] Pago {} RECHAZADO para inscripción {}.",
+        for (DomainEvent event : pago.pullDomainEvents()) {
+            outboxRepository.guardar(crearOutboxEvent(event));
+        }
+
+        log.warn("[webhook] Pago {} RECHAZADO para inscripcion {}.",
             pago.getId(), pago.getInscripcionId());
 
         return ResultadoWebhook.RECHAZADO;
     }
 
-    private OutboxEvent crearOutboxEvent(DomainEvent event, Map<String, String> extras) {
+    /**
+     * Serializa el DomainEvent completo (record) a JSON.
+     *
+     * El record es la fuente de verdad del payload: si se agrega un campo al
+     * evento, el JSON lo refleja automáticamente sin cambios aquí.
+     * Jackson serializa los componentes del record por nombre.
+     */
+    private OutboxEvent crearOutboxEvent(DomainEvent event) {
         try {
-            Map<String, Object> payload = Map.of(
-                "eventId",           event.eventId().toString(),
-                "aggregateId",       event.aggregateId().toString(),
-                "eventType",         event.eventType(),
-                "occurredAt",        event.occurredAt().toString(),
-                "inscripcionId",     extras.getOrDefault("inscripcionId", ""),
-                "referenciaExterna", extras.getOrDefault("referenciaExterna", "")
-            );
-            String json = objectMapper.writeValueAsString(payload);
-            return new OutboxEvent(event.aggregateId(), event.eventType(), json);
-        } catch (Exception e) {
-            throw new RuntimeException("Error serializando evento de dominio", e);
+            String json = objectMapper.writeValueAsString(event);
+            return new OutboxEvent("Pago", event.aggregateId(), event.eventType(), json);
+        } catch (JsonProcessingException e) {
+            throw new SerializacionPayloadException(
+                "Error serializando evento " + event.eventType(), e);
         }
     }
 }

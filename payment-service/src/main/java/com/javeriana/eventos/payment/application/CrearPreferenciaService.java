@@ -1,5 +1,7 @@
 package com.javeriana.eventos.payment.application;
 
+import com.javeriana.eventos.payment.application.observer.PagoAuditObserver;
+import com.javeriana.eventos.payment.domain.model.EstadoPago;
 import com.javeriana.eventos.payment.domain.model.Pago;
 import com.javeriana.eventos.payment.domain.port.in.CrearPreferenciaUseCase;
 import com.javeriana.eventos.payment.domain.port.out.PagoRepository;
@@ -33,11 +35,14 @@ public class CrearPreferenciaService implements CrearPreferenciaUseCase {
 
     private final PagoRepository pagoRepository;
     private final PasarelaPagoFactory pasarelaFactory;
+    private final PagoAuditObserver auditObserver;
 
     public CrearPreferenciaService(PagoRepository pagoRepository,
-                                   PasarelaPagoFactory pasarelaFactory) {
+                                   PasarelaPagoFactory pasarelaFactory,
+                                   PagoAuditObserver auditObserver) {
         this.pagoRepository = pagoRepository;
         this.pasarelaFactory = pasarelaFactory;
+        this.auditObserver = auditObserver;
     }
 
     @Override
@@ -56,6 +61,8 @@ public class CrearPreferenciaService implements CrearPreferenciaUseCase {
             pasarela.getClass().getSimpleName()   // Registra qué adaptador se usó
         );
         pagoRepository.guardar(pago);
+        auditObserver.registrarTransicion(pago, null,
+            "SISTEMA", "Pago creado por solicitud de inscription-service");
 
         // Llamar a la pasarela (MercadoPago real o Simulador)
         PasarelaPagoPort.PreferenciaPago preferencia = pasarela.crearPreferencia(
@@ -66,10 +73,13 @@ public class CrearPreferenciaService implements CrearPreferenciaUseCase {
         );
 
         // Registrar la preferencia en el agregado
+        EstadoPago estadoAnterior = pago.getEstado();
         pago.registrarPreferencia(preferencia.preferenciaId());
         pagoRepository.guardar(pago);
+        auditObserver.registrarTransicion(pago, estadoAnterior.name(),
+            "PASARELA:" + pago.getPasarela(), "Preferencia registrada en pasarela");
 
-        log.info("Preferencia creada para inscripción {}. Pasarela: {}",
+        log.info("Preferencia creada para inscripcion {}. Pasarela: {}",
             command.inscripcionId(), pago.getPasarela());
 
         return new Result(pago.getId(), preferencia.checkoutUrl(), preferencia.preferenciaId());

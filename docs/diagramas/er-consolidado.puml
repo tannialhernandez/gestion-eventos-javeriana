@@ -1,0 +1,238 @@
+@startuml er-consolidado
+' Modelo Entidad-Relacion Consolidado
+' Plataforma de Gestion de Eventos Academicos
+' PostgreSQL 15 | DB per Service Pattern | 4 bases de datos
+'
+' ADR-011: Transactional Outbox (tabla outbox replicada en 3 servicios)
+' ADR-012: Pessimistic Lock (evento.cupos_disponibles en inscription_db)
+' ADR-018: ShedLock (tabla shedlock en inscription_db)
+'
+' Generado: 2026-05-22
+
+!theme plain
+hide circle
+skinparam linetype ortho
+skinparam defaultFontSize 9
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam backgroundColor #FAFAFA
+skinparam EntityBackgroundColor #FFFFFF
+skinparam EntityBorderColor #888888
+skinparam EntityFontSize 9
+skinparam PackageBorderColor #AAAAAA
+skinparam PackageFontSize 10
+
+title
+  <b><size:13>Modelo Entidad-Relacion Consolidado</size></b>
+  <size:10>Plataforma de Gestion de Eventos Academicos | PostgreSQL 15 | DB per Service Pattern</size>
+end title
+
+' ====================================================================
+' event_db
+' ====================================================================
+package "event_db\n(event-service)" as db_event #C8EDCB {
+
+  entity "categoria" as cat {
+    * id : UUID <<PK>>
+    --
+    nombre : VARCHAR(100) <<UNIQUE>>
+    descripcion : TEXT
+    creado_en : TIMESTAMPTZ
+  }
+
+  entity "evento" as evt {
+    * id : UUID <<PK>>
+    --
+    nombre : VARCHAR(200)
+    descripcion : TEXT
+    fecha_inicio : TIMESTAMPTZ
+    fecha_fin : TIMESTAMPTZ
+    cupos_totales : INT
+    cupos_disponibles : INT
+    precio : NUMERIC(10,2)
+    estado : VARCHAR(20)
+    organizador_id : UUID
+    categoria_id : UUID <<FK>>
+    creado_en : TIMESTAMPTZ
+    actualizado_en : TIMESTAMPTZ
+    --
+    INDEX idx_evento_estado_fecha (estado, fecha_inicio)
+  }
+
+  entity "outbox_event\n[event_db]" as outbox_evt {
+    * id : UUID <<PK>>
+    --
+    aggregate_type : VARCHAR(50)
+    aggregate_id : UUID
+    event_type : VARCHAR(100)
+    payload : JSONB
+    estado : VARCHAR(20)
+    intentos : INT DEFAULT 0
+    creado_en : TIMESTAMPTZ
+    enviado_en : TIMESTAMPTZ
+    --
+    INDEX idx_outbox_estado_creado (estado, creado_en)
+  }
+
+  evt }o--|| cat : "categoria_id -> id"
+}
+
+' ====================================================================
+' inscription_db
+' ====================================================================
+package "inscription_db\n(inscription-service)" as db_ins #FFD7D7 {
+
+  entity "evento_proyeccion" as evt_proj {
+    * id : UUID <<PK>>
+    --
+    nombre : VARCHAR(200)
+    cupos_disponibles : INT
+    estado : VARCHAR(20)
+    --
+    NOTE: SELECT FOR UPDATE (ADR-012)
+  }
+
+  entity "inscripcion" as ins {
+    * id : UUID <<PK>>
+    --
+    usuario_id : UUID
+    evento_id : UUID <<FK>>
+    estado : VARCHAR(20)
+    creado_en : TIMESTAMPTZ
+    expira_en : TIMESTAMPTZ
+    confirmado_en : TIMESTAMPTZ
+    referencia_pago : VARCHAR(100)
+    --
+    UNIQUE (usuario_id, evento_id)
+    INDEX idx_inscripcion_expira (estado, expira_en)
+  }
+
+  entity "outbox_event\n[inscription_db]" as outbox_ins {
+    * id : UUID <<PK>>
+    --
+    aggregate_type : VARCHAR(50)
+    aggregate_id : UUID
+    event_type : VARCHAR(100)
+    payload : JSONB
+    estado : VARCHAR(20)
+    intentos : INT DEFAULT 0
+    creado_en : TIMESTAMPTZ
+    enviado_en : TIMESTAMPTZ
+    --
+    INDEX idx_outbox_estado_creado (estado, creado_en)
+  }
+
+  entity "shedlock\n[ADR-018]" as shedlock {
+    * name : VARCHAR(64) <<PK>>
+    --
+    lock_until : TIMESTAMP
+    locked_at : TIMESTAMP
+    locked_by : VARCHAR(255)
+  }
+
+  ins }o--|| evt_proj : "evento_id -> id"
+}
+
+' ====================================================================
+' payment_db
+' ====================================================================
+package "payment_db\n(payment-service)" as db_pay #FFE0B2 {
+
+  entity "pago" as pago {
+    * id : UUID <<PK>>
+    --
+    inscripcion_id : UUID <<UNIQUE>>
+    monto : NUMERIC(10,2)
+    moneda : VARCHAR(3)
+    estado : VARCHAR(20)
+    referencia_pasarela : VARCHAR(100)
+    intentos : INT DEFAULT 0
+    creado_en : TIMESTAMPTZ
+    confirmado_en : TIMESTAMPTZ
+  }
+
+  entity "mensaje_procesado\n[idempotencia]" as msg_proc {
+    * message_id : UUID <<PK>>
+    --
+    procesado_en : TIMESTAMPTZ
+  }
+
+  entity "outbox_event\n[payment_db]\n[PENDIENTE - OutboxRelayService]" as outbox_pay {
+    * id : UUID <<PK>>
+    --
+    aggregate_type : VARCHAR(50)
+    aggregate_id : UUID
+    event_type : VARCHAR(100)
+    payload : JSONB
+    estado : VARCHAR(20)
+    intentos : INT DEFAULT 0
+    creado_en : TIMESTAMPTZ
+    enviado_en : TIMESTAMPTZ
+    --
+    INDEX idx_outbox_estado_creado (estado, creado_en)
+  }
+
+  note bottom of outbox_pay
+    OutboxRelayService PENDIENTE
+    (rama feat/payment-outbox-e2e)
+    Tabla creada, relay sin implementar
+  end note
+}
+
+' ====================================================================
+' notification_db
+' ====================================================================
+package "notification_db\n(notification-service)" as db_notif #FFF9C4 {
+
+  entity "notificacion" as notif {
+    * id : UUID <<PK>>
+    --
+    message_id : UUID <<UNIQUE>>
+    tipo : VARCHAR(50)
+    canal : VARCHAR(20)
+    destinatario : VARCHAR(255)
+    contenido : TEXT
+    estado : VARCHAR(20)
+    intentos : INT DEFAULT 0
+    creado_en : TIMESTAMPTZ
+    enviado_en : TIMESTAMPTZ
+    --
+    INDEX idx_notif_message_id (message_id)
+  }
+}
+
+' ====================================================================
+' CORRELACIONES LOGICAS CROSS-DATABASE
+' (no son FKs reales -- DB per Service Pattern)
+' ====================================================================
+
+evt ..> evt_proj : "<<correlacion logica>>\nevento.id\n(projection replicada\nvia AMQP)"
+
+ins ..> pago : "<<correlacion logica>>\ninscripcion_id\n(sin FK cross-DB)"
+
+outbox_ins ..> msg_proc : "<<correlacion logica>>\noutbox.id = message_id\n(idempotencia consumidor)"
+
+outbox_pay ..> notif : "<<correlacion logica>>\noutbox.id = message_id\n(idempotencia consumidor)"
+
+' ====================================================================
+' LEYENDA
+' ====================================================================
+legend bottom left
+  <b>Modelo E-R -- Plataforma Eventos Academicos</b>
+  -----------------------------------------------
+  |<back:#C8EDCB> </back>| event_db (event-service)           |
+  |<back:#FFD7D7> </back>| inscription_db (inscription-svc)   |
+  |<back:#FFE0B2> </back>| payment_db (payment-service)       |
+  |<back:#FFF9C4> </back>| notification_db (notification-svc) |
+  -----------------------------------------------
+  <<FK>>   Clave foranea real (dentro de la misma BD)
+  UNIQUE   Constraint de unicidad (invariante de negocio)
+  INDEX    Indice critico para consultas frecuentes
+  ....>    Correlacion logica cross-database (sin FK real)
+  -----------------------------------------------
+  ADR-011: tabla outbox en event, inscription y payment
+  ADR-012: evento_proyeccion usa SELECT FOR UPDATE
+  ADR-018: tabla shedlock en inscription_db
+end legend
+
+@enduml

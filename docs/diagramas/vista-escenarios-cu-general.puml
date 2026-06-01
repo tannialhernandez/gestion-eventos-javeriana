@@ -1,0 +1,115 @@
+@startuml vista-escenarios-cu-general
+' Vista +1 Escenarios — Diagrama de Casos de Uso Arquitectónicamente Significativos
+' Plataforma de Gestión de Eventos Académicos — Javeriana 2026
+' Kruchten 4+1 · Entrega 3
+
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 10
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ActorBackgroundColor #DDEEFF
+skinparam ActorBorderColor #4477AA
+skinparam UsecaseBackgroundColor #FFFFFF
+skinparam UsecaseBorderColor #888888
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 9
+
+title
+  <b><size:13>Vista +1 Escenarios — Casos de Uso Arquitectónicamente Significativos</size></b>
+  <size:10>Plataforma de Gestión de Eventos Académicos · Kruchten 4+1 · Javeriana 2026</size>
+end title
+
+' ── Actores humanos (izquierda) ──────────────────────────────────────
+actor "Estudiante\n«actor primario»"         as EST        #DDEEFF
+actor "Organizador\n«actor primario»"        as ORG        #DDEEFF
+actor "Administrador\n«actor primario»"      as ADM        #DDEEFF
+
+' ── Actores sistema / externos (derecha) ─────────────────────────────
+actor "Sistema Scheduler\n«actor secundario»\n(@Scheduled + ShedLock)" as SCHED   #E8FFE8
+actor "Pasarela de Pagos\n«sistema externo»\n(WireMock en prototipo)"  as PASARELA #FFE8D7
+actor "Serv. Notificación\n«sistema externo»\n(SMTP mock WireMock)"    as SMTP_EXT #FFE8D7
+
+' ════════════════════════════════════════════════════════════════════
+' SUBSISTEMA: Catálogo de Eventos (event-service)
+' ════════════════════════════════════════════════════════════════════
+rectangle "**Catálogo de Eventos**\nevent-service · Cache-Aside Redis" as CAT #C8EDCB {
+  usecase "E1: Consultar catálogo\nde eventos\n«Cache-Aside ADR-008»"  as E1
+  usecase "E8: Crear evento\ne invalidar caché\n«Cache eviction»"      as E8
+}
+
+' ════════════════════════════════════════════════════════════════════
+' SUBSISTEMA: Inscripciones (inscription-service)
+' ════════════════════════════════════════════════════════════════════
+rectangle "**Inscripciones**\ninscription-service · Core Domain" as INS #FFD7D7 {
+  usecase "E2: Inscribirse a evento\ncon cupo limitado\n«Pessimistic Lock + Outbox\nADR-003, ADR-011»" as E2
+  usecase "E5: Expirar inscripciones\npendientes automáticamente\n«ShedLock ADR-018»"                   as E5
+  usecase "E6: Cancelar inscripción\npor estudiante\n«Strategy PoliticaCancelacion»"                    as E6
+  usecase "Confirmar inscripción\n(trigger interno vía AMQP)" as CU_CONF
+}
+
+' ════════════════════════════════════════════════════════════════════
+' SUBSISTEMA: Pagos (payment-service)
+' ════════════════════════════════════════════════════════════════════
+rectangle "**Pagos**\npayment-service · 70% implementado" as PAY #FFE0B2 {
+  usecase "E3: Confirmar pago\n«Outbox + fan-out AMQP\nADR-011, ADR-006»"         as E3
+  usecase "E4: Manejar pago fallido\ncompensación + DLQ\n«Compensating TX, ADR-019»" as E4
+}
+
+' ════════════════════════════════════════════════════════════════════
+' SUBSISTEMA: Notificaciones (notification-service)
+' ════════════════════════════════════════════════════════════════════
+rectangle "**Notificaciones**\nnotification-service · Observer + Strategy" as NOTIF #FFF9C4 {
+  usecase "E7: Enviar notificación\nmulti-canal\n«Observer + Strategy»"            as E7
+  usecase "E9: Recuperar tras\ncaída del broker\n«Outbox buffer durable ADR-011»"  as E9
+}
+
+' ── Relaciones actores humanos → casos de uso ────────────────────────
+EST  --> E1
+EST  --> E2
+EST  --> E6
+ORG  --> E8
+ORG  --> E1 : consulta catálogo
+ADM  --> E5 : supervisa
+ADM  --> E1
+
+' ── Relaciones actores sistema → casos de uso ────────────────────────
+SCHED    --> E5     : «dispara @Scheduled»
+SCHED    --> E9     : «dispara OutboxRelayService»
+PASARELA --> E3     : «webhook CONFIRMED»
+PASARELA --> E4     : «webhook FAILED»
+SMTP_EXT --> E7     : «recibe email mock»
+
+' ── Include / Extend ─────────────────────────────────────────────────
+E2   ..>  E7     : <<include>>\nnotif. inscripción pendiente
+E3   ..>  E7     : <<include>>\nnotif. pago confirmado
+E4   ..>  E7     : <<include>>\nnotif. pago rechazado
+E5   ..>  E7     : <<include>>\nnotif. inscripción expirada
+E3   ..>  CU_CONF : <<include>>\nconfirma inscripción
+E5   ..>  CU_CONF : <<extend>>\ncuando inscripción expira
+E6   ..>  CU_CONF : <<extend>>\ncancelación voluntaria
+E8   ..>  E1     : <<extend>>\ntras invalidar caché
+
+' ── Leyenda ──────────────────────────────────────────────────────────
+legend bottom left
+  <b>Vista +1 Escenarios — Kruchten 4+1</b>
+  ¿Qué casos de uso validan la arquitectura?
+  ─────────────────────────────────────────
+  |<back:#C8EDCB> </back>| Catálogo — event-service |
+  |<back:#FFD7D7> </back>| Inscripciones — inscription-service |
+  |<back:#FFE0B2> </back>| Pagos — payment-service (70%) |
+  |<back:#FFF9C4> </back>| Notificaciones — notification-service |
+  |<back:#DDEEFF> </back>| Actores humanos |
+  |<back:#E8FFE8> </back>| Actores sistema (Scheduler) |
+  |<back:#FFE8D7> </back>| Sistemas externos |
+  ─────────────────────────────────────────
+  ADR-003 Pessimistic Lock
+  ADR-006 RabbitMQ
+  ADR-008 Cache-Aside Redis
+  ADR-011 Transactional Outbox
+  ADR-012 Arquitectura Hexagonal
+  ADR-018 ShedLock
+  ADR-019 DLQ Strategy
+end legend
+
+@enduml

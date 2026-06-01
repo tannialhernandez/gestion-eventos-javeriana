@@ -1,0 +1,80 @@
+@startuml c4-component-inscription-service
+' Generado via Structurizr MCP desde inscription-service.dsl
+' Vista: C4 Nivel 3 - Componentes del Inscription Service
+' Herramienta: mcp__structurizr__export-c4plantuml
+
+title <size:18>C4 Nivel 3: Componentes del Inscription Service</size>\n<size:13>Plataforma de Gestión de Eventos Académicos</size>\n<size:11>Arquitectura Hexagonal | ADR-012 (Bloqueo Pesimista) | ADR-008 (Outbox) | ADR-018 (ShedLock)</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+System_Boundary("PlataformadeGestióndeEventosAcadémicos_boundary", "Plataforma de Gestión de Eventos Académicos", $tags="") {
+  Container_Boundary("InscriptionService_boundary", "Inscription Service | Spring Boot 3 / Java 17", $tags="") {
+
+    ' ── Driving Adapters ───────────────────────────────────────
+    Component(restController, "InscripcionRestController", $techn="@RestController", $descr="Driving adapter REST.\nPOST /api/v1/inscripciones\nGET  /api/v1/inscripciones/{id}\nDELETE /api/v1/inscripciones/{id}", $tags="")
+    Component(eventoConsumer, "EventoConsumerListener", $techn="@Component @RabbitListener", $descr="Driving adapter RabbitMQ.\nConsumo: inscripcion.pago.confirmado\nConsumo: inscripcion.pago.expirado", $tags="")
+
+    ' ── Application Services ───────────────────────────────────
+    Component(crearService, "CrearInscripcionService", $techn="@Transactional Application Service", $descr="Crea inscripción con bloqueo pesimista\nSELECT FOR UPDATE sobre Evento y registra\nOutboxEvent en misma transacción\n[ADR-012, ADR-008]", $tags="")
+    Component(confirmarService, "ConfirmarInscripcionService", $techn="@Transactional Application Service", $descr="Confirma inscripción al recibir pago exitoso", $tags="")
+    Component(cancelarService, "CancelarInscripcionService", $techn="@Transactional Application Service", $descr="Cancela inscripción aplicando política\nde cancelación y libera cupo", $tags="")
+    Component(expirarService, "ExpirarInscripcionesPendientesService", $techn="@Scheduled @SchedulerLock Application Service", $descr="Expira inscripciones pendientes cada 60s\nProtegido con ShedLock [ADR-018]", $tags="")
+    Component(outboxRelay, "OutboxRelayService", $techn="@Scheduled @SchedulerLock Application Service", $descr="Publica eventos del Outbox a RabbitMQ cada 2s\nProtegido con ShedLock [ADR-008, ADR-018]", $tags="")
+
+    ' ── Domain Services ────────────────────────────────────────
+    Component(politicaCancelacion, "PoliticaCancelacion", $techn="Domain Service", $descr="Evalúa reglas de negocio para\ncancelación y reembolso", $tags="")
+
+    ' ── Ports (Interfaces) ─────────────────────────────────────
+    Component(inscripcionPort, "InscripcionRepository", $techn="Port Interface", $descr="Puerto primario de persistencia\nde inscripciones", $tags="")
+    Component(eventoPort, "EventoRepository", $techn="Port Interface", $descr="Puerto de persistencia de eventos\ncon soporte bloqueo pesimista", $tags="")
+    Component(outboxPort, "OutboxRepository", $techn="Port Interface", $descr="Puerto de persistencia del\nTransactional Outbox", $tags="")
+    Component(publisherPort, "EventPublisher", $techn="Port Interface", $descr="Puerto de publicación de eventos\nal Message Broker", $tags="")
+
+    ' ── Driven Adapters ────────────────────────────────────────
+    Component(inscripcionJpa, "InscripcionJpaAdapter", $techn="@Repository Driven Adapter", $descr="Adaptador JPA que implementa\nInscripcionRepository", $tags="")
+    Component(eventoJpa, "EventoJpaAdapter", $techn="@Repository Driven Adapter", $descr="Adaptador JPA que implementa\nEventoRepository con PESSIMISTIC_WRITE", $tags="")
+    Component(outboxJpa, "OutboxJpaAdapter", $techn="@Repository Driven Adapter", $descr="Adaptador JPA que implementa\nOutboxRepository", $tags="")
+  }
+}
+
+' ── Relaciones Driving ──────────────────────────────────────────────────────
+Rel(restController, crearService, "invoca", $techn="")
+Rel(restController, cancelarService, "invoca", $techn="")
+Rel(eventoConsumer, confirmarService, "invoca al recibir PagoConfirmadoEvent", $techn="")
+Rel(eventoConsumer, cancelarService, "invoca al recibir PagoExpiradoEvent", $techn="")
+
+' ── Relaciones Application -> Ports ────────────────────────────────────────
+Rel(crearService, inscripcionPort, "persiste Inscripcion", $techn="")
+Rel(crearService, eventoPort, "adquiere bloqueo pesimista y decrementa cupo", $techn="SELECT FOR UPDATE")
+Rel(crearService, outboxPort, "registra InscripcionCreadaEvent", $techn="misma transacción")
+Rel(confirmarService, inscripcionPort, "actualiza estado a CONFIRMADA", $techn="")
+Rel(confirmarService, outboxPort, "registra InscripcionConfirmadaEvent", $techn="")
+Rel(cancelarService, inscripcionPort, "actualiza estado a CANCELADA", $techn="")
+Rel(cancelarService, eventoPort, "incrementa cupo disponible", $techn="")
+Rel(cancelarService, outboxPort, "registra InscripcionCanceladaEvent", $techn="")
+Rel(cancelarService, politicaCancelacion, "consulta reglas", $techn="")
+Rel(expirarService, inscripcionPort, "busca PENDIENTES expiradas", $techn="")
+Rel(expirarService, cancelarService, "delega cancelación por expiración", $techn="")
+Rel(outboxRelay, outboxPort, "lee lote de eventos pendientes", $techn="")
+Rel(outboxRelay, publisherPort, "publica eventos a RabbitMQ", $techn="")
+
+' ── Relaciones Ports -> Driven Adapters ────────────────────────────────────
+Rel(inscripcionJpa, inscripcionPort, "implementa", $techn="")
+Rel(eventoJpa, eventoPort, "implementa", $techn="")
+Rel(outboxJpa, outboxPort, "implementa", $techn="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

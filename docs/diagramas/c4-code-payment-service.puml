@@ -1,0 +1,495 @@
+@startuml c4-code-payment-service
+' C4 Nivel 4: Vista de Codigo - Payment Service (Procesamiento + Mock pasarela)
+' Plataforma de Gestion de Eventos Academicos - Arquitectura Hexagonal
+'
+' Materializa:
+'   ADR-006 -- RabbitMQ como message broker
+'   ADR-011 -- Transactional Outbox Pattern
+'   ADR-012 -- Arquitectura Hexagonal (Ports & Adapters)
+'   ADR-019 -- Estrategia DLQ para mensajes fallidos
+'
+' Estado: 70% implementado
+' PENDIENTE: OutboxRelayService (rama feat/payment-outbox-e2e)
+' WireMock: mock de pasarela de pagos (sin integracion real en prototipo)
+'
+' Generado: 2026-05-22
+
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 35
+skinparam ranksep 55
+skinparam backgroundColor #F9F9F9
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam defaultFontSize 10
+
+skinparam class {
+  BackgroundColor<<AggregateRoot>>            #EDE0F5
+  BorderColor<<AggregateRoot>>                #7B2D8B
+  HeaderBackgroundColor<<AggregateRoot>>      #9B59B6
+
+  BackgroundColor<<Entity>>                   #EAF0FB
+  BorderColor<<Entity>>                       #2E5FA3
+  HeaderBackgroundColor<<Entity>>             #3C7DD9
+
+  BackgroundColor<<Enumeration>>              #FEF9E7
+  BorderColor<<Enumeration>>                  #C8A400
+  HeaderBackgroundColor<<Enumeration>>        #F0C040
+
+  BackgroundColor<<Port>>                     #EAFAF1
+  BorderColor<<Port>>                         #1E8449
+  HeaderBackgroundColor<<Port>>               #27AE60
+
+  BackgroundColor<<ApplicationService>>       #EBF5FB
+  BorderColor<<ApplicationService>>           #1A5276
+  HeaderBackgroundColor<<ApplicationService>> #2980B9
+
+  BackgroundColor<<ApplicationServicePending>> #FEF9E7
+  BorderColor<<ApplicationServicePending>>     #A04000
+  HeaderBackgroundColor<<ApplicationServicePending>> #E67E22
+
+  BackgroundColor<<RestController>>           #FEF5E7
+  BorderColor<<RestController>>               #A04000
+  HeaderBackgroundColor<<RestController>>     #E67E22
+
+  BackgroundColor<<RabbitListener>>           #F9EBEA
+  BorderColor<<RabbitListener>>               #7D3C98
+  HeaderBackgroundColor<<RabbitListener>>     #8E44AD
+
+  BackgroundColor<<JpaAdapter>>               #E8F8F5
+  BorderColor<<JpaAdapter>>                   #148F77
+  HeaderBackgroundColor<<JpaAdapter>>         #1ABC9C
+
+  BackgroundColor<<JpaRepository>>            #E8F6F3
+  BorderColor<<JpaRepository>>                #0E6655
+  HeaderBackgroundColor<<JpaRepository>>      #117A65
+
+  BackgroundColor<<HttpClientAdapter>>        #FEF5E7
+  BorderColor<<HttpClientAdapter>>            #784212
+  HeaderBackgroundColor<<HttpClientAdapter>>  #A04000
+
+  BackgroundColor<<RabbitPublisher>>          #F9EBEA
+  BorderColor<<RabbitPublisher>>              #7D3C98
+  HeaderBackgroundColor<<RabbitPublisher>>    #8E44AD
+
+  FontColor #FFFFFF
+}
+
+title
+  <b><size:16>C4 Nivel 4: Vista de Codigo -- Payment Service (Procesamiento + Mock Pasarela)</size></b>
+  <size:13>Plataforma de Gestion de Eventos Academicos | Arquitectura Hexagonal | Spring Boot 3 / Java 17</size>
+  <size:11><color:#E67E22>70% implementado</color>  |  <color:#2980B9>ADR-011: Transactional Outbox</color>  |  <color:#8E44AD>ADR-006: RabbitMQ</color>  |  <color:#E74C3C>ADR-019: DLQ</color></size>
+end title
+
+' ============================================================
+' PAQUETE: domain.model
+' ============================================================
+package "com.javeriana.eventos.payment\n.domain.model" as pkg_domain_model #EDE0F5 {
+
+  class Pago <<AggregateRoot>> {
+    - id: UUID
+    - inscripcionId: UUID
+    - monto: BigDecimal
+    - moneda: String
+    - estado: EstadoPago
+    - referenciaExterna: String {nullable}
+    - idempotencyKey: String
+    - creadoEn: LocalDateTime
+    - confirmadoEn: LocalDateTime {nullable}
+    - metadatosPasarela: String {JSON, nullable}
+    ==
+    + confirmar(referenciaExterna: String,\n  metadatos: String): void
+    + rechazar(motivo: String): void
+    + reembolsar(): void
+    + estaConfirmado(): boolean
+    + estaPendiente(): boolean
+  }
+
+  enum EstadoPago <<Enumeration>> {
+    INICIADO
+    PENDIENTE_PASARELA
+    CONFIRMADO
+    RECHAZADO
+    REEMBOLSADO
+  }
+
+  class IdempotencyKey <<Entity>> {
+    - key: String
+    - pagoId: UUID
+    - creadoEn: LocalDateTime
+    ==
+    + getKey(): String
+    + getPagoId(): UUID
+  }
+
+  class OutboxEvent <<Entity>> {
+    - id: UUID
+    - aggregateType: String
+    - aggregateId: UUID
+    - eventType: String
+    - payload: String {JSON}
+    - createdAt: LocalDateTime
+    - processedAt: LocalDateTime {nullable}
+    - attempts: int
+    ==
+    + marcarProcesado(): void
+    + incrementarIntentos(): void
+  }
+}
+
+' ============================================================
+' PAQUETE: domain.port
+' ============================================================
+package "com.javeriana.eventos.payment\n.domain.port" as pkg_domain_port #EAFAF1 {
+
+  interface PagoRepository <<Port>> {
+    + guardar(pago: Pago): Pago
+    + buscarPorId(id: UUID): Optional<Pago>
+    + buscarPorReferenciaExterna(\n  ref: String): Optional<Pago>
+    + buscarPorInscripcionId(\n  inscripcionId: UUID): Optional<Pago>
+  }
+
+  interface IdempotencyKeyRepository <<Port>> {
+    + guardar(key: IdempotencyKey): IdempotencyKey
+    + buscarPorKey(key: String): Optional<IdempotencyKey>
+    + existeKey(key: String): boolean
+  }
+
+  interface OutboxRepository <<Port>> {
+    + guardar(evento: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List<OutboxEvent>
+    + marcarProcesado(id: UUID): void
+  }
+
+  interface EventPublisher <<Port>> {
+    + publicar(evento: OutboxEvent): void
+  }
+
+  interface PasarelaPagoPort <<Port>> {
+    ' WireMock en prototipo -- MercadoPago real en prod
+    + crearOrdenPago(monto: BigDecimal,\n  moneda: String,\n  inscripcionId: UUID): OrdenPagoDto
+    + consultarEstado(referenciaExterna: String): EstadoPagoDto
+    + emitirReembolso(referenciaExterna: String): ReembolsoDto
+  }
+}
+
+' ============================================================
+' PAQUETE: application.service
+' ============================================================
+package "com.javeriana.eventos.payment\n.application.service" as pkg_application #EBF5FB {
+
+  class CrearOrdenPagoService <<ApplicationService>> {
+    ' @Transactional
+    - pagoRepository: PagoRepository
+    - pasarelaPagoPort: PasarelaPagoPort
+    - outboxRepository: OutboxRepository
+    - idempotencyKeyRepository: IdempotencyKeyRepository
+    ==
+    + ejecutar(comando: CrearOrdenPagoCommand): Pago
+    - verificarIdempotencia(key: String): Optional<Pago>
+  }
+
+  class ConfirmarPagoService <<ApplicationService>> {
+    ' @Transactional
+    - pagoRepository: PagoRepository
+    - outboxRepository: OutboxRepository
+    ==
+    + ejecutar(comando: ConfirmarPagoCommand): Pago
+    - publicarPagoConfirmado(pago: Pago): void
+  }
+
+  class RechazarPagoService <<ApplicationService>> {
+    ' @Transactional
+    - pagoRepository: PagoRepository
+    - outboxRepository: OutboxRepository
+    ==
+    + ejecutar(pagoId: UUID, motivo: String): Pago
+    - publicarPagoRechazado(pago: Pago): void
+  }
+
+  class ProcesarWebhookService <<ApplicationService>> {
+    ' @Transactional  Idempotente por referenciaExterna
+    - pagoRepository: PagoRepository
+    - confirmarPagoService: ConfirmarPagoService
+    - rechazarPagoService: RechazarPagoService
+    - pasarelaPagoPort: PasarelaPagoPort
+    ==
+    + ejecutar(payload: WebhookPayload): void
+    - esWebhookDuplicado(\n  referenciaExterna: String): boolean
+    - manejarPagoTardio(pago: Pago,\n  ref: String): void
+  }
+
+  class OutboxRelayService <<ApplicationServicePending>> {
+    ' @Scheduled(fixedDelay=2000)  @SchedulerLock
+    ' PENDIENTE -- rama feat/payment-outbox-e2e
+    - outboxRepository: OutboxRepository
+    - eventPublisher: EventPublisher
+    ==
+    + procesarEventosPendientes(): void
+    - procesarLote(eventos: List<OutboxEvent>): void
+  }
+
+  note top of OutboxRelayService
+    <color:red><b>PENDIENTE -- Sprint actual</b></color>
+    Rama: feat/payment-outbox-e2e
+    Sin este servicio, PaymentConfirmedEvent
+    y PaymentFailedEvent NO se publican
+    a RabbitMQ desde payment_db.
+    Bloquea test E2E del flujo completo.
+  end note
+
+  class CrearOrdenPagoCommand {
+    + inscripcionId: UUID
+    + monto: BigDecimal
+    + moneda: String
+    + idempotencyKey: String
+  }
+
+  class ConfirmarPagoCommand {
+    + pagoId: UUID
+    + referenciaExterna: String
+    + metadatosPasarela: String
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.rest
+' ============================================================
+package "com.javeriana.eventos.payment\n.infrastructure.rest" as pkg_rest #FEF5E7 {
+
+  class PagoRestController <<RestController>> {
+    ' @RestController
+    - crearOrdenPagoService: CrearOrdenPagoService
+    - procesarWebhookService: ProcesarWebhookService
+    ==
+    + iniciarPago(req: IniciarPagoRequest):\n  ResponseEntity<PagoDto>
+    ' @PostMapping("/api/v1/pagos")
+    + consultarPago(id: UUID): ResponseEntity<PagoDto>
+    ' @GetMapping("/api/v1/pagos/{id}")
+    + webhookPasarela(payload: WebhookPayload):\n  ResponseEntity<Void>
+    ' @PostMapping("/api/v1/pagos/webhook")
+  }
+
+  class IniciarPagoRequest {
+    + inscripcionId: UUID
+    + monto: BigDecimal
+    + moneda: String
+    + idempotencyKey: String
+  }
+
+  class PagoDto {
+    + id: UUID
+    + inscripcionId: UUID
+    + monto: BigDecimal
+    + estado: String
+    + checkoutUrl: String {nullable}
+    + creadoEn: LocalDateTime
+  }
+
+  class WebhookPayload {
+    + paymentId: String
+    + status: String
+    + externalReference: String
+    + rawBody: String
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.messaging
+' ============================================================
+package "com.javeriana.eventos.payment\n.infrastructure.messaging" as pkg_messaging #F9EBEA {
+
+  class InscripcionEventConsumerListener <<RabbitListener>> {
+    ' @Component  @RabbitListener
+    ' queue: payment.inscription.created
+    - crearOrdenPagoService: CrearOrdenPagoService
+    ==
+    + onInscripcionCreada(\n  event: InscripcionCreadaEvent): void
+    ' @RabbitListener(queues="payment.inscription.created")
+    - construirComando(\n  event: InscripcionCreadaEvent): CrearOrdenPagoCommand
+  }
+
+  class InscripcionCreadaEvent {
+    + inscripcionId: UUID
+    + estudianteId: UUID
+    + eventoId: UUID
+    + monto: BigDecimal
+    + idempotencyKey: String
+  }
+
+  class PagoRabbitPublisherAdapter <<RabbitPublisher>> {
+    ' implements EventPublisher
+    - rabbitTemplate: RabbitTemplate
+    ==
+    + publicar(evento: OutboxEvent): void
+    - buildMessage(evento: OutboxEvent): Message
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.gateway
+' ============================================================
+package "com.javeriana.eventos.payment\n.infrastructure.gateway" as pkg_gateway #FEF5E7 {
+
+  class MercadoPagoAdapter <<HttpClientAdapter>> {
+    ' implements PasarelaPagoPort
+    ' WireMock en perfil local/test -- API real en prod
+    - wireMockBaseUrl: String {${payment.gateway.url}}
+    - restTemplate: RestTemplate
+    ==
+    + crearOrdenPago(monto: BigDecimal,\n  moneda: String,\n  inscripcionId: UUID): OrdenPagoDto
+    + consultarEstado(\n  referenciaExterna: String): EstadoPagoDto
+    + emitirReembolso(\n  referenciaExterna: String): ReembolsoDto
+  }
+
+  note bottom of MercadoPagoAdapter
+    En perfil local/test:
+    baseUrl = http://wiremock:8089
+    Stubs en /infrastructure/wiremock/mappings/
+    En perfil prod:
+    baseUrl = https://api.mercadopago.com
+    API key desde AWS Secrets Manager
+  end note
+
+  class OrdenPagoDto {
+    + paymentId: String
+    + checkoutUrl: String
+    + preferenceId: String
+  }
+
+  class EstadoPagoDto {
+    + paymentId: String
+    + status: String
+  }
+}
+
+' ============================================================
+' PAQUETE: infrastructure.persistence
+' ============================================================
+package "com.javeriana.eventos.payment\n.infrastructure.persistence" as pkg_persistence #E8F8F5 {
+
+  class PagoJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: PagoJpaRepository
+    ==
+    + guardar(pago: Pago): Pago
+    + buscarPorId(id: UUID): Optional<Pago>
+    + buscarPorReferenciaExterna(\n  ref: String): Optional<Pago>
+    + buscarPorInscripcionId(\n  inscripcionId: UUID): Optional<Pago>
+  }
+
+  interface PagoJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<PagoEntity, UUID>
+    + findByReferenciaExterna(\n  ref: String): Optional<PagoEntity>
+    + findByInscripcionId(\n  inscripcionId: UUID): Optional<PagoEntity>
+  }
+
+  class IdempotencyKeyJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: IdempotencyKeyJpaRepository
+    ==
+    + guardar(key: IdempotencyKey): IdempotencyKey
+    + buscarPorKey(key: String): Optional<IdempotencyKey>
+    + existeKey(key: String): boolean
+  }
+
+  interface IdempotencyKeyJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<IdempotencyKeyEntity, String>
+    + existsByKey(key: String): boolean
+  }
+
+  class OutboxJpaAdapter <<JpaAdapter>> {
+    ' @Repository
+    - jpaRepository: OutboxJpaRepository
+    ==
+    + guardar(evento: OutboxEvent): OutboxEvent
+    + buscarPendientes(limite: int): List<OutboxEvent>
+    + marcarProcesado(id: UUID): void
+  }
+
+  interface OutboxJpaRepository <<JpaRepository>> {
+    ' extends JpaRepository<OutboxEventEntity, UUID>
+    + findByProcessedAtIsNullOrderByCreatedAtAsc(\n  pageable: Pageable): List<OutboxEventEntity>
+  }
+}
+
+' ============================================================
+' RELACIONES: Domain Model
+' ============================================================
+Pago "1" --> "1" EstadoPago : estado
+
+' ============================================================
+' RELACIONES: Application -> Ports
+' ============================================================
+CrearOrdenPagoService   "1" o--> "1" PagoRepository            : pagoRepository
+CrearOrdenPagoService   "1" o--> "1" PasarelaPagoPort          : pasarelaPagoPort\n[WireMock/MercadoPago]
+CrearOrdenPagoService   "1" o--> "1" OutboxRepository          : outboxRepository
+CrearOrdenPagoService   "1" o--> "1" IdempotencyKeyRepository  : idempotencyKeyRepository
+
+ConfirmarPagoService    "1" o--> "1" PagoRepository            : pagoRepository
+ConfirmarPagoService    "1" o--> "1" OutboxRepository          : outboxRepository\n[ADR-011] PagoConfirmado
+
+RechazarPagoService     "1" o--> "1" PagoRepository            : pagoRepository
+RechazarPagoService     "1" o--> "1" OutboxRepository          : outboxRepository\n[ADR-011] PagoRechazado
+
+ProcesarWebhookService  "1" o--> "1" PagoRepository            : pagoRepository
+ProcesarWebhookService  "1" o--> "1" ConfirmarPagoService      : confirmarPagoService
+ProcesarWebhookService  "1" o--> "1" RechazarPagoService       : rechazarPagoService
+ProcesarWebhookService  "1" o--> "1" PasarelaPagoPort          : pasarelaPagoPort
+
+OutboxRelayService      "1" o--> "1" OutboxRepository          : outboxRepository
+OutboxRelayService      "1" o--> "1" EventPublisher            : eventPublisher
+
+' ============================================================
+' RELACIONES: REST -> Application
+' ============================================================
+PagoRestController "1" o--> "1" CrearOrdenPagoService  : crearOrdenPagoService
+PagoRestController "1" o--> "1" ProcesarWebhookService : procesarWebhookService
+
+' ============================================================
+' RELACIONES: Messaging -> Application
+' ============================================================
+InscripcionEventConsumerListener "1" o--> "1" CrearOrdenPagoService : crearOrdenPagoService
+
+' ============================================================
+' RELACIONES: Driven Adapters -> Ports
+' ============================================================
+PagoJpaAdapter              ..|> PagoRepository
+IdempotencyKeyJpaAdapter    ..|> IdempotencyKeyRepository
+OutboxJpaAdapter            ..|> OutboxRepository
+MercadoPagoAdapter          ..|> PasarelaPagoPort
+PagoRabbitPublisherAdapter  ..|> EventPublisher
+
+PagoJpaAdapter           "1" o--> "1" PagoJpaRepository           : jpaRepository
+IdempotencyKeyJpaAdapter "1" o--> "1" IdempotencyKeyJpaRepository  : jpaRepository
+OutboxJpaAdapter         "1" o--> "1" OutboxJpaRepository          : jpaRepository
+
+' ============================================================
+' LEYENDA
+' ============================================================
+legend right
+  <b>Capas -- Arquitectura Hexagonal</b>
+  |<back:#9B59B6><color:white>  AggregateRoot     </color></back>| Raiz de agregado (Dominio)         |
+  |<back:#3C7DD9><color:white>  Entity            </color></back>| Entidad de dominio                 |
+  |<back:#F0C040>  Enumeration    </back>| Enumeracion de dominio             |
+  |<back:#27AE60><color:white>  Port              </color></back>| Puerto / Interfaz del hexagono     |
+  |<back:#2980B9><color:white>  ApplicationSvc    </color></back>| Servicio de aplicacion (caso uso)  |
+  |<back:#E67E22><color:white>  AppSvc PENDIENTE  </color></back>| Servicio pendiente de implementar  |
+  |<back:#E67E22><color:white>  RestController    </color></back>| Adaptador primario REST            |
+  |<back:#8E44AD><color:white>  RabbitListener    </color></back>| Adaptador primario RabbitMQ        |
+  |<back:#A04000><color:white>  HttpClientAdapter </color></back>| Adaptador pasarela (WireMock/API)  |
+  |<back:#1ABC9C><color:white>  JpaAdapter        </color></back>| Adaptador secundario JPA           |
+  |<back:#117A65><color:white>  JpaRepository     </color></back>| Repositorio Spring Data JPA        |
+  |<back:#8E44AD><color:white>  RabbitPublisher   </color></back>| Publicador AMQP (Outbox relay)     |
+  ====
+  [ADR-006] RabbitMQ: InscripcionEventConsumerListener
+            consume payment.inscription.created
+  [ADR-011] OutboxEvent publicado en misma TX que Pago
+            OutboxRelayService [PENDIENTE] relay a RabbitMQ
+  [ADR-012] Dependency Rule: infra -> app -> domain
+            PasarelaPagoPort invierte dependencia de WireMock
+  [ADR-019] DLQ configurado en RabbitMqTopologyConfig
+            3 reintentos -> payment.inscription.created.dlq
+end legend
+
+@enduml

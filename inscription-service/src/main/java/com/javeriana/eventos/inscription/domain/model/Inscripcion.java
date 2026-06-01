@@ -3,6 +3,7 @@ package com.javeriana.eventos.inscription.domain.model;
 import com.javeriana.eventos.shared.domain.AggregateRoot;
 import com.javeriana.eventos.shared.domain.BusinessRuleViolationException;
 import com.javeriana.eventos.inscription.domain.events.InscripcionConfirmadaEvent;
+import com.javeriana.eventos.inscription.domain.events.InscripcionCreadaEvent;
 import com.javeriana.eventos.inscription.domain.events.InscripcionExpiradaEvent;
 
 import java.time.Instant;
@@ -48,6 +49,12 @@ public class Inscripcion extends AggregateRoot {
         this.fechaExpiracionPago = this.fechaInscripcion.plusSeconds(MINUTOS_EXPIRACION * 60L);
         this.idempotencyKey = idempotencyKey;
         this.version = 0;
+
+        // Emitir evento INSCRIPCION_CREADA para que notification-service
+        // pueda enviar recordatorio de pago (ADR-020, Prompt 15)
+        registerEvent(new InscripcionCreadaEvent(
+            this.id, this.usuarioId, this.eventoId,
+            this.tarifaId, this.fechaExpiracionPago));
     }
 
     // Constructor de reconstrucción desde persistencia

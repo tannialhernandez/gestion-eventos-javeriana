@@ -1,0 +1,106 @@
+@startuml escenario-a-inscripcion-outbox
+!theme plain
+skinparam maxMessageSize 140
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam defaultFontSize 10
+skinparam sequenceArrowThickness 1.5
+skinparam roundcorner 5
+scale 0.9
+
+title Escenario A: Inscripción con Bloqueo Pesimista + Transactional Outbox\nVista de Procesos — Kruchten 4+1
+
+actor       "Estudiante\n(React SPA)"                     as CLIENT
+participant "InscripcionRest\nController"                  as CTRL  #BDE5FF
+participant "CrearInscripcion\nService @Transactional"     as SVC   #C8EDCB
+database    "PostgreSQL\n(inscription_db)"                 as PG    #FFF9C4
+participant "OutboxRelay\nService @Scheduled(2s)"          as RELAY #FFE0B2
+queue       "RabbitMQ\n(Amazon MQ)"                       as MQ    #F3E5F5
+participant "InscripcionCreada\nListener\n(payment-svc)"   as PAY   #FFD7D7
+
+== Flujo síncrono: solicitud HTTP ==
+
+CLIENT -> CTRL : POST /api/v1/inscripciones\n{usuarioId, eventoId}
+activate CTRL
+CTRL -> SVC : ejecutar(CrearInscripcionCommand)
+activate SVC
+
+note over SVC,PG #C8EDCB
+  BEGIN TRANSACTION
+end note
+
+SVC -> PG : SELECT * FROM eventos\nWHERE id = :eventoId\nFOR UPDATE
+activate PG
+PG --> SVC : EventoEntity (fila bloqueada\nhasta COMMIT/ROLLBACK)
+deactivate PG
+
+SVC -> SVC : validate: cuposDisponibles > 0\nvalidate: no inscripción activa duplicada
+
+SVC -> PG : INSERT INTO inscripciones\n(id, usuario_id, evento_id,\n estado='PENDING',\n expira_en = NOW() + interval '15 min')
+activate PG
+PG --> SVC : 1 row inserted
+deactivate PG
+
+SVC -> PG : UPDATE eventos\nSET cupos_disponibles = cupos_disponibles - 1\nWHERE id = :eventoId
+activate PG
+PG --> SVC : 1 row updated
+deactivate PG
+
+SVC -> PG : INSERT INTO outbox\n(id, aggregate_type='Inscripcion',\n aggregate_id=inscripcionId,\n event_type='InscripcionCreada',\n payload=:json,\n processed_at=NULL,\n attempts=0)
+activate PG
+PG --> SVC : 1 row inserted (atómico con inscripcion)
+deactivate PG
+
+note over SVC,PG #C8EDCB
+  COMMIT
+  ── inscripcion + decremento cupo + outbox
+  ── en una única transacción ACID
+end note
+
+SVC --> CTRL : InscripcionDto {id, estado='PENDING', expiraEn}
+deactivate SVC
+CTRL --> CLIENT : HTTP 201 Created\n{inscripcionId, expiraEn}
+deactivate CTRL
+
+|||
+== Flujo asíncrono: OutboxRelayService polling cada 2 s ==
+|||
+
+activate RELAY
+RELAY -> PG : SELECT id, payload, event_type\nFROM outbox\nWHERE processed_at IS NULL\nORDER BY created_at\nLIMIT 10\nFOR UPDATE SKIP LOCKED
+activate PG
+PG --> RELAY : [{id, payload='InscripcionCreada', ...}]
+deactivate PG
+
+RELAY -> MQ : basicPublish(\n  exchange='inscripcion.events',\n  routingKey='inscripcion.created',\n  body=payload,\n  messageId=outbox.id,\n  deliveryMode=PERSISTENT)
+activate MQ
+MQ --> RELAY : publisher confirm (ack)
+deactivate MQ
+
+RELAY -> PG : UPDATE outbox\nSET processed_at = NOW(), attempts = attempts + 1\nWHERE id = :outboxId
+activate PG
+PG --> RELAY : 1 row updated
+deactivate PG
+deactivate RELAY
+
+|||
+== Consumo idempotente en payment-service ==
+|||
+
+MQ -> PAY : deliver(InscripcionCreadaEvent\nmessageId=<outboxId>)
+activate PAY
+PAY -> PAY : SELECT 1 FROM processed_messages\nWHERE message_id = :messageId\n(¿ya procesado?)
+
+alt messageId NO procesado
+  PAY -> PAY : crear PaymentRecord(inscripcionId,\nestado='AWAITING_PAYMENT')
+  PAY -> MQ : channel.basicAck(deliveryTag)
+else messageId YA procesado
+  note right of PAY #FFB3B3
+    Descarta: idempotencia garantizada
+  end note
+  PAY -> MQ : channel.basicAck(deliveryTag)
+end
+
+deactivate PAY
+
+@enduml

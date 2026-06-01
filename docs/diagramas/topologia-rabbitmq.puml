@@ -1,0 +1,189 @@
+@startuml topologia-rabbitmq
+' Topologia de Mensajeria RabbitMQ
+' Plataforma de Gestion de Eventos Academicos
+' Amazon MQ for RabbitMQ | Patron Pub-Sub Fan-Out | Transactional Outbox
+'
+' ADR-006: RabbitMQ como message broker
+' ADR-011: Transactional Outbox -- publisher confirms activos
+' ADR-019: Estrategia DLQ para mensajes fallidos
+'
+' Generado: 2026-05-22
+
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 9
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam rectangleBorderColor #888888
+skinparam noteBorderColor #CCCCAA
+skinparam noteBackgroundColor #FFFFF0
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 8
+
+title
+  <b><size:13>Topologia de Mensajeria RabbitMQ</size></b>
+  <size:10>Plataforma de Gestion de Eventos Academicos | Amazon MQ | Pub-Sub Fan-Out via Transactional Outbox</size>
+end title
+
+' ====================================================================
+' PRODUCTORES (columna izquierda)
+' ====================================================================
+rectangle "<<Producer>>\nevent-service\n(100%)" as PROD_EVT #FFE0B2
+rectangle "<<Producer>>\ninscription-service\n(100%)" as PROD_INS #FFE0B2
+rectangle "<<Producer -- 70%>>\npayment-service\n[OutboxRelay PENDIENTE]" as PROD_PAY #FFCCCC
+
+' ====================================================================
+' EXCHANGES (centro-izquierda) -- todos tipo TOPIC
+' ====================================================================
+rectangle "events.exchange\n[TOPIC]" as EX_EVT #BBDEFB
+rectangle "inscriptions.exchange\n[TOPIC]" as EX_INS #BBDEFB
+rectangle "payments.exchange\n[TOPIC]" as EX_PAY #BBDEFB
+rectangle "dlx.exchange\n[Dead Letter Exchange]" as DLX #FFCDD2
+
+' ====================================================================
+' QUEUES (centro-derecha) -- agrupadas por productor
+' ====================================================================
+
+' -- event-service queues --
+rectangle "inscription.event-projection.queue" as Q_EVT_PROJ #C8E6C9
+rectangle "inscription.event-cancelled.queue" as Q_EVT_CANC_I #C8E6C9
+rectangle "notification.event-cancelled.queue" as Q_EVT_CANC_N #C8E6C9
+
+' -- inscription-service queues (FAN-OUT en inscription.created) --
+rectangle "payment.inscription-created.queue" as Q_INS_CREAT_P #C8E6C9
+rectangle "notification.inscription-created.queue" as Q_INS_CREAT_N #C8E6C9
+rectangle "notification.inscription-expired.queue" as Q_INS_EXP #C8E6C9
+rectangle "notification.inscription-cancelled.queue" as Q_INS_CANC_N #C8E6C9
+rectangle "payment.inscription-cancelled.queue" as Q_INS_CANC_P #C8E6C9
+
+' -- payment-service queues (FAN-OUT en payment.confirmed) --
+rectangle "inscription.payment-confirmed.queue" as Q_PAY_CONF_I #C8E6C9
+rectangle "notification.payment-confirmed.queue" as Q_PAY_CONF_N #C8E6C9
+rectangle "inscription.payment-failed.queue" as Q_PAY_FAIL_I #C8E6C9
+rectangle "notification.payment-failed.queue" as Q_PAY_FAIL_N #C8E6C9
+
+' ====================================================================
+' DLQs (columna inferior)
+' ====================================================================
+rectangle "payment.inscription-created.dlq" as DLQ1 #FFCDD2
+rectangle "notification.inscription-created.dlq" as DLQ2 #FFCDD2
+rectangle "inscription.payment-confirmed.dlq" as DLQ3 #FFCDD2
+rectangle "notification.payment-confirmed.dlq" as DLQ4 #FFCDD2
+rectangle "inscription.payment-failed.dlq" as DLQ5 #FFCDD2
+rectangle "notification.payment-failed.dlq" as DLQ6 #FFCDD2
+
+' ====================================================================
+' CONSUMIDORES (columna derecha)
+' ====================================================================
+rectangle "<<Consumer>>\ninscription-service" as CONS_INS #E1BEE7
+rectangle "<<Consumer>>\npayment-service" as CONS_PAY #E1BEE7
+rectangle "<<Consumer only>>\nnotification-service" as CONS_NOT #E1BEE7
+
+' ====================================================================
+' FLUJO: Productores -> Exchanges
+' ====================================================================
+PROD_EVT --> EX_EVT : "publica via Outbox"
+PROD_INS --> EX_INS : "publica via Outbox"
+PROD_PAY --> EX_PAY : "publica [PENDIENTE]\nOutboxRelayService"
+
+' ====================================================================
+' FLUJO: Exchanges -> Queues (bindings + routing keys)
+' ====================================================================
+
+' events.exchange
+EX_EVT --> Q_EVT_PROJ   : "event.published"
+EX_EVT --> Q_EVT_CANC_I : "event.cancelled"
+EX_EVT --> Q_EVT_CANC_N : "event.cancelled"
+
+' inscriptions.exchange
+EX_INS --> Q_INS_CREAT_P : "inscription.created\n[FAN-OUT]"
+EX_INS --> Q_INS_CREAT_N : "inscription.created\n[FAN-OUT]"
+EX_INS --> Q_INS_EXP     : "inscription.expired"
+EX_INS --> Q_INS_CANC_N  : "inscription.cancelled"
+EX_INS --> Q_INS_CANC_P  : "inscription.cancelled"
+
+' payments.exchange
+EX_PAY --> Q_PAY_CONF_I : "payment.confirmed\n[FAN-OUT]"
+EX_PAY --> Q_PAY_CONF_N : "payment.confirmed\n[FAN-OUT]"
+EX_PAY --> Q_PAY_FAIL_I : "payment.failed"
+EX_PAY --> Q_PAY_FAIL_N : "payment.failed"
+
+' ====================================================================
+' FLUJO: Queues -> Consumidores
+' ====================================================================
+Q_EVT_PROJ   --> CONS_INS : "consume"
+Q_EVT_CANC_I --> CONS_INS : "consume"
+Q_EVT_CANC_N --> CONS_NOT : "consume"
+
+Q_INS_CREAT_P --> CONS_PAY : "consume"
+Q_INS_CREAT_N --> CONS_NOT : "consume"
+Q_INS_EXP     --> CONS_NOT : "consume"
+Q_INS_CANC_N  --> CONS_NOT : "consume"
+Q_INS_CANC_P  --> CONS_PAY : "consume"
+
+Q_PAY_CONF_I  --> CONS_INS : "consume"
+Q_PAY_CONF_N  --> CONS_NOT : "consume"
+Q_PAY_FAIL_I  --> CONS_INS : "consume"
+Q_PAY_FAIL_N  --> CONS_NOT : "consume"
+
+' ====================================================================
+' FLUJO: Queues -> DLX (tras N reintentos)
+' ====================================================================
+Q_INS_CREAT_P ..> DLX : "3 reintentos -> DLQ"
+Q_PAY_CONF_I  ..> DLX : "3 reintentos -> DLQ"
+Q_PAY_CONF_N  ..> DLX : "3 reintentos -> DLQ"
+Q_PAY_FAIL_I  ..> DLX : "3 reintentos -> DLQ"
+Q_PAY_FAIL_N  ..> DLX : "3 reintentos -> DLQ"
+Q_INS_CREAT_N ..> DLX : "3 reintentos -> DLQ"
+
+' ====================================================================
+' FLUJO: DLX -> DLQs
+' ====================================================================
+DLX --> DLQ1 : "inscription.created\n-> payment DLQ"
+DLX --> DLQ2 : "inscription.created\n-> notification DLQ"
+DLX --> DLQ3 : "payment.confirmed\n-> inscription DLQ"
+DLX --> DLQ4 : "payment.confirmed\n-> notification DLQ"
+DLX --> DLQ5 : "payment.failed\n-> inscription DLQ"
+DLX --> DLQ6 : "payment.failed\n-> notification DLQ"
+
+' ====================================================================
+' NOTA PENDIENTE payment-service
+' ====================================================================
+note on link
+  OutboxRelayService de payment-service
+  PENDIENTE (feat/payment-outbox-e2e).
+  Las queues estan configuradas pero
+  payment-service aun no publica a
+  payments.exchange desde la BD.
+end note
+
+' ====================================================================
+' LEYENDA
+' ====================================================================
+legend bottom left
+  <b>Topologia RabbitMQ -- Amazon MQ</b>
+  -----------------------------------------------
+  |<back:#FFE0B2> </back>| Productor (via Outbox Relay)        |
+  |<back:#FFCCCC> </back>| Productor PENDIENTE (70%)           |
+  |<back:#BBDEFB> </back>| Exchange tipo TOPIC                 |
+  |<back:#C8E6C9> </back>| Queue (durable, x-message-ttl 24h) |
+  |<back:#FFCDD2> </back>| Dead Letter Queue / Exchange        |
+  |<back:#E1BEE7> </back>| Consumidor (Spring @RabbitListener) |
+  -----------------------------------------------
+  Naming convention:
+    Exchanges:    <dominio>.exchange
+    Routing keys: <agregado>.<evento-pasado>
+    Queues:       <consumidor>.<evento-origen>.queue
+    DLQs:         <queue>.dlq
+  -----------------------------------------------
+  Config por queue:
+    durable: true
+    x-message-ttl: 86400000 (24h)
+    x-dead-letter-exchange: dlx.exchange
+    Reintentos: 3 (Spring AMQP RetryTemplate)
+  -----------------------------------------------
+  ADR-011: publisher confirms en todos los productores
+  ADR-019: DLQ tras 3 reintentos fallidos
+end legend
+
+@enduml

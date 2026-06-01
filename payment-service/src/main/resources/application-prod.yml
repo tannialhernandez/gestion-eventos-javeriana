@@ -1,0 +1,45 @@
+# =============================================================================
+# application-prod.yml — perfil de producción (AWS ECS / Kubernetes)
+#
+# Activar con: SPRING_PROFILES_ACTIVE=prod
+#
+# Credenciales: todas vienen de variables de entorno inyectadas por AWS
+# Secrets Manager (vía ECS Task Definition secretOptions o K8s Secrets).
+# NUNCA hardcodear valores aquí — este archivo se versiona en git.
+# =============================================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    virtual-host: ${RABBITMQ_VHOST:eventos}
+
+logging:
+  level:
+    root: INFO
+    com.javeriana.eventos: INFO
+
+# C-01: HMAC secret inyectado por AWS Secrets Manager. REQUERIDO — no tiene default.
+payment:
+  gateway:
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET}
+
+# m-03: URL pública de webhooks en producción
+mercadopago:
+  webhook-url: ${MERCADOPAGO_WEBHOOK_URL}
+
+retention:
+  enabled: ${RETENTION_ENABLED:true}
+  cron: "${RETENTION_CRON:0 0 3 * * *}"
+  outbox-enviado-days: ${RETENTION_OUTBOX_ENVIADO_DAYS:30}
+  outbox-fallido-days: ${RETENTION_OUTBOX_FALLIDO_DAYS:90}
+  mensaje-procesado-days: ${RETENTION_MENSAJE_PROCESADO_DAYS:30}
+  batch-size: ${RETENTION_BATCH_SIZE:1000}
+  max-batches-per-run: ${RETENTION_MAX_BATCHES_PER_RUN:100}

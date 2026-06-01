@@ -1,0 +1,173 @@
+@startuml vista-desarrollo-paquetes-hexagonales
+' Vista de Desarrollo (Kruchten 4+1)
+' Estructura de Paquetes Hexagonales — 4 Microservicios
+' Plataforma de Gestión de Eventos Académicos — Javeriana 2026
+'
+' Dependency Rule: infrastructure → application → domain
+' domain NO depende de nada externo (Spring, JPA, RabbitMQ)
+
+!theme plain
+top to bottom direction
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 9
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 8
+skinparam packageStyle rectangle
+skinparam padding 4
+skinparam nodesep 8
+skinparam ranksep 15
+
+title
+  <b><size:13>Vista de Desarrollo — Estructura de Paquetes Hexagonales</size></b>
+  <size:10>4 Microservicios · Arquitectura Hexagonal (Ports & Adapters) · com.javeriana.eventos.{servicio}</size>
+end title
+
+' ════════════════════════════════════════════════════════════════
+' EVENT-SERVICE
+' ════════════════════════════════════════════════════════════════
+package "**event-service** ✅" as EVT #C8EDCB {
+
+  package "domain" as EVT_DOM #880E4F {
+    package "domain.model" as EVT_DM {
+      class "Evento «AR»\nEstadoEvento «Enum»\nCategoriaEvento «VO»\nEventoFactory «Factory Method»" as EVT_MODEL
+    }
+    package "domain.port" as EVT_DP {
+      interface "EventoRepository «Port»\nEventPublisher «Port»" as EVT_PORT
+    }
+    package "domain.service" as EVT_DS {
+      class "ValidadorCapacidad\n«Domain Service»" as EVT_SVC
+    }
+  }
+
+  package "application" as EVT_APP #1A237E {
+    class "CrearEventoService @Tx\nPublicarEventoService @Tx\nCancelarEventoService @Tx\n─\nCrearEventoCommand" as EVT_APPSVC
+  }
+
+  package "infrastructure" as EVT_INF #BF360C {
+    class "EventoController @RestController\n<color:darkorange>⚠ DEUDA: mezcla lógica de negocio</color>\n─\nEventoJpaAdapter @Repository [Driven]\nEventoJpaEntity @Entity\n─\nEventoAmqpPublisher [Driven]\n─\nRabbitMqConfig · SecurityConfig · FlywayConfig" as EVT_INFRA #FFCCCC
+  }
+
+  EVT_APP -down-> EVT_DOM : «importa»
+  EVT_INF -down-> EVT_APP : «invoca»
+  EVT_INF ..up..> EVT_DP  : «implementa»
+}
+
+' ════════════════════════════════════════════════════════════════
+' INSCRIPTION-SERVICE
+' ════════════════════════════════════════════════════════════════
+package "**inscription-service** ✅  «Core Domain»" as INS #FFD7D7 {
+
+  package "domain" as INS_DOM #880E4F {
+    package "domain.model" as INS_DM {
+      class "Inscripcion «AR»\nEstadoInscripcion «Enum»\nPENDIENTE|CONFIRMADA|CANCELADA|EXPIRADA\nEvento «Entity»\nOutboxEvent «Entity»" as INS_MODEL
+    }
+    package "domain.port" as INS_DP {
+      interface "InscripcionRepository «Port»\nEventoRepository «Port» ⚡ SELECT FOR UPDATE\nOutboxRepository «Port»\nEventPublisher «Port»" as INS_PORT
+    }
+    package "domain.service" as INS_DS {
+      class "PoliticaCancelacion\n«Strategy»" as INS_SVC
+    }
+  }
+
+  package "application" as INS_APP #1A237E {
+    class "CrearInscripcionService @Tx  (PL + Outbox misma TX)\nConfirmarInscripcionService @Tx\nCancelarInscripcionService @Tx\nExpirarPendientesService @Scheduled @SchedulerLock\nOutboxRelayService @Scheduled @SchedulerLock\n─\nCrearInscripcionCommand" as INS_APPSVC
+  }
+
+  package "infrastructure" as INS_INF #BF360C {
+    class "InscripcionController @RestController [Driving]\nPOST/GET/DELETE /api/v1/inscripciones\n─\nEventoConsumerListener @RabbitListener [Driving]\npago.confirmado | pago.expirado\nRabbitMqEventPublisher [Driven]\n─\nInscripcionJpaAdapter @Repository [Driven]\nEventoJpaAdapter ⚡ PESSIMISTIC_WRITE [Driven]\nOutboxJpaAdapter @Repository [Driven]\n─\nRabbitMqTopologyConfig + DLQ · ShedLockConfig · SecurityConfig" as INS_INFRA
+  }
+
+  INS_APP -down-> INS_DOM : «importa»
+  INS_INF -down-> INS_APP : «invoca»
+  INS_INF ..up..> INS_DP  : «implementa»
+}
+
+' ════════════════════════════════════════════════════════════════
+' PAYMENT-SERVICE
+' ════════════════════════════════════════════════════════════════
+package "**payment-service** 🔶 70%  (feat/payment-outbox-e2e)" as PAY #FFE0B2 {
+
+  package "domain" as PAY_DOM #880E4F {
+    package "domain.model" as PAY_DM {
+      class "Pago «AR»\nEstadoPago «Enum»\nIdempotencyKey «VO»\nOutboxEvent «Entity»" as PAY_MODEL
+    }
+    package "domain.port" as PAY_DP {
+      interface "PagoRepository «Port»\nOutboxRepository «Port»\nEventPublisher «Port»\nPaymentGatewayPort «Port»" as PAY_PORT
+    }
+    package "domain.service" as PAY_DS {
+      class "ReembolsoCalculator\n«Domain Service»" as PAY_SVC
+    }
+  }
+
+  package "application" as PAY_APP #1A237E {
+    class "ProcesarPagoService @Tx\nConfirmarPagoWebhookService @Tx (idempotente)\nReembolsarPagoService @Tx\n<color:red>OutboxRelayService @Scheduled @SchedulerLock  ⚠ PENDIENTE</color>" as PAY_APPSVC
+  }
+
+  package "infrastructure" as PAY_INF #BF360C {
+    class "PagoController @RestController [Driving]\nPOST /api/v1/pagos  ·  POST /api/v1/pagos/webhook\n─\nInscripcionCreadaListener @RabbitListener [Driving]\nRabbitMqEventPublisher [Driven]\n─\nPagoJpaAdapter @Repository [Driven]\nOutboxJpaAdapter @Repository [Driven]\n─\nMercadoPagoAdapter [Driven] → PaymentGatewayPort\n(WireMock en tests · API real en prod)\n─\nRabbitMqTopologyConfig + DLQ · ShedLockConfig\nWireMockConfig (perfil local/test)" as PAY_INFRA
+  }
+
+  PAY_APP -down-> PAY_DOM : «importa»
+  PAY_INF -down-> PAY_APP : «invoca»
+  PAY_INF ..up..> PAY_DP  : «implementa»
+}
+
+' ════════════════════════════════════════════════════════════════
+' NOTIFICATION-SERVICE
+' ════════════════════════════════════════════════════════════════
+package "**notification-service** 🔶 WIP" as NOT #FFF9C4 {
+
+  package "domain" as NOT_DOM #880E4F {
+    package "domain.model" as NOT_DM {
+      class "Notificacion «Entity»\nTipoNotificacion «Enum»\nPlantillaEmail «VO»" as NOT_MODEL
+    }
+    package "domain.port" as NOT_DP {
+      interface "NotificacionRepository «Port»\nEmailSenderPort «Port»" as NOT_PORT
+    }
+  }
+
+  package "application" as NOT_APP #1A237E {
+    class "EnviarNotificacionService @Tx\nRegistrarNotificacionService\nReintentarEnvioService @Scheduled" as NOT_APPSVC
+  }
+
+  package "infrastructure" as NOT_INF #BF360C {
+    class "InscripcionConfirmadaListener @RabbitListener [Driving]\nPagoConfirmadoListener @RabbitListener [Driving]\nCertificadoGeneradoListener @RabbitListener [Driving]\n─\nJavaMailSenderAdapter [Driven] → EmailSenderPort\nThymeleaf HTML templates\n─\nNotificacionJpaAdapter @Repository [Driven]\n─\nRabbitMqBindingsConfig · MailConfig · ThymeleafConfig" as NOT_INFRA
+  }
+
+  NOT_APP -down-> NOT_DOM : «importa»
+  NOT_INF -down-> NOT_APP : «invoca»
+  NOT_INF ..up..> NOT_DP  : «implementa»
+}
+
+' ════════════════════════════════════════════════════════════════
+' LAYOUT HINTS (flechas ocultas para organizar el grafo)
+' ════════════════════════════════════════════════════════════════
+EVT -[hidden]right-> INS
+INS -[hidden]right-> PAY
+PAY -[hidden]right-> NOT
+
+' ════════════════════════════════════════════════════════════════
+' LEYENDA
+' ════════════════════════════════════════════════════════════════
+legend bottom left
+  <b>Vista de Desarrollo — Paquetes Hexagonales (Kruchten 4+1)</b>
+  ¿Cómo está organizado el código fuente?
+  ───────────────────────────────────────────────
+  |<back:#880E4F><color:#FFFFFF> domain </color></back>| Núcleo hexagonal — solo Java puro |
+  |<back:#1A237E><color:#FFFFFF> application </color></back>| Casos de uso — orquesta domain + ports |
+  |<back:#BF360C><color:#FFFFFF> infrastructure </color></back>| Adaptadores driving/driven |
+  ───────────────────────────────────────────────
+  <b>Dependency Rule:</b>  infrastructure → application → domain
+  <b>domain</b> NO importa: Spring, JPA, RabbitMQ
+  <b>«Port»</b>: interfaz del hexágono (invertida)
+  <b>«AR»</b>: Aggregate Root  ·  <b>«VO»</b>: Value Object
+  <b>⚡</b>: SELECT FOR UPDATE (Pessimistic Lock)
+  <b>⚠</b>: Deuda técnica
+  ───────────────────────────────────────────────
+  ADR-012 Hexagonal  ·  ADR-008 Outbox  ·  ADR-018 ShedLock
+  ADR-020 Pessimistic Lock  ·  ADR-S03 ArchUnit enforcement
+end legend
+
+@enduml

@@ -1,0 +1,90 @@
+@startuml vista-desarrollo-maven-modulos
+' Vista de Desarrollo (Kruchten 4+1)
+' Diagrama de Módulos Maven — Monorepo Multi-módulo
+' Plataforma de Gestión de Eventos Académicos — Javeriana 2026
+'
+' Generado con MCP Structurizr · DSL validado
+
+!theme plain
+top to bottom direction
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 11
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 9
+skinparam ArrowFontColor #333333
+skinparam packageStyle rectangle
+skinparam nodesep 20
+skinparam ranksep 30
+
+title
+  <b><size:14>Vista de Desarrollo (Kruchten 4+1) — Módulos Maven</size></b>
+  <size:11>Monorepo Multi-módulo · Plataforma de Gestión de Eventos Académicos · Java 17 + Spring Boot 3</size>
+end title
+
+' ── Parent POM ──────────────────────────────────────────────────────
+rectangle "**pom.xml (parent)**\n[Maven POM]\n\ngroupId: com.javeriana.eventos\nGestión centralizada de versiones, plugins\n(Surefire, Failsafe, JaCoCo, ArchUnit)\nPerfiles: local | prod" as PARENT #455A64
+
+' ── Shared Kernel ────────────────────────────────────────────────────
+rectangle "**shared-kernel**\n[Java 17 · Sin Spring]\n\nDTOs AMQP canónicos (records Java)\nConstantes de exchanges/queues/routing-keys\nExcepciones base (DomainException)\ngroupId: com.javeriana.eventos\nartifactId: shared-kernel" as SK #BDBDBD
+
+' ── Microservicios ───────────────────────────────────────────────────
+rectangle "**event-service** ✅ 100%\n[Spring Boot 3 · Java 17]\n\nGestión del catálogo de eventos académicos\n⚠ Deuda técnica: EventoController mezcla capas\ngroupId: com.javeriana.eventos\nartifactId: event-service" as ES #2E7D32
+
+rectangle "**inscription-service** ✅ 100%\n[Spring Boot 3 · Java 17]\n\nCore Domain — Pessimistic Lock + Outbox + ShedLock\ngroupId: com.javeriana.eventos\nartifactId: inscription-service" as IS #2E7D32
+
+rectangle "**payment-service** 🔶 70%\n[Spring Boot 3 · Java 17]\n\nIntegración MercadoPago (WireMock en tests)\n⚠ OutboxRelayService pendiente\nRama activa: feat/payment-outbox-e2e\ngroupId: com.javeriana.eventos\nartifactId: payment-service" as PS #E65100
+
+rectangle "**notification-service** 🔶 WIP\n[Spring Boot 3 · Java 17]\n\nConsumidor puro AMQP · Worker de emails\nThymeleaf templates\ngroupId: com.javeriana.eventos\nartifactId: notification-service" as NS #E65100
+
+' ── Relaciones ───────────────────────────────────────────────────────
+PARENT -down-> SK   : gestiona versión
+PARENT -down-> ES   : gestiona versión
+PARENT -down-> IS   : gestiona versión
+PARENT -down-> PS   : gestiona versión
+PARENT -down-> NS   : gestiona versión
+
+ES --right--> SK : depende de\n(DTOs AMQP)
+IS --right--> SK : depende de\n(DTOs AMQP)
+PS --right--> SK : depende de\n(DTOs AMQP)
+NS --right--> SK : depende de\n(DTOs AMQP)
+
+' ── Notas ─────────────────────────────────────────────────────────────
+note bottom of SK
+  shared-kernel NO depende
+  de ningún microservicio.
+  Dependencia estrictamente unidireccional.
+  Solo Jackson + Lombok como dependencias.
+end note
+
+note right of PS
+  <color:red><b>feat/payment-outbox-e2e</b></color>
+  OutboxRelayService @Scheduled
+  @SchedulerLock — pendiente de implementar
+end note
+
+note left of ES
+  <color:darkorange><b>Deuda técnica:</b></color>
+  EventoController.java contiene
+  lógica de negocio que debería
+  estar en la capa application.
+end note
+
+' ── Leyenda ─────────────────────────────────────────────────────────
+legend bottom left
+  <b>Vista de Desarrollo — Módulos Maven</b>
+  ──────────────────────────────────────
+  |<back:#2E7D32> </back>| 100% implementado |
+  |<back:#E65100> </back>| En progreso / WIP |
+  |<back:#455A64> </back>| Build tooling (POM parent) |
+  |<back:#BDBDBD> </back>| Shared Kernel (contrato AMQP) |
+  ──────────────────────────────────────
+  Las flechas representan dependencias Maven (<dependency>).
+  shared-kernel se referencia como dependencia local
+  sin publicar al repositorio de artefactos (monorepo).
+  ──────────────────────────────────────
+  ADR relacionados: ADR-S01 Monorepo, ADR-S02 Shared-Kernel
+end legend
+
+@enduml
