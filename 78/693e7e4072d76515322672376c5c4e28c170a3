@@ -1,0 +1,26 @@
+docs/presentacion/plataforma-eventos-javeriana.html
+  s_ffdf5e4b299f5d::t_194ad0b338bf0c 534-544,547-549
+  s_ffdf5e4b299f5d::t_3f171257fe8eab 692-696
+  s_ffdf5e4b299f5d::t_dd1d0cfa6a4415 702,704-707
+  s_ffdf5e4b299f5d::t_6b0de809c07662 555-569
+docs/presentacion/capturas/diagramas/c4-nivel2.svg
+  s_ffdf5e4b299f5d::t_dd7ff7c4631101 1
+docs/presentacion/capturas/diagramas/c4-nivel1.svg
+  s_ffdf5e4b299f5d::t_dd7ff7c4631101 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "78693e7e4072d76515322672376c5c4e28c170a3",
+  "prompts": {},
+  "sessions": {
+    "s_ffdf5e4b299f5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea4f5644-72be-42f5-b8a9-74779555a6a3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
