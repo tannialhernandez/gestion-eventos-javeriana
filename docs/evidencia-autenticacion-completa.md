@@ -86,6 +86,39 @@ Las capturas de autenticacion quedan en:
 - `frontend/test-results/evidence/auth/10-logout-completo.png`
 - `frontend/test-results/evidence/auth/11-refresh-session.png`
 
+## Validacion en AWS productivo
+
+URL productiva validada: `https://d1xvny1kolb55e.cloudfront.net`.
+
+Se ejecuto `scripts/smoke-multi-rol-aws.sh` contra la distribucion CloudFront productiva. El smoke valida:
+
+- Login real contra `auth-service-stub` productivo.
+- Decodificacion de JWT y verificacion del rol esperado.
+- Acceso a `GET /api/v1/eventos` para ADMIN, ORGANIZADOR y PARTICIPANTE.
+- Flujo PARTICIPANTE: creacion de inscripcion, webhook de pago firmado y confirmacion de pago.
+
+Resultado observado:
+
+| Rol | Usuario AWS | Sub JWT | Catalogo | Flujo adicional | Resultado |
+|---|---|---|---|---|---|
+| ADMIN | `ana.admin@javeriana.edu.co` | `44444444-4444-4444-4444-444444444444` | HTTP 200, 2 eventos visibles | Validacion de rol | OK |
+| ORGANIZADOR | `carlos.organizador@javeriana.edu.co` | `33333333-3333-3333-3333-333333333333` | HTTP 200, 2 eventos visibles | Validacion de rol | OK |
+| PARTICIPANTE | `sofia.soporte@javeriana.edu.co` | `55555555-5555-5555-5555-555555555555` | HTTP 200, 2 eventos visibles | Inscripcion `917fc47c-1498-460a-8668-81af65a631b7` + webhook `CONFIRMADO` | OK |
+
+Validacion final en RDS productivo:
+
+| Inscripcion | Usuario | Evento | Estado inscripcion | Estado pago |
+|---|---|---|---|---|
+| `917fc47c-1498-460a-8668-81af65a631b7` | `55555555-5555-5555-5555-555555555555` | `2dec9908-4616-4ae2-8b5a-41f48604c2f6` | `CONFIRMADA` | `CONFIRMADO` |
+
+Capturas productivas:
+
+- `docs/evidence/aws-productivo/multi-rol/admin-catalogo-aws.png`
+- `docs/evidence/aws-productivo/multi-rol/organizador-catalogo-aws.png`
+- `docs/evidence/aws-productivo/multi-rol/participante-catalogo-aws.png`
+
+Nota operativa: `scripts/smoke-multi-rol-aws.sh` siembra por SSM un evento/tarifa/cupo fresco en cada ejecucion para evitar choques con la regla de negocio `uk_usuario_evento`, que impide duplicar inscripciones del mismo usuario al mismo evento. Sofia Mesa de Ayuda se usa como PARTICIPANTE representativa en el flujo de inscripcion y pago.
+
 ## Conclusiones
 
 La autenticacion queda validada de extremo a extremo para los usuarios demo reales, con JWT RS256 emitido por `auth-service-stub`, persistencia de sesion en `sessionStorage`, proteccion de rutas privadas y limpieza ante credenciales, token expirado, token malformado o logout. La autorizacion frontend actual es coherente con el alcance implementado: las rutas privadas requieren sesion activa y no existen rutas administrativas funcionales en Entrega 3.

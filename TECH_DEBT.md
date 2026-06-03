@@ -10,31 +10,32 @@ Este documento registra la deuda tecnica consciente de Entrega 3: decisiones dif
 
 | Severidad | Cantidad | Esfuerzo estimado |
 |---|---:|---:|
-| Critica P0 | 3 | 9.75 dias-persona |
+| Critica P0 abierta | 2 | 9 dias-persona |
+| Critica P0 cerrada | 1 | 0 dias-persona |
 | Mayor P1 | 9 | 16.5 dias-persona |
 | Menor P2 | 7 | 15.5 dias-persona |
-| Total | 19 | 41.75 dias-persona |
+| Total abierto | 18 | 41 dias-persona |
 
-El backlog completo suma aproximadamente 41.75 dias-persona tras cerrar CI/CD y dejar AWS declarado como IaC. El roadmap recomendado lo organiza en 3 sprints de 2 semanas, con paralelizacion o priorizacion por riesgo para que Fase 2 pueda cerrarse en 6 semanas calendario.
+El backlog abierto suma aproximadamente 41 dias-persona tras cerrar CI/CD y validar el despliegue AWS productivo. El roadmap recomendado lo organiza en 3 sprints de 2 semanas, con paralelizacion o priorizacion por riesgo para que Fase 2 pueda cerrarse en 6 semanas calendario.
 
 ## 2. Inventario de deudas tecnicas
 
 ### 2.1 Deudas criticas P0
 
-#### D-001 - Despliegue AWS productivo declarado en IaC, apply pendiente
+#### D-001 - Despliegue AWS productivo
 
 | Campo | Detalle |
 |---|---|
-| Estado | Reformulado en Prompt 29.8-B |
-| Descripcion | El SAD describe despliegue productivo en AWS. Entrega 3 ya incluye Terraform declarativo para VPC, ALB, EC2 Docker Compose, RDS PostgreSQL, ElastiCache Redis, Amazon MQ RabbitMQ, S3 y CloudFront; falta ejecutar `terraform apply` con una cuenta AWS real. |
-| Justificacion de Entrega 3 | La cuenta AWS institucional se gestiona en paralelo. Para evitar 12h de trabajo posterior, se dejo IaC versionada y validable en CI sin consumir recursos AWS. |
-| Impacto en produccion | No se ha certificado disponibilidad ni rendimiento sobre infraestructura AWS real; TLS con dominio propio, secretos productivos, backups avanzados y alarmas CloudWatch quedan para el apply/hardening. |
-| Mitigacion actual | `infra/terraform/`, `docs/deployment-aws-runbook.md`, workflows de Terraform validate/plan dry-run, Dockerfiles por servicio, GHCR y evidencia reproducible local. |
-| Plan de cierre | Configurar credenciales AWS, revisar `terraform.tfvars`, ejecutar `terraform init/plan/apply`, validar outputs, publicar SPA en S3/CloudFront, correr smoke post-deploy y ejecutar `terraform destroy` si es demo temporal. |
-| Esfuerzo estimado | 5h restantes; IaC ya preparado |
-| Prioridad Fase 2 | P0 |
+| Estado | CERRADO en Prompt 29.11 |
+| Descripcion | El SAD describe despliegue productivo en AWS. Entrega 3 dejo Terraform declarativo y posteriormente se ejecuto el despliegue productivo con CloudFront, S3, ALB, EC2 Docker Compose, RDS PostgreSQL, ElastiCache Redis y Amazon MQ RabbitMQ. |
+| Justificacion de Entrega 3 | La validacion productiva se ejecuto al cierre de Entrega 3, usando la cuenta AWS disponible y el pipeline/manual deploy preparado en Prompt 29.8-B. |
+| Impacto en produccion | Cerrado para el alcance MVP: los servicios estan operativos y el smoke multi-rol productivo paso. Quedan como hardening futuro TLS con dominio propio, rotacion formal de secretos, backups avanzados y alarmas CloudWatch. |
+| Mitigacion actual | Despliegue activo en `https://d1xvny1kolb55e.cloudfront.net`, IaC versionada, workflow de deploy frontend, GHCR, smoke multi-rol y evidencias visuales AWS. |
+| Plan de cierre | Cerrado. Mantener runbook, limpiar recursos temporales si aplica y promover hardening observacional a Fase 2. |
+| Esfuerzo estimado | 0 dias-persona abierto |
+| Prioridad Fase 2 | Cerrado |
 | ADRs relacionados | ADR-004 despliegue contenedorizado AWS/ECS, ADR-022 API Gateway policies, ADR-018 ShedLock |
-| Evidencias en el repo | `infra/terraform/`, `docs/deployment-aws-runbook.md`, `.github/workflows/terraform-validate.yml`, `docs/vista-fisica-deployment.md`, `docs/limites-carga-reconocidos.md` |
+| Evidencias en el repo | `infra/terraform/`, `docs/deployment-aws-runbook.md`, `.github/workflows/deploy-frontend.yml`, `scripts/smoke-multi-rol-aws.sh`, `docs/evidencia-autenticacion-completa.md`, `docs/evidence/aws-productivo/multi-rol/` |
 
 #### D-002 - Integracion Mercado Pago real pendiente
 
@@ -134,7 +135,7 @@ El backlog completo suma aproximadamente 41.75 dias-persona tras cerrar CI/CD y 
 |---|---|
 | Estado | Parcial |
 | Descripcion | RNF-04 exige 500 usuarios concurrentes. Entrega 3 certifica escenarios focalizados y carga local de 150 VUs, no 500 VUs en infraestructura horizontal. |
-| Justificacion de Entrega 3 | Docker Compose local comparte CPU, memoria, red y disco entre servicios, bases de datos, Redis, RabbitMQ, Prometheus y K6; no representa produccion. |
+| Justificacion de Entrega 3 | Docker Compose local comparte CPU, memoria, red y disco entre servicios, bases de datos, Redis, RabbitMQ, Prometheus y K6; no representa produccion. Prompt 29.11 valido AWS con smoke multi-rol, pero no ejecuto K6 de 500 VUs sobre AWS. |
 | Impacto en produccion | No hay garantia empirica de capacidad a 500 VUs reales ni punto de quiebre caracterizado en AWS. |
 | Mitigacion actual | K6 defendible: RNF-16, RNF-14, cache Redis y 150 VUs sostenidos sin errores. |
 | Plan de cierre | Ejecutar K6 desde host externo sobre AWS, habilitar replicas, medir Hikari/CPU/RAM/Redis/RabbitMQ/PostgreSQL, generar reporte p95/p99/errores y ajustar autoscaling. |
@@ -327,9 +328,10 @@ El backlog completo suma aproximadamente 41.75 dias-persona tras cerrar CI/CD y 
 
 | Deuda | Trabajo |
 |---|---|
-| D-001 | Ejecutar Terraform AWS ya declarado, configurar secretos productivos, validar outputs y smoke post-deploy. |
 | D-003 | Integracion Azure AD Javeriana o IdP OIDC institucional. |
 | D-002 | Integracion Mercado Pago real en sandbox y preparacion productiva. |
+
+Nota: D-001 se mantiene fuera del roadmap abierto porque el despliegue AWS productivo fue validado en Prompt 29.11. El hardening operativo restante se gestiona como mejora de operacion, no como deuda critica de despliegue pendiente.
 
 ### Sprint 2 - P1 importante, aproximadamente 2 semanas
 
@@ -352,7 +354,7 @@ El backlog completo suma aproximadamente 41.75 dias-persona tras cerrar CI/CD y 
 | D-018 | Reembolso tardio asincrono. |
 | D-014 / D-019 | Storybook y cierre documental residual. |
 
-Total estimado: 6 semanas calendario en 3 sprints, con 41.75 dias-persona de backlog inventariado. Si trabaja una sola persona full-time, se recomienda cerrar P0 y P1 primero y mover parte de P2 a un cuarto sprint si no hay paralelizacion.
+Total estimado: 6 semanas calendario en 3 sprints, con 41 dias-persona de backlog abierto. Si trabaja una sola persona full-time, se recomienda cerrar P0 y P1 primero y mover parte de P2 a un cuarto sprint si no hay paralelizacion.
 
 ## 5. Estado de calidad medible
 
@@ -365,6 +367,7 @@ Total estimado: 6 semanas calendario en 3 sprints, con 41.75 dias-persona de bac
 | p95 Circuit Breaker abierto | <50 ms | 37.26 ms | `load-tests/reports/05-circuit-breaker.html`, `docs/evidencia-carga.md` |
 | p95 sostenido 150 VUs | <800 ms | 52.81 ms en evidencia final; corrida previa documentada 28.15 ms | `load-tests/reports/02-load-test.html`, `docs/evidencia-carga.md`, `docs/limites-carga-reconocidos.md` |
 | Cache hit rate Redis | Medible | 99.50% | `load-tests/reports/06-cache-effectiveness.html`, `docs/evidencia-carga.md` |
+| Smoke multi-rol AWS | OK | ADMIN y ORGANIZADOR login + catalogo; PARTICIPANTE inscripcion `CONFIRMADA` y pago `CONFIRMADO` | `scripts/smoke-multi-rol-aws.sh`, `docs/evidencia-autenticacion-completa.md`, `docs/evidence/aws-productivo/multi-rol/` |
 | Smoke E2E reproducible | OK | Pago `CONFIRMADO` | `frontend/scripts/smoke-e2e.mjs`, `docs/evidencia-testing-frontend.md` |
 | Tests frontend pasando | >=80% | 52/52 unit + 28/28 E2E | `docs/evidencia-autenticacion-completa.md`, `frontend/playwright-report/index.html` |
 | Hallazgos auditoria cerrados | 26/27 | 26 cerrados y diferidos registrados en este documento | `docs/srs-sad-gap-analysis.md`, `TECH_DEBT.md` |

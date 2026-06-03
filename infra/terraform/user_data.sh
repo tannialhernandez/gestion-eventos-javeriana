@@ -54,6 +54,11 @@ services:
     image: ${images["payment-service"]}
     environment:
       SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${db_host}:${db_port}/${db_name}?currentSchema=payment
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: payment
+      SPRING_FLYWAY_SCHEMAS: payment
+      SPRING_FLYWAY_DEFAULT_SCHEMA: payment
+      SPRING_FLYWAY_CREATE_SCHEMAS: "true"
       DB_HOST: ${db_host}
       DB_PORT: "${db_port}"
       DB_NAME: ${db_name}
@@ -81,6 +86,11 @@ services:
     image: ${images["inscription-service"]}
     environment:
       SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${db_host}:${db_port}/${db_name}?currentSchema=inscription
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: inscription
+      SPRING_FLYWAY_SCHEMAS: inscription
+      SPRING_FLYWAY_DEFAULT_SCHEMA: inscription
+      SPRING_FLYWAY_CREATE_SCHEMAS: "true"
       DB_HOST: ${db_host}
       DB_PORT: "${db_port}"
       DB_NAME: ${db_name}
