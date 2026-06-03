@@ -47,8 +47,11 @@ RDS y Amazon MQ pueden tardar 15-20 minutos en quedar disponibles.
 | `aws_region` | `us-east-1` | Region de menor friccion para AWS Academy. |
 | `ec2_instance_type` | `t3.small` | Host Docker Compose para los 4 servicios. |
 | `rds_instance_class` | `db.t4g.micro` | PostgreSQL 15. |
+| `postgres_engine_version` | `15.18` | Version RDS soportada en `us-east-1` al 2026-06-02. |
 | `elasticache_node_type` | `cache.t3.micro` | Redis 7. |
+| `redis_engine_version` | `7.0` | Version Redis soportada en ElastiCache. |
 | `mq_instance_type` | `mq.t3.micro` | Amazon MQ RabbitMQ. |
+| `rabbitmq_engine_version` | `3.13` | Version Amazon MQ RabbitMQ soportada en `us-east-1` al 2026-06-02. |
 | `container_images` | `ghcr.io/tannialhernandez/*:latest` | Imagenes publicadas por GitHub Actions. |
 
 ## Estimacion FinOps mensual

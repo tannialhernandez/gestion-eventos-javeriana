@@ -34,16 +34,34 @@ variable "rds_instance_class" {
   default     = "db.t4g.micro"
 }
 
+variable "postgres_engine_version" {
+  description = "Version de PostgreSQL soportada por RDS en la region objetivo."
+  type        = string
+  default     = "15.18"
+}
+
 variable "elasticache_node_type" {
   description = "Tipo de nodo ElastiCache Redis."
   type        = string
   default     = "cache.t3.micro"
 }
 
+variable "redis_engine_version" {
+  description = "Version de Redis soportada por ElastiCache en la region objetivo."
+  type        = string
+  default     = "7.0"
+}
+
 variable "mq_instance_type" {
   description = "Tipo de instancia Amazon MQ RabbitMQ."
   type        = string
   default     = "mq.t3.micro"
+}
+
+variable "rabbitmq_engine_version" {
+  description = "Version de RabbitMQ soportada por Amazon MQ en la region objetivo."
+  type        = string
+  default     = "3.13"
 }
 
 variable "db_name" {

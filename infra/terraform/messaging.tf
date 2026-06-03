@@ -6,7 +6,7 @@ resource "random_password" "mq" {
 resource "aws_mq_broker" "rabbitmq" {
   broker_name         = "${var.project_name}-mq"
   engine_type         = "RabbitMQ"
-  engine_version      = "3.11.20"
+  engine_version      = var.rabbitmq_engine_version
   host_instance_type  = var.mq_instance_type
   publicly_accessible = false
   subnet_ids          = [aws_subnet.private[0].id]
