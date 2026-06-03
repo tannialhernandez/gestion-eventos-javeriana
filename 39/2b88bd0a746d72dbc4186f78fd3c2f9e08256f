@@ -1,0 +1,33 @@
+frontend/src/features/catalog/CatalogPage.tsx
+  s_4e209cba02b5c4::t_a30c79071a929c 39,183-203
+frontend/src/features/catalog/CatalogPage.test.tsx
+  s_4e209cba02b5c4::t_5ed79c1cae7dda 117-130
+inscription-service/src/test/java/com/javeriana/eventos/inscription/application/AsistenciaServiceTest.java
+  s_4e209cba02b5c4::t_21e5465d1fcaae 49-67,130-133,135-136
+frontend/src/features/events/EventDetailPage.test.tsx
+  s_4e209cba02b5c4::t_b28a3004a92711 234-269
+frontend/src/shared/styles/global.css
+  s_4e209cba02b5c4::t_4dba6919ec4be5 827-837
+frontend/src/features/events/EventDetailPage.tsx
+  s_4e209cba02b5c4::t_ddf7b3cb55c4c6 23-33,106-110,353-361,371-373,381,404,406-408,410,560-565
+frontend/src/shared/ui/Icon.tsx
+  s_4e209cba02b5c4::t_04fc041dd07720 10,32
+inscription-service/src/main/java/com/javeriana/eventos/inscription/application/AsistenciaService.java
+  s_4e209cba02b5c4::t_02b65f15c99035 42,112-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "392b88bd0a746d72dbc4186f78fd3c2f9e08256f",
+  "prompts": {},
+  "sessions": {
+    "s_4e209cba02b5c4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e8c52-5a55-7203-a007-904acde549c4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
