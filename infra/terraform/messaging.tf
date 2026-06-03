@@ -4,13 +4,14 @@ resource "random_password" "mq" {
 }
 
 resource "aws_mq_broker" "rabbitmq" {
-  broker_name         = "${var.project_name}-mq"
-  engine_type         = "RabbitMQ"
-  engine_version      = var.rabbitmq_engine_version
-  host_instance_type  = var.mq_instance_type
-  publicly_accessible = false
-  subnet_ids          = [aws_subnet.private[0].id]
-  security_groups     = [aws_security_group.mq.id]
+  broker_name                = "${var.project_name}-mq"
+  engine_type                = "RabbitMQ"
+  engine_version             = var.rabbitmq_engine_version
+  host_instance_type         = var.mq_instance_type
+  auto_minor_version_upgrade = true
+  publicly_accessible        = false
+  subnet_ids                 = [aws_subnet.private[0].id]
+  security_groups            = [aws_security_group.mq.id]
 
   user {
     username = var.mq_username
