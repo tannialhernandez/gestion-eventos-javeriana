@@ -9,6 +9,11 @@ concurrency:
   group: deploy-frontend-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 
+env:
+  AWS_REGION: us-east-1
+  FRONTEND_S3_BUCKET: eventos-javeriana-spa-44aa8767
+  CLOUDFRONT_DISTRIBUTION_ID: E2WXZQBIXPHFUB
+
 jobs:
   deploy:
     name: Build and publish SPA
@@ -54,8 +59,6 @@ jobs:
 
       - name: Validate deployment configuration
         run: |
-          test -n "${{ vars.FRONTEND_S3_BUCKET }}" || (echo "Missing repository variable FRONTEND_S3_BUCKET" && exit 1)
-          test -n "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" || (echo "Missing repository variable CLOUDFRONT_DISTRIBUTION_ID" && exit 1)
           test -n "${{ secrets.AWS_ACCESS_KEY_ID }}" || (echo "Missing secret AWS_ACCESS_KEY_ID" && exit 1)
           test -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" || (echo "Missing secret AWS_SECRET_ACCESS_KEY" && exit 1)
 
@@ -64,13 +67,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Upload SPA to S3
-        run: aws s3 sync dist/ "s3://${{ vars.FRONTEND_S3_BUCKET }}/" --delete
+        run: aws s3 sync dist/ "s3://${FRONTEND_S3_BUCKET}/" --delete
 
       - name: Invalidate CloudFront
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
             --paths "/*"
