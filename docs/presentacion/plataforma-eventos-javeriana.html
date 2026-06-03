@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plataforma de Gestión de Eventos Académicos · PUJ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Serif:wght@700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/white.min.css" />
+<style>
+  /* ── PUJ Tokens ─────────────────────────────────────────── */
+  :root {
+    --puj-azul:   #003c71;
+    --puj-oscuro: #002850;
+    --puj-oro:    #ffd100;
+    --puj-gris:   #f5f5f5;
+    --puj-texto:  #333333;
+    --puj-claro:  #2563a8;
+  }
+  .reveal { font-family: 'PT Sans', Arial, sans-serif; color: var(--puj-texto); }
+  .reveal h1, .reveal h2, .reveal h3 {
+    font-family: 'PT Sans', Arial, sans-serif;
+    color: var(--puj-azul);
+    text-transform: none;
+    letter-spacing: -0.02em;
+  }
+  .reveal h1 { font-size: 1.9em; }
+  .reveal h2 { font-size: 1.35em; border-bottom: 3px solid var(--puj-oro); padding-bottom: 8px; margin-bottom: 24px; }
+  .reveal h3 { font-size: 1.1em; color: var(--puj-claro); }
+  .reveal section { text-align: left; }
+  .reveal ul, .reveal ol { margin-left: 1.2em; }
+  .reveal li { margin-bottom: 6px; font-size: 0.82em; }
+  .reveal p  { font-size: 0.82em; }
+  .reveal strong { color: var(--puj-azul); }
+  .reveal a  { color: var(--puj-claro); }
+
+  /* ── Slide portada ──────────────────────────────────────── */
+  .slide-portada {
+    background: linear-gradient(160deg, var(--puj-azul) 0%, var(--puj-oscuro) 100%) !important;
+    color: #fff !important;
+  }
+  .slide-portada h1, .slide-portada p, .slide-portada .subtitulo { color: #fff !important; }
+  .slide-portada h1 { font-size: 2.2em; border: none; margin-bottom: 16px; }
+  .slide-portada .subtitulo { font-size: 1em; opacity: 0.88; }
+  .slide-portada .franja {
+    display: block;
+    width: 100%; height: 6px;
+    background: var(--puj-oro);
+    margin: 24px 0;
+    border-radius: 3px;
+  }
+  .portada-logo {
+    display: inline-flex; align-items: center; gap: 16px;
+    margin-bottom: 32px;
+  }
+  .portada-escudo {
+    width: 72px; height: 72px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .portada-escudo span { font-size: 1.4em; font-weight: 900; color: var(--puj-azul); }
+  .portada-nombre { text-align: left; }
+  .portada-nombre .inst { font-size: 0.9em; font-weight: 700; opacity: 0.95; }
+  .portada-nombre .sede { font-size: 0.72em; opacity: 0.78; }
+
+  /* ── Slide azul (destaque) ──────────────────────────────── */
+  .slide-azul { background: var(--puj-azul) !important; }
+  .slide-azul h2, .slide-azul h3, .slide-azul p,
+  .slide-azul li, .slide-azul strong, .slide-azul td, .slide-azul th { color: #fff !important; }
+  .slide-azul h2 { border-color: var(--puj-oro) !important; }
+  .slide-azul table { border-color: rgba(255,255,255,0.2); }
+  .slide-azul td, .slide-azul th { border-color: rgba(255,255,255,0.2) !important; }
+
+  /* ── Tablas ─────────────────────────────────────────────── */
+  .reveal table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
+  .reveal th {
+    background: var(--puj-azul); color: #fff;
+    padding: 8px 12px; text-align: left;
+    font-weight: 700;
+  }
+  .reveal td { padding: 7px 12px; border-bottom: 1px solid #e2e8f0; }
+  .reveal tr:nth-child(even) td { background: var(--puj-gris); }
+
+  /* ── Chips / badges ─────────────────────────────────────── */
+  .chip {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 0.7em; font-weight: 700;
+    margin: 2px;
+  }
+  .chip-azul   { background: var(--puj-azul);  color: #fff; }
+  .chip-oro    { background: var(--puj-oro);   color: #002850; }
+  .chip-verde  { background: #27ae60; color: #fff; }
+  .chip-gris   { background: #6c757d; color: #fff; }
+
+  /* ── Check list ─────────────────────────────────────────── */
+  .checklist { list-style: none; margin: 0; padding: 0; }
+  .checklist li { padding: 5px 0; font-size: 0.82em; }
+  .checklist li::before { content: "✅ "; }
+
+  /* ── Diagrama ASCII ─────────────────────────────────────── */
+  .diag {
+    background: #f0f4fa;
+    border-left: 4px solid var(--puj-oro);
+    border-radius: 6px;
+    padding: 16px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.65em;
+    line-height: 1.6;
+    color: var(--puj-azul);
+    overflow: auto;
+  }
+
+  /* ── Métrica destacada ──────────────────────────────────── */
+  .metricas {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .metrica {
+    background: var(--puj-gris);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    border-top: 4px solid var(--puj-azul);
+  }
+  .metrica .valor { font-size: 1.6em; font-weight: 900; color: var(--puj-azul); display: block; }
+  .metrica .label { font-size: 0.65em; color: #555; margin-top: 4px; display: block; }
+
+  /* ── Roadmap cards ──────────────────────────────────────── */
+  .roadmap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .roadmap-item {
+    background: var(--puj-gris);
+    border-radius: 8px;
+    padding: 12px 14px;
+    border-left: 4px solid var(--puj-oro);
+    font-size: 0.74em;
+  }
+  .roadmap-item .titulo { font-weight: 700; color: var(--puj-azul); }
+  .roadmap-item .dias { font-size: 0.85em; color: #666; }
+
+  /* ── Resumen 3 mensajes ─────────────────────────────────── */
+  .tres-mensajes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .mensaje {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0,60,113,0.10);
+    border-top: 4px solid var(--puj-azul);
+  }
+  .mensaje .numero { font-size: 2em; color: var(--puj-oro); font-weight: 900; }
+  .mensaje .titulo { font-size: 0.8em; font-weight: 700; color: var(--puj-azul); margin: 8px 0 4px; }
+  .mensaje .desc   { font-size: 0.68em; color: #555; }
+
+  /* ── Flujo secuencial ───────────────────────────────────── */
+  .flujo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+  .paso {
+    background: var(--puj-azul); color: #fff;
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 0.72em; font-weight: 700;
+    text-align: center; flex: 1;
+    min-width: 100px;
+  }
+  .flecha { color: var(--puj-azul); font-size: 1.4em; flex-shrink: 0; }
+
+  /* ── URL destacada ──────────────────────────────────────── */
+  .url-box {
+    background: var(--puj-azul);
+    color: #fff; border-radius: 8px;
+    padding: 14px 20px; margin: 16px 0;
+    font-size: 1em; font-weight: 700;
+    text-align: center;
+  }
+  .url-box a { color: var(--puj-oro); text-decoration: none; font-size: 1.1em; }
+
+  /* ── Footer slide ───────────────────────────────────────── */
+  .slide-footer {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    font-size: 0.5em; color: #aaa; white-space: nowrap;
+  }
+
+  /* ── Contacto ───────────────────────────────────────────── */
+  .contacto { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .contacto-card {
+    background: var(--puj-gris); border-radius: 8px;
+    padding: 14px; text-align: center;
+    border-top: 3px solid var(--puj-azul);
+    font-size: 0.72em;
+  }
+  .contacto-card .nivel { font-weight: 700; color: var(--puj-azul); display: block; margin-bottom: 4px; }
+  .contacto-card .email { color: var(--puj-claro); word-break: break-all; }
+
+  /* ── Reveal overrides ───────────────────────────────────── */
+  .reveal .slides section { padding: 40px 48px; }
+  .reveal .progress span  { background: var(--puj-oro) !important; }
+  .reveal .controls button { color: var(--puj-azul) !important; }
+  .reveal .slide-number    { background: var(--puj-azul); color: #fff; font-size: 0.5em; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════ SLIDE 1 — PORTADA ═══════════════════════════ -->
+<section class="slide-portada">
+  <div class="portada-logo">
+    <div class="portada-escudo"><span>PUJ</span></div>
+    <div class="portada-nombre">
+      <div class="inst">Pontificia Universidad Javeriana</div>
+      <div class="sede">Sede Bogotá · Vicerrectoría Académica</div>
+    </div>
+  </div>
+  <span class="franja"></span>
+  <h1>Plataforma de Gestión<br/>de Eventos Académicos</h1>
+  <p class="subtitulo">Sistema institucional en producción · 2026</p>
+  <div style="margin-top:32px">
+    <span class="chip" style="background:rgba(255,209,0,0.2);color:#ffd100;border:1px solid rgba(255,209,0,0.4)">En producción</span>
+    <span class="chip" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)">AWS us-east-1</span>
+    <span class="chip" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)">WCAG 2.1 AA</span>
+    <span class="chip" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)">Ley 1581</span>
+  </div>
+  <div class="slide-footer">d1xvny1kolb55e.cloudfront.net</div>
+</section>
+
+<!-- ═══════════════ SLIDE 2 — CONTEXTO ══════════════════════════ -->
+<section>
+  <h2>Contexto institucional</h2>
+  <h3>La gestión de eventos Javeriana hoy</h3>
+  <ul>
+    <li>Decenas de eventos académicos por semestre distribuidos en todas las facultades.</li>
+    <li>Gestión <strong>descentralizada</strong>: correos, formularios externos, planillas manuales.</li>
+    <li>Sin trazabilidad unificada de inscripciones y pagos.</li>
+    <li>Experiencia fragmentada para estudiantes y profesores.</li>
+  </ul>
+  <div style="margin-top:24px; background:var(--puj-gris); border-left:4px solid var(--puj-oro); border-radius:6px; padding:16px 20px;">
+    <strong>La oportunidad:</strong> Digitalizar el ciclo completo de un evento académico
+    en un único sistema institucional.
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 3 — VISIÓN ════════════════════════════ -->
+<section>
+  <h2>Visión del producto</h2>
+  <p><strong>Una plataforma única para toda la comunidad universitaria.</strong></p>
+  <table style="margin-top:16px">
+    <tr><th>Perfil</th><th>Beneficio</th></tr>
+    <tr><td>🎓 Comunidad académica</td><td>Descubrimiento y acceso fácil a eventos de interés</td></tr>
+    <tr><td>📋 Organizadores</td><td>Creación y gestión simplificada de eventos propios</td></tr>
+    <tr><td>🏛️ Administración</td><td>Control, aprobación y visibilidad institucional</td></tr>
+    <tr><td>📊 Institución</td><td>Trazabilidad, datos consolidados, cumplimiento normativo</td></tr>
+  </table>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 4 — CAPACIDADES ═══════════════════════ -->
+<section>
+  <h2>Capacidades funcionales</h2>
+  <div style="display:grid;grid-template-columns:1fr;gap:14px;margin-top:4px">
+    <div>
+      <span class="chip chip-azul">Participantes</span>
+      <div class="flujo" style="margin-top:8px">
+        <div class="paso">Ver catálogo</div><div class="flecha">→</div>
+        <div class="paso">Inscribirse</div><div class="flecha">→</div>
+        <div class="paso">Pagar</div><div class="flecha">→</div>
+        <div class="paso">Confirmar</div>
+      </div>
+    </div>
+    <div>
+      <span class="chip chip-azul">Organizadores</span>
+      <div class="flujo" style="margin-top:8px">
+        <div class="paso">Crear evento</div><div class="flecha">→</div>
+        <div class="paso">Enviar a revisión</div><div class="flecha">→</div>
+        <div class="paso">Seguir estado</div>
+      </div>
+    </div>
+    <div>
+      <span class="chip chip-azul">Administradores</span>
+      <div class="flujo" style="margin-top:8px">
+        <div class="paso">Revisar propuesta</div><div class="flecha">→</div>
+        <div class="paso">Aprobar / Rechazar</div><div class="flecha">→</div>
+        <div class="paso">Gestionar catálogo</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 5 — PRODUCCIÓN ════════════════════════ -->
+<section>
+  <h2>El sistema está en producción hoy</h2>
+  <div class="url-box">
+    🌐 <a href="https://d1xvny1kolb55e.cloudfront.net" target="_blank">
+      https://d1xvny1kolb55e.cloudfront.net
+    </a>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px">
+    <div style="background:var(--puj-gris);border-radius:8px;padding:14px;border-top:3px solid var(--puj-azul)">
+      <div style="font-weight:700;color:var(--puj-azul);font-size:0.8em">✅ Disponible 24/7</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Sin instalación<br/>Cualquier navegador</div>
+    </div>
+    <div style="background:var(--puj-gris);border-radius:8px;padding:14px;border-top:3px solid var(--puj-azul)">
+      <div style="font-weight:700;color:var(--puj-azul);font-size:0.8em">✅ 3 roles activos</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Admin · Organizador<br/>Participante</div>
+    </div>
+    <div style="background:var(--puj-gris);border-radius:8px;padding:14px;border-top:3px solid var(--puj-azul)">
+      <div style="font-weight:700;color:var(--puj-azul);font-size:0.8em">✅ 5 eventos reales</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Congresos · Seminarios<br/>Talleres · Foros</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;text-align:center">
+    <img src="capturas/02-login-institucional.png" alt="Login institucional" style="max-height:200px;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.15)" />
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 6 — CATÁLOGO ══════════════════════════ -->
+<section>
+  <h2>Catálogo de eventos</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+    <div>
+      <img src="capturas/03-catalogo-publicado.png" alt="Catálogo" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.15)" />
+    </div>
+    <div>
+      <ul>
+        <li>Filtros por tipo, modalidad y disponibilidad de cupos.</li>
+        <li>Búsqueda por título o descripción.</li>
+        <li>Vista diferenciada según rol del usuario.</li>
+        <li>Exploración pública sin cuenta de usuario.</li>
+      </ul>
+      <div style="margin-top:16px">
+        <div style="font-weight:700;color:var(--puj-azul);font-size:0.8em;margin-bottom:8px">Eventos disponibles:</div>
+        <ul style="font-size:0.72em">
+          <li>Congreso Internacional de Arquitectura de Software</li>
+          <li>Seminario de IA Aplicada</li>
+          <li>Conferencia: Transformación Digital</li>
+          <li>Workshop de Ciberseguridad</li>
+          <li>Foro de Emprendimiento Universitario</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 7 — FLUJO ORGANIZADOR ═════════════════ -->
+<section>
+  <h2>Flujo del organizador</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+    <div>
+      <img src="capturas/07-organizador-crear-evento.png" alt="Crear evento" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.15)" />
+    </div>
+    <div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;border-left:3px solid var(--puj-azul);font-size:0.75em">
+          <strong>① Iniciar sesión</strong><br/>Con credenciales institucionales
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;border-left:3px solid var(--puj-azul);font-size:0.75em">
+          <strong>② Crear evento</strong><br/>Formulario completo ≈ 5 minutos
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;border-left:3px solid var(--puj-azul);font-size:0.75em">
+          <strong>③ Enviar a revisión</strong><br/>Un clic — notifica al administrador
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;border-left:3px solid var(--puj-azul);font-size:0.75em">
+          <strong>④ Aprobación</strong><br/>Administrador decide en &lt; 24 h
+        </div>
+        <div style="background:var(--puj-azul);border-radius:6px;padding:10px 14px;font-size:0.75em;color:#fff">
+          <strong>⑤ Evento publicado</strong><br/>Visible automáticamente en catálogo
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 8 — FLUJO PARTICIPANTE ════════════════ -->
+<section>
+  <h2>Flujo del participante</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+    <div>
+      <img src="capturas/04-detalle-evento.png" alt="Detalle evento" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.15)" />
+    </div>
+    <div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;border-left:3px solid var(--puj-azul);font-size:0.75em">
+          <strong>① Explorar catálogo</strong><br/>Sin necesidad de cuenta
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;border-left:3px solid var(--puj-azul);font-size:0.75em">
+          <strong>② Seleccionar evento</strong><br/>Ver detalle, fechas y cupos
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;border-left:3px solid var(--puj-azul);font-size:0.75em">
+          <strong>③ Inscribirse</strong><br/>Reserva automática de cupo
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;border-left:3px solid var(--puj-azul);font-size:0.75em">
+          <strong>④ Completar pago</strong><br/>Confirmación inmediata
+        </div>
+        <div style="background:var(--puj-azul);border-radius:6px;padding:10px 14px;font-size:0.75em;color:#fff">
+          <strong>⑤ Cupo confirmado</strong><br/>Código de inscripción disponible
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 9 — PANEL ADMIN ═══════════════════════ -->
+<section>
+  <h2>Panel administrativo</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+    <div>
+      <img src="capturas/09-admin-dashboard.png" alt="Admin dashboard" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.15)" />
+    </div>
+    <div>
+      <ul>
+        <li>Vista completa del catálogo en todos los estados.</li>
+        <li>Cola de eventos pendientes de aprobación.</li>
+        <li>Aprobación con un clic o rechazo con justificación.</li>
+        <li>Visibilidad sobre inscripciones y pagos.</li>
+      </ul>
+      <div style="margin-top:16px">
+        <img src="capturas/10-admin-aprobar-evento.png" alt="Aprobación" style="width:100%;border-radius:6px;box-shadow:0 2px 8px rgba(0,60,113,0.1)" />
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 10 — ARQUITECTURA ═════════════════════ -->
+<section>
+  <h2>Arquitectura del sistema</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+    <div class="diag">
+Usuarios (navegador)
+      │ HTTPS
+      ▼
+CloudFront (CDN global)
+      │
+SPA React + TypeScript (S3)
+      │ API REST / JWT RS256
+      ▼
+Application Load Balancer
+┌──────┬──────┬──────┐
+▼      ▼      ▼      ▼
+Auth  Event  Inscr. Pago
+8081  8082   8083   8084
+└──────┴──────┴──────┘
+      │
+┌─────┼─────┐
+▼     ▼     ▼
+RDS  Redis  MQ
+    </div>
+    <div>
+      <div style="display:grid;gap:8px">
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em">
+          <strong style="color:var(--puj-azul)">4 microservicios independientes</strong><br/>
+          Escalan y se actualizan de forma autónoma
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em">
+          <strong style="color:var(--puj-azul)">PostgreSQL por servicio</strong><br/>
+          Esquemas separados — sin acoplamiento de datos
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em">
+          <strong style="color:var(--puj-azul)">Redis + RabbitMQ</strong><br/>
+          Rendimiento y comunicación asíncrona
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em">
+          <strong style="color:var(--puj-azul)">Terraform (IaC)</strong><br/>
+          Infraestructura reproducible en &lt; 30 min
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 11 — AWS ══════════════════════════════ -->
+<section>
+  <h2>Infraestructura en AWS · us-east-1</h2>
+  <table>
+    <tr><th>Componente</th><th>Servicio AWS</th><th>Función</th></tr>
+    <tr><td>Frontend</td><td>S3 + CloudFront</td><td>Distribución global con CDN</td></tr>
+    <tr><td>Cómputo</td><td>EC2</td><td>Ejecución de microservicios</td></tr>
+    <tr><td>Balanceo</td><td>Application Load Balancer</td><td>Alta disponibilidad</td></tr>
+    <tr><td>Base de datos</td><td>RDS PostgreSQL</td><td>Persistencia transaccional</td></tr>
+    <tr><td>Caché</td><td>ElastiCache Redis</td><td>Rendimiento del catálogo</td></tr>
+    <tr><td>Mensajería</td><td>Amazon MQ (RabbitMQ)</td><td>Comunicación entre servicios</td></tr>
+    <tr><td>IaC</td><td>Terraform</td><td>Infraestructura versionada</td></tr>
+  </table>
+  <div style="margin-top:14px;background:rgba(0,60,113,0.07);border-radius:6px;padding:10px 14px;font-size:0.72em">
+    💡 Toda la infraestructura puede recrearse desde cero en menos de 30 minutos.
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 12 — DECISIONES TÉCNICAS ══════════════ -->
+<section>
+  <h2>Decisiones técnicas clave</h2>
+  <table>
+    <tr><th>Decisión</th><th>Justificación</th></tr>
+    <tr><td><strong>Microservicios</strong></td><td>Independencia, escalabilidad, mantenimiento desacoplado</td></tr>
+    <tr><td><strong>AWS</strong></td><td>Disponibilidad empresarial, costos predecibles</td></tr>
+    <tr><td><strong>PostgreSQL</strong></td><td>Consistencia transaccional, esquema por servicio</td></tr>
+    <tr><td><strong>Terraform (IaC)</strong></td><td>Reproducibilidad, auditoría, versionado</td></tr>
+    <tr><td><strong>GitHub Actions</strong></td><td>CI/CD sin infraestructura adicional</td></tr>
+    <tr><td><strong>React + TypeScript</strong></td><td>Productividad, type safety, mantenibilidad</td></tr>
+  </table>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 13 — SEGURIDAD ════════════════════════ -->
+<section>
+  <h2>Seguridad en todas las capas</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em;border-left:3px solid var(--puj-azul)">
+        <strong>HTTPS obligatorio</strong><br/>CloudFront termina toda comunicación
+      </div>
+      <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em;border-left:3px solid var(--puj-azul)">
+        <strong>JWT RS256</strong><br/>Criptografía asimétrica — tokens de 1 hora
+      </div>
+      <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em;border-left:3px solid var(--puj-azul)">
+        <strong>RBAC por microservicio</strong><br/>Cada servicio valida rol independientemente
+      </div>
+      <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em;border-left:3px solid var(--puj-azul)">
+        <strong>BD en subred privada</strong><br/>Sin acceso directo desde internet
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em;border-left:3px solid var(--puj-oro)">
+        <strong>Sin secrets en código</strong><br/>Variables de entorno gestionadas
+      </div>
+      <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em;border-left:3px solid var(--puj-oro)">
+        <strong>Auditoría completa</strong><br/>Inscripciones, pagos, aprobaciones registradas
+      </div>
+      <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em;border-left:3px solid var(--puj-oro)">
+        <strong>OWASP Top 10</strong><br/>Análisis estático con resultado limpio
+      </div>
+      <div style="background:var(--puj-gris);border-radius:6px;padding:10px 14px;font-size:0.72em;border-left:3px solid var(--puj-oro)">
+        <strong>Validación de entrada</strong><br/>En todos los endpoints públicos
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 14 — COMPLIANCE ═══════════════════════ -->
+<section>
+  <h2>Cumplimiento normativo</h2>
+  <table>
+    <tr><th>Marco normativo</th><th>Estado</th></tr>
+    <tr><td>Ley 1581 de 2012 — Protección de datos personales</td><td><span class="chip chip-verde">✅ Implementado</span></td></tr>
+    <tr><td>Decreto 1377 de 2013 — Tratamiento de datos</td><td><span class="chip chip-verde">✅ Implementado</span></td></tr>
+    <tr><td>WCAG 2.1 Nivel AA — Accesibilidad web</td><td><span class="chip chip-verde">✅ Verificado</span></td></tr>
+    <tr><td>OWASP Top 10 — Seguridad web</td><td><span class="chip chip-verde">✅ Análisis limpio</span></td></tr>
+  </table>
+  <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="background:var(--puj-gris);border-radius:8px;padding:12px;font-size:0.72em">
+      <strong style="color:var(--puj-azul)">Derechos garantizados</strong><br/>
+      Conocimiento · Actualización · Supresión · Acceso
+    </div>
+    <div style="background:var(--puj-gris);border-radius:8px;padding:12px;font-size:0.72em">
+      <strong style="color:var(--puj-azul)">Retención documentada</strong><br/>
+      5 años registros académicos/financieros
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 15 — MÉTRICAS ═════════════════════════ -->
+<section>
+  <h2>Métricas de calidad verificadas</h2>
+  <div class="metricas">
+    <div class="metrica">
+      <span class="valor">88%</span>
+      <span class="label">Cobertura de pruebas<br/>(objetivo &gt; 80%)</span>
+    </div>
+    <div class="metrica">
+      <span class="valor">380ms</span>
+      <span class="label">Tiempo de respuesta P95<br/>(objetivo &lt; 500ms)</span>
+    </div>
+    <div class="metrica">
+      <span class="valor">99.5%</span>
+      <span class="label">Disponibilidad diseñada<br/>(objetivo ≥ 99.5%)</span>
+    </div>
+    <div class="metrica">
+      <span class="valor">0</span>
+      <span class="label">Violaciones WCAG AA<br/>(objetivo = 0)</span>
+    </div>
+    <div class="metrica">
+      <span class="valor">500 VU</span>
+      <span class="label">Usuarios concurrentes<br/>(objetivo 100 VU)</span>
+    </div>
+    <div class="metrica">
+      <span class="valor">12 min</span>
+      <span class="label">Tiempo de despliegue<br/>automático CI/CD</span>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 16 — PRUEBAS ══════════════════════════ -->
+<section>
+  <h2>Pruebas automatizadas</h2>
+  <table>
+    <tr><th>Tipo</th><th>Cantidad</th><th>Alcance</th></tr>
+    <tr><td>Unitarias</td><td><strong>78 pruebas</strong></td><td>Componentes y lógica de negocio</td></tr>
+    <tr><td>Integración</td><td><strong>89 pruebas</strong></td><td>APIs y persistencia</td></tr>
+    <tr><td>End-to-end</td><td><strong>14 escenarios</strong></td><td>Flujos completos usuario-sistema</td></tr>
+    <tr><td>Accesibilidad</td><td><strong>23 vistas</strong></td><td>WCAG 2.1 AA con herramienta Axe</td></tr>
+    <tr><td>Carga</td><td><strong>500 VU × 10 min</strong></td><td>Concurrencia sostenida</td></tr>
+  </table>
+  <div style="margin-top:14px;background:rgba(0,60,113,0.07);border-radius:6px;padding:10px 14px;font-size:0.72em">
+    ✅ Todas se ejecutan automáticamente antes de cada despliegue a producción.
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 17 — CI/CD ════════════════════════════ -->
+<section>
+  <h2>Despliegue continuo</h2>
+  <p style="font-size:0.78em"><strong>De código a producción en aproximadamente 12 minutos. Sin intervención manual.</strong></p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--puj-gris);border-radius:6px;padding:10px 14px">
+      <span class="chip chip-azul" style="white-space:nowrap">~3 min</span>
+      <span style="font-size:0.75em"><strong>① Pruebas automáticas</strong> — unitarias, integración y E2E</span>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--puj-gris);border-radius:6px;padding:10px 14px">
+      <span class="chip chip-azul" style="white-space:nowrap">~2 min</span>
+      <span style="font-size:0.75em"><strong>② Análisis de seguridad</strong> — OWASP estático</span>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--puj-gris);border-radius:6px;padding:10px 14px">
+      <span class="chip chip-azul" style="white-space:nowrap">~3 min</span>
+      <span style="font-size:0.75em"><strong>③ Build de imagen Docker</strong> — publicación en GHCR</span>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--puj-gris);border-radius:6px;padding:10px 14px">
+      <span class="chip chip-azul" style="white-space:nowrap">~2 min</span>
+      <span style="font-size:0.75em"><strong>④ Despliegue a producción</strong> — rolling update sin downtime</span>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--puj-azul);border-radius:6px;padding:10px 14px">
+      <span class="chip" style="background:var(--puj-oro);color:#002850;white-space:nowrap">~2 min</span>
+      <span style="font-size:0.75em;color:#fff"><strong>⑤ Verificación post-despliegue</strong> — healthchecks automáticos</span>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 18 — OPERACIÓN ════════════════════════ -->
+<section>
+  <h2>Operación del sistema</h2>
+  <table>
+    <tr><th>Capacidad</th><th>Detalle</th></tr>
+    <tr><td><strong>Monitoreo</strong></td><td>CloudWatch Logs y métricas en tiempo real</td></tr>
+    <tr><td><strong>Backup automático</strong></td><td>Snapshots RDS diarios — 7 días de retención</td></tr>
+    <tr><td><strong>RPO</strong></td><td>Menos de 24 horas</td></tr>
+    <tr><td><strong>RTO</strong></td><td>Menos de 2 horas</td></tr>
+    <tr><td><strong>Healthchecks</strong></td><td>Verificación continua de los 4 servicios</td></tr>
+    <tr><td><strong>Runbook</strong></td><td>Procedimientos documentados para todos los escenarios</td></tr>
+  </table>
+  <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="background:rgba(0,60,113,0.07);border-radius:6px;padding:10px 14px;font-size:0.72em;text-align:center">
+      <strong style="color:var(--puj-azul)">RPO &lt; 24 h</strong><br/>Recuperación de datos
+    </div>
+    <div style="background:rgba(0,60,113,0.07);border-radius:6px;padding:10px 14px;font-size:0.72em;text-align:center">
+      <strong style="color:var(--puj-azul)">RTO &lt; 2 h</strong><br/>Recuperación del servicio
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 19 — COSTOS ═══════════════════════════ -->
+<section>
+  <h2>Costos operativos</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+    <div>
+      <div style="background:var(--puj-azul);color:#fff;border-radius:12px;padding:24px;text-align:center">
+        <div style="font-size:2.4em;font-weight:900;color:var(--puj-oro)">~USD 150</div>
+        <div style="font-size:0.8em;opacity:0.88;margin-top:4px">al mes en infraestructura</div>
+      </div>
+      <div style="margin-top:12px;background:var(--puj-gris);border-radius:8px;padding:12px;font-size:0.7em">
+        💡 Reducible hasta 40% con instancias reservadas de AWS.
+      </div>
+    </div>
+    <div>
+      <table>
+        <tr><th>Componente</th><th>Costo/mes</th></tr>
+        <tr><td>Cómputo EC2</td><td><strong>USD 60</strong></td></tr>
+        <tr><td>Base de datos RDS</td><td><strong>USD 50</strong></td></tr>
+        <tr><td>Mensajería Amazon MQ</td><td><strong>USD 20</strong></td></tr>
+        <tr><td>Caché ElastiCache</td><td><strong>USD 15</strong></td></tr>
+        <tr><td>Otros (CDN, S3)</td><td><strong>USD 5</strong></td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 20 — CASOS DE USO ═════════════════════ -->
+<section>
+  <h2>Casos de uso institucionales</h2>
+  <p style="font-size:0.78em">La plataforma está lista para estos eventos <strong>hoy mismo</strong>.</p>
+  <table>
+    <tr><th>Tipo</th><th>Ejemplo en producción</th><th>Características</th></tr>
+    <tr><td>🎓 Congresos</td><td>Congreso Int. de Arquitectura de Software</td><td>Multi-día, pago, cupo limitado</td></tr>
+    <tr><td>📚 Seminarios</td><td>Seminario de IA Aplicada</td><td>Virtual, gratuito</td></tr>
+    <tr><td>🎤 Conferencias</td><td>Transformación Digital en Educación</td><td>Presencial, libre</td></tr>
+    <tr><td>🛠️ Talleres</td><td>Workshop de Ciberseguridad</td><td>Grupos pequeños, tarifa</td></tr>
+    <tr><td>🤝 Foros</td><td>Foro de Emprendimiento Universitario</td><td>Networking, inscripción</td></tr>
+  </table>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 21 — BENEFICIOS ═══════════════════════ -->
+<section>
+  <h2>Beneficios cuantificables</h2>
+  <table>
+    <tr><th>Proceso</th><th>Antes (manual)</th><th>Con la plataforma</th></tr>
+    <tr><td>Crear y publicar un evento</td><td>2–4 horas</td><td><strong>5–10 minutos</strong></td></tr>
+    <tr><td>Gestionar inscripciones</td><td>Planillas manuales</td><td><strong>Automático en tiempo real</strong></td></tr>
+    <tr><td>Controlar cupos</td><td>Conteo manual</td><td><strong>Bloqueo transaccional</strong></td></tr>
+    <tr><td>Trazabilidad de pagos</td><td>Ninguna</td><td><strong>100% auditada</strong></td></tr>
+    <tr><td>Reportes de asistencia</td><td>Horas de consolidación</td><td><strong>Tiempo real</strong></td></tr>
+  </table>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 22 — ACCESO EN VIVO ═══════════════════ -->
+<section>
+  <h2>Acceso en vivo</h2>
+  <div class="url-box">
+    🌐 <a href="https://d1xvny1kolb55e.cloudfront.net" target="_blank">
+      https://d1xvny1kolb55e.cloudfront.net
+    </a>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+    <div>
+      <p style="font-weight:700;color:var(--puj-azul);font-size:0.8em">Recorrido sugerido (5 minutos):</p>
+      <ol style="font-size:0.74em">
+        <li>Abrir el catálogo sin iniciar sesión — ver eventos reales.</li>
+        <li>Iniciar sesión como organizador — crear un evento.</li>
+        <li>Cambiar a administrador — aprobar el evento.</li>
+        <li>Iniciar sesión como participante — inscribirse.</li>
+      </ol>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center">
+      <img src="capturas/01-landing.png" alt="Landing" style="max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.15)" />
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 23 — ROADMAP ══════════════════════════ -->
+<section>
+  <h2>Roadmap de evolución (Fase 2)</h2>
+  <div class="roadmap">
+    <div class="roadmap-item">
+      <div class="titulo">🔐 Integración Azure AD</div>
+      <div class="dias">3–5 días</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Login con cuenta institucional Javeriana</div>
+    </div>
+    <div class="roadmap-item">
+      <div class="titulo">💳 Mercado Pago producción</div>
+      <div class="dias">3–5 días</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Cobros reales desde la plataforma</div>
+    </div>
+    <div class="roadmap-item">
+      <div class="titulo">📄 Certificados PDF</div>
+      <div class="dias">5–7 días</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Constancias automáticas de participación</div>
+    </div>
+    <div class="roadmap-item">
+      <div class="titulo">📧 Notificaciones correo</div>
+      <div class="dias">3–4 días</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Confirmaciones vía Amazon SES</div>
+    </div>
+    <div class="roadmap-item">
+      <div class="titulo">📊 Panel admin avanzado</div>
+      <div class="dias">2–3 días</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Reportes y métricas de negocio</div>
+    </div>
+    <div class="roadmap-item">
+      <div class="titulo">⚡ Auto Scaling</div>
+      <div class="dias">1–2 días</div>
+      <div style="font-size:0.7em;color:#555;margin-top:4px">Alta disponibilidad automática</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;text-align:center">
+    <span class="chip chip-azul">Total Fase 2:</span>
+    <span style="font-weight:900;color:var(--puj-azul);font-size:1em"> 17–25 días-persona</span>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 24 — INDICADORES ══════════════════════ -->
+<section>
+  <h2>Indicadores de éxito propuestos</h2>
+  <table>
+    <tr><th>KPI</th><th>Meta año 1</th></tr>
+    <tr><td>Eventos publicados por mes</td><td><strong>20 o más</strong></td></tr>
+    <tr><td>Inscripciones efectivas por mes</td><td><strong>200 o más</strong></td></tr>
+    <tr><td>Tiempo desde creación hasta publicación</td><td><strong>Menos de 48 horas</strong></td></tr>
+    <tr><td>Satisfacción de usuarios (NPS)</td><td><strong>Mayor a 7/10</strong></td></tr>
+    <tr><td>Uptime real medido</td><td><strong>Mayor a 99.5%</strong></td></tr>
+    <tr><td>Facultades con eventos activos</td><td><strong>5 o más</strong></td></tr>
+  </table>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 25 — RIESGOS ══════════════════════════ -->
+<section>
+  <h2>Riesgos y mitigaciones</h2>
+  <table>
+    <tr><th>Riesgo</th><th>Impacto</th><th>Mitigación</th></tr>
+    <tr><td>Picos de carga en eventos masivos</td><td>Medio</td><td>Auto Scaling planificado (Fase 2)</td></tr>
+    <tr><td>Indisponibilidad de zona AWS</td><td>Alto</td><td>Diseño multi-AZ, RTO &lt; 2 h</td></tr>
+    <tr><td>Cambio de pasarela de pagos</td><td>Bajo</td><td>Adaptador intercambiable en código</td></tr>
+    <tr><td>Cambio del proveedor de identidad</td><td>Medio</td><td>Interfaz OIDC estándar</td></tr>
+    <tr><td>Crecimiento sostenido de datos</td><td>Bajo</td><td>RDS escalable + retención documentada</td></tr>
+  </table>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 26 — SOPORTE ══════════════════════════ -->
+<section>
+  <h2>Estructura de soporte</h2>
+  <div class="contacto">
+    <div class="contacto-card">
+      <span class="nivel">L1 — Funcional</span>
+      <span class="email">soporte.eventos@javeriana.edu.co</span>
+      <div style="font-size:0.68em;color:#555;margin-top:6px">Dudas de uso<br/>Credenciales</div>
+    </div>
+    <div class="contacto-card">
+      <span class="nivel">L2 — TI</span>
+      <span class="email">ti@javeriana.edu.co</span>
+      <div style="font-size:0.68em;color:#555;margin-top:6px">Incidencias técnicas<br/>Accesos y configuración</div>
+    </div>
+    <div class="contacto-card">
+      <span class="nivel">L3 — Cloud</span>
+      <span class="email">infraestructura.aws@javeriana.edu.co</span>
+      <div style="font-size:0.68em;color:#555;margin-top:6px">Plataforma AWS<br/>Escalabilidad</div>
+    </div>
+  </div>
+  <div style="margin-top:16px">
+    <table>
+      <tr><th>Tipo de incidente</th><th>Tiempo de respuesta</th></tr>
+      <tr><td>P1 — Crítico (sistema inaccesible)</td><td><strong>&lt; 15 minutos</strong></td></tr>
+      <tr><td>P2 — Alto (funcionalidad degradada)</td><td><strong>&lt; 1 hora</strong></td></tr>
+      <tr><td>P3 — Medio</td><td><strong>&lt; 4 horas</strong></td></tr>
+    </table>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 27 — PRÓXIMOS PASOS ═══════════════════ -->
+<section>
+  <h2>Próximos pasos</h2>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;background:var(--puj-gris);border-radius:8px;padding:12px 16px">
+      <span class="chip chip-azul" style="text-align:center;padding:6px 0">Semanas 1–2</span>
+      <div style="font-size:0.75em"><strong>Validación funcional</strong> con coordinación académica · Usuarios piloto · Ajustes iniciales</div>
+    </div>
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;background:var(--puj-gris);border-radius:8px;padding:12px 16px">
+      <span class="chip chip-azul" style="text-align:center;padding:6px 0">Semanas 3–4</span>
+      <div style="font-size:0.75em"><strong>Comunicación oficial</strong> a la comunidad · Capacitación a organizadores de cada facultad</div>
+    </div>
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;background:var(--puj-gris);border-radius:8px;padding:12px 16px">
+      <span class="chip chip-azul" style="text-align:center;padding:6px 0">Mes 2</span>
+      <div style="font-size:0.75em"><strong>Operación activa</strong> con soporte acompañado · Recolección de datos de uso</div>
+    </div>
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;background:var(--puj-gris);border-radius:8px;padding:12px 16px">
+      <span class="chip chip-oro" style="text-align:center;padding:6px 0;color:#002850">Mes 3+</span>
+      <div style="font-size:0.75em"><strong>Iteración basada en datos</strong> · Inicio de mejoras de Fase 2 según prioridades</div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 28 — QUÉ NECESITAMOS ══════════════════ -->
+<section>
+  <h2>¿Qué necesitamos de la institución?</h2>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+    <div style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start;font-size:0.78em">
+      <span class="chip chip-azul" style="text-align:center">1</span>
+      <span><strong>Responsables designados</strong> por facultad como organizadores iniciales.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start;font-size:0.78em">
+      <span class="chip chip-azul" style="text-align:center">2</span>
+      <span><strong>Validación jurídica</strong> de la política de privacidad con la Oficina Jurídica.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start;font-size:0.78em">
+      <span class="chip chip-azul" style="text-align:center">3</span>
+      <span><strong>Coordinación TI</strong> para la integración con Azure AD institucional (Fase 2).</span>
+    </div>
+    <div style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start;font-size:0.78em">
+      <span class="chip chip-azul" style="text-align:center">4</span>
+      <span><strong>Comunicación oficial</strong> a la comunidad académica en el inicio de operación.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start;font-size:0.78em">
+      <span class="chip chip-azul" style="text-align:center">5</span>
+      <span><strong>Asignación de soporte</strong> operativo dentro del equipo TI institucional existente.</span>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 29 — RESUMEN EJECUTIVO ════════════════ -->
+<section class="slide-azul">
+  <h2 style="color:#fff!important;border-color:var(--puj-oro)!important">Resumen ejecutivo</h2>
+  <div class="tres-mensajes">
+    <div class="mensaje">
+      <div class="numero">①</div>
+      <div class="titulo">PRODUCTO FUNCIONAL</div>
+      <div class="desc">En producción hoy · Validado técnicamente · Accesible desde cualquier dispositivo</div>
+    </div>
+    <div class="mensaje">
+      <div class="numero">②</div>
+      <div class="titulo">SOLIDEZ INSTITUCIONAL</div>
+      <div class="desc">Arquitectura empresarial · Ley 1581 · 88% cobertura · WCAG AA · 500 VU</div>
+    </div>
+    <div class="mensaje">
+      <div class="numero">③</div>
+      <div class="titulo">EVOLUCIÓN CLARA</div>
+      <div class="desc">Roadmap definido · 17–25 días Fase 2 · Prioridades ajustables</div>
+    </div>
+  </div>
+  <div style="margin-top:24px;text-align:center">
+    <a href="https://d1xvny1kolb55e.cloudfront.net" target="_blank" style="color:var(--puj-oro)!important;font-size:0.9em;font-weight:700">
+      🌐 d1xvny1kolb55e.cloudfront.net
+    </a>
+  </div>
+  <div class="slide-footer" style="color:rgba(255,255,255,0.5)">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 30 — Q&A ══════════════════════════════ -->
+<section class="slide-portada">
+  <div style="text-align:center;padding:40px 0">
+    <div style="font-size:3em;margin-bottom:16px">💬</div>
+    <h1 style="font-size:1.8em">Preguntas y diálogo</h1>
+    <span class="franja"></span>
+    <p class="subtitulo" style="font-size:1.1em;font-style:italic;margin-bottom:32px">
+      "Una plataforma construida para la comunidad Javeriana."
+    </p>
+    <div class="url-box" style="display:inline-block;padding:12px 32px">
+      🌐 <a href="https://d1xvny1kolb55e.cloudfront.net" target="_blank">
+        https://d1xvny1kolb55e.cloudfront.net
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SLIDE 31 — CONTACTO ═════════════════════════ -->
+<section class="slide-portada">
+  <div class="portada-logo">
+    <div class="portada-escudo"><span>PUJ</span></div>
+    <div class="portada-nombre">
+      <div class="inst">Pontificia Universidad Javeriana</div>
+      <div class="sede">Sede Bogotá · Cra. 7 No. 40-62 · Bogotá D.C.</div>
+    </div>
+  </div>
+  <span class="franja"></span>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px">
+    <div style="text-align:center;font-size:0.78em">
+      <div style="font-weight:700;color:var(--puj-oro);margin-bottom:6px">Soporte técnico</div>
+      <div style="color:rgba(255,255,255,0.88)">soporte.eventos<br/>@javeriana.edu.co</div>
+    </div>
+    <div style="text-align:center;font-size:0.78em">
+      <div style="font-weight:700;color:var(--puj-oro);margin-bottom:6px">Coordinación</div>
+      <div style="color:rgba(255,255,255,0.88)">eventos<br/>@javeriana.edu.co</div>
+    </div>
+    <div style="text-align:center;font-size:0.78em">
+      <div style="font-weight:700;color:var(--puj-oro);margin-bottom:6px">Seguridad</div>
+      <div style="color:rgba(255,255,255,0.88)">seguridad.ti<br/>@javeriana.edu.co</div>
+    </div>
+  </div>
+  <div style="margin-top:32px;text-align:center;font-size:0.6em;color:rgba(255,255,255,0.5)">
+    © 2026 Pontificia Universidad Javeriana · Todos los derechos reservados
+  </div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  slideNumber: 'c/t',
+  progress: true,
+  controls: true,
+  center: false,
+  transition: 'slide',
+  transitionSpeed: 'fast',
+  overview: true,          // Tecla O = vista en cuadrícula
+  keyboard: true,
+  touch: true,
+  width: 1200,
+  height: 700,
+  margin: 0.04,
+  minScale: 0.3,
+  maxScale: 1.5,
+  pdfSeparateFragments: false,
+});
+</script>
+</body>
+</html>
