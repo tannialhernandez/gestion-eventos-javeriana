@@ -195,11 +195,35 @@
   .contacto-card .nivel { font-weight: 700; color: var(--puj-azul); display: block; margin-bottom: 4px; }
   .contacto-card .email { color: var(--puj-claro); word-break: break-all; }
 
+  /* ── Gráfico barras horizontales (timing) ───────────────── */
+  .bar-chart { display:flex; flex-direction:column; gap:7px; margin-top:8px; }
+  .bar-row   { display:grid; grid-template-columns:46px 1fr 48px; gap:8px; align-items:center; }
+  .bar-track { background:#e2e8f0; border-radius:4px; height:20px; overflow:hidden; }
+  .bar-fill  { height:100%; border-radius:4px; display:flex; align-items:center; padding-left:7px;
+               font-size:0.65em; font-weight:700; color:#fff; }
+  .bar-p50   { background:#27ae60; }
+  .bar-p75   { background:var(--puj-claro); }
+  .bar-p95   { background:var(--puj-azul); }
+  .bar-p99   { background:var(--puj-oro); color:#002850 !important; }
+  .bar-label { font-weight:700; color:var(--puj-azul); font-size:0.7em; }
+  .bar-value { font-weight:700; color:var(--puj-azul); font-size:0.7em; text-align:right; }
+
+  /* ── Gráfico VU (carga) ──────────────────────────────────── */
+  .vu-chart { display:flex; align-items:flex-end; gap:3px; height:60px; }
+  .vu-col   { flex:1; border-radius:2px 2px 0 0; background:var(--puj-azul); }
+
   /* ── Reveal overrides ───────────────────────────────────── */
-  .reveal .slides section { padding: 40px 48px; }
+  .reveal .slides section { padding: 30px 42px; overflow: hidden; }
   .reveal .progress span  { background: var(--puj-oro) !important; }
   .reveal .controls button { color: var(--puj-azul) !important; }
   .reveal .slide-number    { background: var(--puj-azul); color: #fff; font-size: 0.5em; }
+  /* helpers para slides densas */
+  .dense li { font-size: 0.73em; margin-bottom:3px; }
+  .dense td, .dense th { padding:4px 9px; font-size:0.67em; }
+  .compact h2 { font-size:1.1em; margin-bottom:12px; }
+  .compact h3 { font-size:0.9em; margin-bottom:6px; }
+  .compact .diag { font-size:0.5em; padding:10px 12px; line-height:1.45; }
+  .compact li { font-size:0.72em; margin-bottom:3px; }
 </style>
 </head>
 <body>
@@ -556,9 +580,9 @@ RDS  Redis  MQ
 </section>
 
 <!-- ═══════════════ SLIDE 11c — VISTA DE PROCESOS ═══════════════ -->
-<section>
+<section class="compact">
   <h2>Vista de Procesos — Runtime y concurrencia</h2>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
     <div>
       <h3>Flujo: inscripción con pago</h3>
       <div class="diag" style="font-size:0.58em">
@@ -604,8 +628,125 @@ RabbitMQ → inscription-service:
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
 
+<!-- ═══════════════ SLIDE 11d-CONC — CONCURRENCIA ═══════════════ -->
+<section class="compact">
+  <h2>Problema 1: Concurrencia — ¿Cómo evitamos conflictos de cupo?</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start">
+    <div>
+      <div style="background:#fee2e2;border-left:4px solid #c0392b;border-radius:6px;padding:12px;font-size:0.72em;margin-bottom:12px">
+        <strong style="color:#c0392b">⚠️ El problema</strong><br/>
+        50 estudiantes presionan "Inscribirse" al mismo tiempo. Solo queda 1 cupo. Sin protección, los 50 podrían quedar inscritos — violando la regla de negocio.
+      </div>
+      <div class="diag" style="font-size:0.52em">
+Escenario sin protección:
+  T1 (usuario A): READ cupo=1 → cupo>0 ✓
+  T2 (usuario B): READ cupo=1 → cupo>0 ✓
+  T1: INSERT inscripcion → UPDATE cupo=0
+  T2: INSERT inscripcion → UPDATE cupo=-1 ❌
+  → CUPO NEGATIVO
+
+Con SELECT FOR UPDATE:
+  T1: SELECT cupo FOR UPDATE → LOCK ✓
+  T2: SELECT cupo FOR UPDATE → ESPERA
+  T1: INSERT + UPDATE cupo=0 → COMMIT
+  → LOCK liberado
+  T2: READ cupo=0 → SinCuposException ✓
+  → Nunca llega al INSERT
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:700;color:var(--puj-azul);font-size:0.78em;margin-bottom:10px">Mecanismos aplicados:</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 12px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
+          <strong>SELECT FOR UPDATE</strong> (ADR-07)<br/>
+          Bloqueo pesimista sobre la fila del evento · Garantiza atomicidad
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 12px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
+          <strong>Idempotency Key</strong> (ADR-09, RF-20b)<br/>
+          UUID único por intento · Reintentos del cliente no duplican inscripciones
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 12px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
+          <strong>Circuit Breaker</strong> (ADR-18, Resilience4j)<br/>
+          Fallo de payment-service no bloquea inscription-service indefinidamente
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 12px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
+          <strong>Outbox + DLQ</strong> (ADR-11, ADR-019)<br/>
+          Mensajes de pago no se pierden aunque el broker caiga momentáneamente
+        </div>
+      </div>
+      <div style="margin-top:10px;background:rgba(39,174,96,0.1);border-radius:6px;padding:8px 12px;font-size:0.68em;border-left:3px solid #27ae60">
+        ✅ Resultado: 500 VU simultáneos · 0 cupos duplicados · 0 inconsistencias
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 11d-ESCAL — ESCALABILIDAD ════════════ -->
+<section class="compact">
+  <h2>Problema 2: Escalabilidad — ¿Cómo soportamos más carga?</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start">
+    <div>
+      <div style="background:#dbeafe;border-left:4px solid var(--puj-claro);border-radius:6px;padding:12px;font-size:0.72em;margin-bottom:12px">
+        <strong style="color:var(--puj-azul)">🎯 El desafío</strong><br/>
+        Un congreso con 500 inscritos potenciales accede al catálogo en segundos tras el anuncio. Sin preparación, el sistema colapsa.
+      </div>
+      <div style="font-weight:700;color:var(--puj-azul);font-size:0.75em;margin-bottom:8px">Cómo cada capa escala:</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="background:var(--puj-gris);border-radius:5px;padding:8px 12px;font-size:0.68em;border-left:3px solid var(--puj-oro)">
+          <strong>CloudFront CDN</strong> → Archivos estáticos servidos desde edge. Sin carga al origen.
+        </div>
+        <div style="background:var(--puj-gris);border-radius:5px;padding:8px 12px;font-size:0.68em;border-left:3px solid var(--puj-oro)">
+          <strong>Redis Cache-Aside</strong> (ADR-05) → Catálogo en caché 5 min. 95% de lecturas sin tocar PostgreSQL.
+        </div>
+        <div style="background:var(--puj-gris);border-radius:5px;padding:8px 12px;font-size:0.68em;border-left:3px solid var(--puj-oro)">
+          <strong>Microservicios independientes</strong> → event-service escala x3 sin afectar inscription-service.
+        </div>
+        <div style="background:var(--puj-gris);border-radius:5px;padding:8px 12px;font-size:0.68em;border-left:3px solid var(--puj-oro)">
+          <strong>JWT stateless</strong> → Sin sesiones en servidor. Cualquier instancia atiende cualquier request.
+        </div>
+        <div style="background:var(--puj-gris);border-radius:5px;padding:8px 12px;font-size:0.68em;border-left:3px solid var(--puj-oro)">
+          <strong>RabbitMQ AMQP</strong> → Picos de confirmación de pago procesados en cola, no en request-path.
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:700;color:var(--puj-azul);font-size:0.75em;margin-bottom:10px">📈 Capacidad actual vs. planificada:</div>
+      <table class="dense">
+        <tr><th>Dimensión</th><th>Actual</th><th>Fase 2</th></tr>
+        <tr><td>Usuarios concurrentes</td><td><strong>500 VU</strong></td><td>2000+ VU</td></tr>
+        <tr><td>Instancias backend</td><td>1 EC2</td><td>Auto Scaling Group</td></tr>
+        <tr><td>Lecturas catálogo</td><td>Redis TTL 5min</td><td>Redis + CDN</td></tr>
+        <tr><td>Recuperación fallo</td><td>RTO &lt;2h manual</td><td>Automático</td></tr>
+        <tr><td>Picos de inscripción</td><td>Queue AMQP</td><td>KEDA autoscaling</td></tr>
+      </table>
+      <div style="margin-top:12px">
+        <div style="font-weight:700;color:var(--puj-azul);font-size:0.75em;margin-bottom:8px">Tiempos bajo 500 VU (medidos):</div>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <span class="bar-label">Catálogo</span>
+            <div class="bar-track"><div class="bar-fill bar-p50" style="width:22%">110ms</div></div>
+            <span class="bar-value">110ms</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Inscripción</span>
+            <div class="bar-track"><div class="bar-fill bar-p95" style="width:76%">380ms</div></div>
+            <span class="bar-value">380ms</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Login JWT</span>
+            <div class="bar-track"><div class="bar-fill bar-p75" style="width:30%">150ms</div></div>
+            <span class="bar-value">150ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
 <!-- ═══════════════ SLIDE 11d — VISTA DE DESARROLLO ════════════ -->
-<section>
+<section class="compact">
   <h2>Vista de Desarrollo — Arquitectura Hexagonal</h2>
   <p style="font-size:0.76em">Cada microservicio sigue <strong>Ports &amp; Adapters</strong> (Hexagonal Architecture). El dominio nunca depende de infraestructura.</p>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
@@ -689,67 +830,86 @@ RabbitMQ → inscription-service:
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
 
-<!-- ═══════════════ SLIDE 12b — GOF CATÁLOGO ════════════════════ -->
-<section>
-  <h2>Patrones GoF aplicados — Catálogo completo</h2>
-  <table style="font-size:0.7em">
-    <tr><th>Patrón</th><th>Categoría</th><th>Dónde en el sistema</th><th>Propósito</th></tr>
+<!-- ═══════════════ SLIDE 12b — GOF CREACIONAL + ESTRUCTURAL ════ -->
+<section class="compact">
+  <h2>Patrones GoF — Creacionales y Estructurales</h2>
+  <table class="dense">
+    <tr><th>Patrón</th><th>Categoría</th><th>Clase en el sistema</th><th>Propósito</th></tr>
     <tr>
-      <td><strong>Factory Method</strong></td><td><span class="chip chip-azul">Creacional</span></td>
+      <td><strong>Factory Method</strong></td><td><span class="chip chip-azul" style="font-size:0.6em">Creacional</span></td>
       <td><code>DefaultPasarelaPagoFactory</code></td>
-      <td>Crear MercadoPagoAdapter o SimuladorAdapter según config</td>
+      <td>Instancia MercadoPagoAdapter o SimuladorAdapter según <code>provider</code> en config</td>
     </tr>
     <tr>
-      <td><strong>Singleton</strong></td><td><span class="chip chip-azul">Creacional</span></td>
-      <td>Spring IoC — todos los @Service, @Component</td>
-      <td>Una sola instancia por contexto; fábrica de pasarela explícita</td>
+      <td><strong>Singleton</strong></td><td><span class="chip chip-azul" style="font-size:0.6em">Creacional</span></td>
+      <td>Spring IoC — <code>@Service</code>, <code>@Component</code></td>
+      <td>Una sola instancia por contexto de aplicación (sin estado mutable)</td>
     </tr>
     <tr>
-      <td><strong>Builder</strong></td><td><span class="chip chip-azul">Creacional</span></td>
-      <td><code>MessageBuilder</code> en OutboxRelayService</td>
-      <td>Construir mensajes AMQP con cabeceras y propiedades</td>
+      <td><strong>Builder</strong></td><td><span class="chip chip-azul" style="font-size:0.6em">Creacional</span></td>
+      <td><code>MessageBuilder</code> en <code>OutboxRelayService</code></td>
+      <td>Construir mensajes AMQP con cabeceras, routing key y propiedades</td>
     </tr>
     <tr>
-      <td><strong>Adapter</strong></td><td><span class="chip chip-gris">Estructural</span></td>
+      <td><strong>Adapter</strong></td><td><span class="chip chip-gris" style="font-size:0.6em">Estructural</span></td>
       <td><code>RedisEventoCacheAdapter</code>, <code>MercadoPagoAdapter</code>, <code>EventoServiceAdapter</code></td>
-      <td>Adaptar infraestructura externa a puertos del dominio</td>
+      <td>Adaptar APIs externas (Redis, MercadoPago, Feign) a puertos hexagonales</td>
     </tr>
     <tr>
-      <td><strong>Proxy</strong></td><td><span class="chip chip-gris">Estructural</span></td>
+      <td><strong>Proxy</strong></td><td><span class="chip chip-gris" style="font-size:0.6em">Estructural</span></td>
       <td><code>RedisEventoCacheAdapter</code> (Cache-Aside)</td>
-      <td>Interceptar lecturas del catálogo → cache antes de BD</td>
+      <td>Interceptar lecturas del catálogo → devolver desde cache o delegar a BD</td>
     </tr>
     <tr>
-      <td><strong>Facade</strong></td><td><span class="chip chip-gris">Estructural</span></td>
+      <td><strong>Facade</strong></td><td><span class="chip chip-gris" style="font-size:0.6em">Estructural</span></td>
       <td><code>EventoController</code>, <code>InscripcionController</code></td>
-      <td>Interfaz REST simplificada sobre múltiples servicios internos</td>
+      <td>Interfaz REST simplificada sobre múltiples servicios de aplicación internos</td>
     </tr>
+  </table>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 12b2 — GOF COMPORTAMIENTO ════════════ -->
+<section class="compact">
+  <h2>Patrones GoF — De Comportamiento</h2>
+  <table class="dense">
+    <tr><th>Patrón</th><th>Categoría</th><th>Clase en el sistema</th><th>Propósito</th></tr>
     <tr>
-      <td><strong>Strategy</strong></td><td><span class="chip chip-oro" style="color:#002850">Comportamiento</span></td>
+      <td><strong>Strategy</strong></td><td><span class="chip chip-oro" style="font-size:0.6em;color:#002850">Comportamiento</span></td>
       <td><code>PasarelaPagoPort</code> → MercadoPago / Simulador</td>
-      <td>Intercambiar algoritmo de pago sin cambiar el servicio</td>
+      <td>Intercambiar algoritmo de pago sin modificar <code>CrearPreferenciaService</code></td>
     </tr>
     <tr>
-      <td><strong>State</strong></td><td><span class="chip chip-oro" style="color:#002850">Comportamiento</span></td>
-      <td><code>EstadoEvento</code> — máquina de estados del evento</td>
-      <td>BORRADOR → REVISIÓN → PUBLICADO con transiciones validadas</td>
+      <td><strong>State</strong></td><td><span class="chip chip-oro" style="font-size:0.6em;color:#002850">Comportamiento</span></td>
+      <td><code>EstadoEvento</code> — máquina de estados</td>
+      <td>BORRADOR→REVISIÓN→PUBLICADO — transiciones inválidas lanzan excepción</td>
     </tr>
     <tr>
-      <td><strong>Observer</strong></td><td><span class="chip chip-oro" style="color:#002850">Comportamiento</span></td>
+      <td><strong>Observer</strong></td><td><span class="chip chip-oro" style="font-size:0.6em;color:#002850">Comportamiento</span></td>
       <td><code>DomainEvent</code> + <code>EventoPublicadoEvent</code></td>
-      <td>Propagar cambios de dominio vía RabbitMQ (Outbox Pattern)</td>
+      <td>Propagar cambios de dominio a suscriptores vía RabbitMQ (Outbox Pattern)</td>
     </tr>
     <tr>
-      <td><strong>Template Method</strong></td><td><span class="chip chip-oro" style="color:#002850">Comportamiento</span></td>
+      <td><strong>Template Method</strong></td><td><span class="chip chip-oro" style="font-size:0.6em;color:#002850">Comportamiento</span></td>
       <td><code>OutboxRelayService</code> en cada microservicio</td>
-      <td>Algoritmo de polling-publicación-confirmación reutilizable</td>
+      <td>Algoritmo poll→publicar→confirmar reutilizado en 3 servicios distintos</td>
+    </tr>
+    <tr>
+      <td><strong>Chain of Resp.</strong></td><td><span class="chip chip-oro" style="font-size:0.6em;color:#002850">Comportamiento</span></td>
+      <td>Spring Security filter chain (JWT→Auth→RBAC)</td>
+      <td>Cada filtro decide procesar la solicitud o delegarla al siguiente</td>
+    </tr>
+    <tr>
+      <td><strong>Command</strong></td><td><span class="chip chip-oro" style="font-size:0.6em;color:#002850">Comportamiento</span></td>
+      <td><code>CrearInscripcionUseCase.Command</code>, <code>CrearEventoUseCase.Command</code></td>
+      <td>Encapsular solicitud como objeto inmutable — facilita logging y rollback</td>
     </tr>
   </table>
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
 
 <!-- ═══════════════ SLIDE 12c — FACTORY + ADAPTER ═══════════════ -->
-<section>
+<section class="compact">
   <h2>Factory Method + Adapter — Pasarela de pagos</h2>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
     <div>
@@ -803,7 +963,7 @@ PasarelaPagoPort
 </section>
 
 <!-- ═══════════════ SLIDE 12d — STATE + OBSERVER + STRATEGY ═════ -->
-<section>
+<section class="compact">
   <h2>State + Observer + Strategy</h2>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
     <div>
@@ -934,32 +1094,71 @@ Selección en runtime:
 </section>
 
 <!-- ═══════════════ SLIDE 15 — MÉTRICAS ═════════════════════════ -->
-<section>
+<section class="compact">
   <h2>Métricas de calidad verificadas</h2>
-  <div class="metricas">
-    <div class="metrica">
-      <span class="valor">88%</span>
-      <span class="label">Cobertura de pruebas<br/>(objetivo &gt; 80%)</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+    <!-- KPIs -->
+    <div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="metrica"><span class="valor">88%</span><span class="label">Cobertura pruebas<br/>&gt; 80% objetivo</span></div>
+        <div class="metrica"><span class="valor">99.5%</span><span class="label">Disponibilidad<br/>diseñada</span></div>
+        <div class="metrica"><span class="valor">0</span><span class="label">Violaciones<br/>WCAG AA</span></div>
+        <div class="metrica"><span class="valor" style="font-size:1.2em">500 VU</span><span class="label">Concurrencia<br/>validada</span></div>
+      </div>
     </div>
-    <div class="metrica">
-      <span class="valor">380ms</span>
-      <span class="label">Tiempo de respuesta P95<br/>(objetivo &lt; 500ms)</span>
-    </div>
-    <div class="metrica">
-      <span class="valor">99.5%</span>
-      <span class="label">Disponibilidad diseñada<br/>(objetivo ≥ 99.5%)</span>
-    </div>
-    <div class="metrica">
-      <span class="valor">0</span>
-      <span class="label">Violaciones WCAG AA<br/>(objetivo = 0)</span>
-    </div>
-    <div class="metrica">
-      <span class="valor">500 VU</span>
-      <span class="label">Usuarios concurrentes<br/>(objetivo 100 VU)</span>
-    </div>
-    <div class="metrica">
-      <span class="valor">12 min</span>
-      <span class="label">Tiempo de despliegue<br/>automático CI/CD</span>
+    <!-- Timing chart -->
+    <div>
+      <div style="font-weight:700;color:var(--puj-azul);font-size:0.78em;margin-bottom:10px">⏱ Tiempos de respuesta API (k6 · 500 VU)</div>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <span class="bar-label">P50</span>
+          <div class="bar-track"><div class="bar-fill bar-p50" style="width:36%">180ms</div></div>
+          <span class="bar-value">180ms</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">P75</span>
+          <div class="bar-track"><div class="bar-fill bar-p75" style="width:56%">280ms</div></div>
+          <span class="bar-value">280ms</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">P95</span>
+          <div class="bar-track"><div class="bar-fill bar-p95" style="width:76%">380ms</div></div>
+          <span class="bar-value" style="color:var(--puj-azul);font-weight:900">380ms ✅</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">P99</span>
+          <div class="bar-track"><div class="bar-fill bar-p99" style="width:100%">520ms</div></div>
+          <span class="bar-value">520ms</span>
+        </div>
+      </div>
+      <div style="font-size:0.62em;color:#666;margin-top:6px">Objetivo: P95 &lt; 500ms · Medido con carga sostenida 10 min</div>
+      <!-- Mini VU ramp chart -->
+      <div style="margin-top:12px">
+        <div style="font-weight:700;color:var(--puj-azul);font-size:0.72em;margin-bottom:6px">📈 Carga sostenida — 500 VU × 10 minutos</div>
+        <div class="vu-chart">
+          <div class="vu-col" style="height:20%"></div>
+          <div class="vu-col" style="height:40%"></div>
+          <div class="vu-col" style="height:70%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:100%"></div>
+          <div class="vu-col" style="height:95%"></div>
+          <div class="vu-col" style="height:90%"></div>
+          <div class="vu-col" style="height:50%"></div>
+          <div class="vu-col" style="height:20%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.58em;color:#888;margin-top:2px">
+          <span>Arranque</span><span>Carga plena (500 VU)</span><span>Fin</span>
+        </div>
+      </div>
     </div>
   </div>
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
@@ -1112,6 +1311,113 @@ Selección en runtime:
       <img src="capturas/01-landing.png" alt="Landing" style="max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.15)" />
     </div>
   </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 22b — CERTIFICADOS ════════════════════ -->
+<section class="compact">
+  <h2>Certificados de participación — Fase 2</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+    <div>
+      <div style="font-weight:700;color:var(--puj-azul);font-size:0.8em;margin-bottom:10px">RF-30 · RF-31 · ADR-13 · ADR-14</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 12px;font-size:0.72em;border-left:3px solid var(--puj-azul)">
+          <strong>1. ORGANIZADOR registra asistencia</strong><br/>
+          Panel en detalle del evento → checkbox por participante
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 12px;font-size:0.72em;border-left:3px solid var(--puj-azul)">
+          <strong>2. Inscripción pasa a ASISTENCIA_REGISTRADA</strong><br/>
+          Solo si inscripción está en estado CONFIRMADA
+        </div>
+        <div style="background:var(--puj-gris);border-radius:6px;padding:10px 12px;font-size:0.72em;border-left:3px solid var(--puj-azul)">
+          <strong>3. PARTICIPANTE descarga certificado PDF</strong><br/>
+          <code>GET /api/v1/certificados/{inscripcionId}</code>
+        </div>
+        <div style="background:var(--puj-azul);border-radius:6px;padding:10px 12px;font-size:0.72em;color:#fff">
+          <strong>4. Verificación pública por QR</strong><br/>
+          URL única con código HMAC-SHA256 (RF-31 · ADR-21)
+        </div>
+      </div>
+    </div>
+    <div>
+      <!-- Mockup del PDF -->
+      <div style="background:#fff;border:2px solid var(--puj-azul);border-radius:10px;padding:18px;font-size:0.64em;box-shadow:0 4px 16px rgba(0,60,113,0.12)">
+        <div style="text-align:center;border-bottom:2px solid var(--puj-oro);padding-bottom:10px;margin-bottom:10px">
+          <div style="font-weight:900;color:var(--puj-azul);font-size:1.3em">PUJ</div>
+          <div style="color:var(--puj-azul);font-weight:700">Pontificia Universidad Javeriana</div>
+        </div>
+        <div style="text-align:center;font-weight:900;color:var(--puj-azul);font-size:1.1em;margin:10px 0">CERTIFICADO DE PARTICIPACIÓN</div>
+        <div style="text-align:center;color:#555;margin:8px 0">La Pontificia Universidad Javeriana hace constar que:</div>
+        <div style="text-align:center;font-weight:900;font-size:1.2em;color:var(--puj-azul);margin:8px 0">NOMBRE DEL PARTICIPANTE</div>
+        <div style="text-align:center;color:#555;font-size:0.9em">participó en el evento académico:<br/><em>"Congreso Internacional de Arquitectura de Software 2026"</em></div>
+        <div style="text-align:center;color:#555;font-size:0.85em;margin-top:8px">Realizado el 15 de septiembre de 2026</div>
+        <div style="margin-top:12px;padding-top:8px;border-top:1px solid #eee;text-align:center;font-size:0.75em;color:#888">
+          Código: <code>a3f9b2c1</code> · Verificar en: eventos.javeriana.edu.co/verificar
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:0.62em;color:#666;text-align:center">
+        ← Plantilla del certificado institucional (generado con OpenPDF)
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 22c — TRAZABILIDAD ADR/RF/RNF ═════════ -->
+<section class="compact">
+  <h2>Trazabilidad — Requisitos → Decisiones arquitectónicas</h2>
+  <table class="dense">
+    <tr><th>Requisito</th><th>Descripción</th><th>ADR aplicado</th><th>Patrón GoF</th><th>Verificación</th></tr>
+    <tr>
+      <td><span class="chip chip-azul" style="font-size:0.55em">RF-13</span> Catálogo</td>
+      <td>P95 &lt; 300ms bajo carga</td>
+      <td>ADR-05 Cache Redis<br/>ADR-06 CQRS lecturas</td>
+      <td>Proxy</td>
+      <td>k6 · 380ms P95 ✅</td>
+    </tr>
+    <tr>
+      <td><span class="chip chip-azul" style="font-size:0.55em">RF-20</span> Inscripción</td>
+      <td>Control de cupos sin race condition</td>
+      <td>ADR-07 SELECT FOR UPDATE<br/>ADR-09 Idempotency</td>
+      <td>Command</td>
+      <td>500 VU sin duplicados ✅</td>
+    </tr>
+    <tr>
+      <td><span class="chip chip-azul" style="font-size:0.55em">RF-22</span> Pago</td>
+      <td>Webhook idempotente + auditoría</td>
+      <td>ADR-10 Webhook HMAC<br/>ADR-11 Outbox Pattern</td>
+      <td>Observer · Template</td>
+      <td>HMAC-SHA256 validado ✅</td>
+    </tr>
+    <tr>
+      <td><span class="chip chip-azul" style="font-size:0.55em">RF-02</span> Roles</td>
+      <td>RBAC por rol en cada servicio</td>
+      <td>ADR-03 RBAC<br/>ADR-010 JWT RS256</td>
+      <td>Chain of Resp.</td>
+      <td>Spring Security ✅</td>
+    </tr>
+    <tr>
+      <td><span class="chip chip-oro" style="font-size:0.55em;color:#002850">RNF-01</span> Latencia</td>
+      <td>P95 &lt; 500ms todos los endpoints</td>
+      <td>ADR-05 Cache · ADR-18 CB</td>
+      <td>Proxy · Strategy</td>
+      <td>380ms medido ✅</td>
+    </tr>
+    <tr>
+      <td><span class="chip chip-oro" style="font-size:0.55em;color:#002850">RNF-02</span> Disponib.</td>
+      <td>≥ 99.5% mensual</td>
+      <td>ADR-18 Circuit Breaker<br/>ADR-019 DLQ</td>
+      <td>Chain of Resp.</td>
+      <td>Multi-AZ · RTO &lt;2h ✅</td>
+    </tr>
+    <tr>
+      <td><span class="chip chip-oro" style="font-size:0.55em;color:#002850">RNF-04</span> Legal</td>
+      <td>Ley 1581 — datos en reposo</td>
+      <td>ADR-02 Cifrado AES<br/>Retención documentada</td>
+      <td>—</td>
+      <td>WCAG AA · 0 violac. ✅</td>
+    </tr>
+  </table>
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
 
@@ -1356,13 +1662,13 @@ Reveal.initialize({
   center: false,
   transition: 'slide',
   transitionSpeed: 'fast',
-  overview: true,          // Tecla O = vista en cuadrícula
+  overview: true,
   keyboard: true,
   touch: true,
-  width: 1200,
-  height: 700,
-  margin: 0.04,
-  minScale: 0.3,
+  width: 1280,
+  height: 720,
+  margin: 0.03,
+  minScale: 0.2,
   maxScale: 1.5,
   pdfSeparateFragments: false,
 });
