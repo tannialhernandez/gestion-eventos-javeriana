@@ -531,99 +531,42 @@ RDS  Redis  MQ
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
 
-<!-- ═══════════════ SLIDE 11b — VISTA LÓGICA C4 ═════════════════ -->
+<!-- ═══════════════ SLIDE 11b — C4 NIVEL 1 ══════════════════════ -->
+<section>
+  <h2>Vista Lógica — C4 Nivel 1 (Contexto del sistema)</h2>
+  <div style="text-align:center">
+    <img src="capturas/diagramas/c4-nivel1.svg" alt="C4 Nivel 1"
+         style="max-height:560px;max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.12)" />
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
+
+<!-- ═══════════════ SLIDE 11b2 — C4 NIVEL 2 ════════════════════ -->
 <section>
   <h2>Vista Lógica — C4 Nivel 2 (Contenedores)</h2>
-  <div style="display:grid;grid-template-columns:3fr 2fr;gap:20px;align-items:start">
-    <div class="diag" style="font-size:0.6em">
-┌──────────────────────────────────────────────┐
-│            Sistema de Eventos PUJ             │
-│                                               │
-│  ┌─────────────┐    ┌──────────────────────┐  │
-│  │  SPA React  │───▶│  Application LB      │  │
-│  │ TypeScript  │    └────────┬─────────────┘  │
-│  │  (S3+CDN)   │             │                 │
-│  └─────────────┘     ┌───────┼───────┐         │
-│                       ▼       ▼       ▼         │
-│              ┌──────┐ ┌─────┐ ┌─────┐ ┌─────┐  │
-│              │Auth  │ │Event│ │Insc.│ │Pago │  │
-│              │:8081 │ │:8082│ │:8083│ │:8084│  │
-│              └──┬───┘ └──┬──┘ └──┬──┘ └──┬──┘  │
-│                 │        │       │        │      │
-│              ┌──▼────────▼───────▼────────▼──┐  │
-│              │  PostgreSQL  │ Redis │  MQ      │  │
-│              └──────────────────────────────┘  │
-└──────────────────────────────────────────────┘
-    </div>
-    <div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em">
-          <span class="chip chip-azul">SPA</span><br/>
-          React + TypeScript. Consume APIs REST con JWT Bearer.
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em">
-          <span class="chip chip-azul">auth-service</span><br/>
-          Emite JWT RS256, expone JWKS para validación stateless.
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em">
-          <span class="chip chip-azul">event-service</span><br/>
-          Catálogo, workflow de aprobación, caché Redis.
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em">
-          <span class="chip chip-azul">inscription + payment</span><br/>
-          Cupos transaccionales, Outbox Pattern, confirmación.
-        </div>
-      </div>
-    </div>
+  <div style="text-align:center">
+    <img src="capturas/diagramas/c4-nivel2.svg" alt="C4 Nivel 2"
+         style="max-height:560px;max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.12)" />
   </div>
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
 
 <!-- ═══════════════ SLIDE 11c — VISTA DE PROCESOS ═══════════════ -->
-<section class="compact">
-  <h2>Vista de Procesos — Runtime y concurrencia</h2>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-    <div>
-      <h3>Flujo: inscripción con pago</h3>
-      <div class="diag" style="font-size:0.58em">
-Participante → SPA → inscription-service
-  │
-  ├─ [1] SELECT FOR UPDATE → reserva cupo
-  ├─ [2] INSERT inscripcion (PENDIENTE_PAGO)
-  ├─ [3] Feign → payment-service → crea preferencia
-  ├─ [4] INSERT outbox_event (PENDIENTE)
-  └─ [5] HTTP 201 → checkoutUrl al cliente
+<section>
+  <h2>Vista de Procesos — Flujo inscripción y pago</h2>
+  <div style="text-align:center">
+    <img src="capturas/diagramas/procesos-pago.png" alt="Proceso de pago"
+         style="max-height:540px;max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.12)" />
+  </div>
+  <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
+</section>
 
-  OutboxRelayService (cada 2s):
-  ├─ SELECT outbox PENDIENTE (skip locked)
-  ├─ RabbitMQ publish + publisher confirm
-  └─ UPDATE outbox → PROCESADO
-
-RabbitMQ → inscription-service:
-  ├─ PaymentConfirmed → UPDATE CONFIRMADA
-  └─ PaymentFailed   → UPDATE EXPIRADA + liberar cupo
-      </div>
-    </div>
-    <div>
-      <h3>Concurrencia y consistencia</h3>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
-          <strong>SELECT FOR UPDATE</strong><br/>Previene doble reserva de cupo bajo carga simultánea
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
-          <strong>Outbox Pattern</strong><br/>Garantiza entrega de eventos incluso con caída del broker
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
-          <strong>Idempotency Key</strong><br/>Re-envíos del cliente no duplican inscripciones
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
-          <strong>Circuit Breaker (Resilience4j)</strong><br/>Fallo de payment-service no bloquea inscription-service
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:10px;font-size:0.7em;border-left:3px solid var(--puj-azul)">
-          <strong>Dead Letter Queue</strong><br/>Mensajes envenenados no bloquean el bus AMQP
-        </div>
-      </div>
-    </div>
+<!-- ═══════════════ SLIDE 11c2 — PROCESOS FANOUT ═══════════════ -->
+<section>
+  <h2>Vista de Procesos — Fan-out de eventos (Outbox + RabbitMQ)</h2>
+  <div style="text-align:center">
+    <img src="capturas/diagramas/procesos-fanout.png" alt="Fan-out eventos"
+         style="max-height:540px;max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.12)" />
   </div>
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
@@ -746,71 +689,22 @@ Con SELECT FOR UPDATE:
 </section>
 
 <!-- ═══════════════ SLIDE 11d — VISTA DE DESARROLLO ════════════ -->
-<section class="compact">
-  <h2>Vista de Desarrollo — Arquitectura Hexagonal</h2>
-  <p style="font-size:0.76em">Cada microservicio sigue <strong>Ports &amp; Adapters</strong> (Hexagonal Architecture). El dominio nunca depende de infraestructura.</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
-    <div class="diag" style="font-size:0.6em">
-        ┌─── INFRAESTRUCTURA ────────────┐
-        │  Web (REST)   Cache (Redis)    │
-        │       │             │          │
-        │  ┌────▼─────────────▼────┐    │
-        │  │       APLICACIÓN       │    │
-        │  │  (Use Cases / Services)│    │
-        │  │       │                │    │
-        │  │  ┌────▼───────────┐   │    │
-        │  │  │    DOMINIO      │   │    │
-        │  │  │ Entidades, VOs  │   │    │
-        │  │  │ Domain Events   │   │    │
-        │  │  └────────────────┘   │    │
-        │  └────────────────────────┘    │
-        │       │             │          │
-        │  DB (JPA)    Messaging (MQ)    │
-        └────────────────────────────────┘
-    </div>
-    <div>
-      <div style="display:flex;flex-direction:column;gap:7px">
-        <div style="background:var(--puj-gris);border-radius:6px;padding:9px 12px;font-size:0.68em">
-          <strong style="color:var(--puj-azul)">Domain Layer</strong><br/>
-          <code>Evento</code>, <code>Inscripcion</code>, <code>Pago</code> — sin dependencias externas
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:9px 12px;font-size:0.68em">
-          <strong style="color:var(--puj-azul)">Application Layer</strong><br/>
-          <code>CrearEventoUseCase</code>, <code>CrearInscripcionService</code> — orquesta el dominio
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:9px 12px;font-size:0.68em">
-          <strong style="color:var(--puj-azul)">Ports (interfaces)</strong><br/>
-          <code>EventoRepository</code>, <code>PasarelaPagoPort</code>, <code>EventoCachePort</code>
-        </div>
-        <div style="background:var(--puj-gris);border-radius:6px;padding:9px 12px;font-size:0.68em">
-          <strong style="color:var(--puj-azul)">Adapters (infraestructura)</strong><br/>
-          <code>JpaEventoRepository</code>, <code>RedisEventoCacheAdapter</code>, <code>MercadoPagoAdapter</code>
-        </div>
-        <div style="background:rgba(0,60,113,0.08);border-radius:6px;padding:9px 12px;font-size:0.68em">
-          ✅ Testeable sin BD ni red · ✅ Infraestructura intercambiable
-        </div>
-      </div>
-    </div>
+<section>
+  <h2>Vista de Desarrollo — Arquitectura Hexagonal (Ports &amp; Adapters)</h2>
+  <div style="text-align:center">
+    <img src="capturas/diagramas/desarrollo-hexagonal.png" alt="Arquitectura hexagonal"
+         style="max-height:540px;max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.12)" />
   </div>
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
 
 <!-- ═══════════════ SLIDE 11e — VISTA FÍSICA ════════════════════ -->
-<!-- ═══════════════ SLIDE 11 — AWS ══════════════════════════════ -->
+<!-- ═══════════════ SLIDE 11 — AWS DEPLOYMENT ════════════════════ -->
 <section>
-  <h2>Infraestructura en AWS · us-east-1</h2>
-  <table>
-    <tr><th>Componente</th><th>Servicio AWS</th><th>Función</th></tr>
-    <tr><td>Frontend</td><td>S3 + CloudFront</td><td>Distribución global con CDN</td></tr>
-    <tr><td>Cómputo</td><td>EC2</td><td>Ejecución de microservicios</td></tr>
-    <tr><td>Balanceo</td><td>Application Load Balancer</td><td>Alta disponibilidad</td></tr>
-    <tr><td>Base de datos</td><td>RDS PostgreSQL</td><td>Persistencia transaccional</td></tr>
-    <tr><td>Caché</td><td>ElastiCache Redis</td><td>Rendimiento del catálogo</td></tr>
-    <tr><td>Mensajería</td><td>Amazon MQ (RabbitMQ)</td><td>Comunicación entre servicios</td></tr>
-    <tr><td>IaC</td><td>Terraform</td><td>Infraestructura versionada</td></tr>
-  </table>
-  <div style="margin-top:14px;background:rgba(0,60,113,0.07);border-radius:6px;padding:10px 14px;font-size:0.72em">
-    💡 Toda la infraestructura puede recrearse desde cero en menos de 30 minutos.
+  <h2>Vista Física — Despliegue en AWS (us-east-1)</h2>
+  <div style="text-align:center">
+    <img src="capturas/diagramas/kruchten-vista-fisica.png" alt="Despliegue AWS"
+         style="max-height:540px;max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,60,113,0.12)" />
   </div>
   <div class="slide-footer">Pontificia Universidad Javeriana · Plataforma de Eventos · 2026</div>
 </section>
