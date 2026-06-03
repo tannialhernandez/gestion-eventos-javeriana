@@ -114,6 +114,20 @@ describe('CatalogPage', () => {
     expect(screen.getByText('0/10')).toBeInTheDocument();
   });
 
+  it('debe mostrar eventos agotados al participante salvo que active filtro de cupos', async () => {
+    let conCuposParam: string | null = null;
+    server.use(http.get('*/api/v1/eventos', ({ request }) => {
+      conCuposParam = new URL(request.url).searchParams.get('conCupos');
+      return HttpResponse.json([mockSoldOutEvent]);
+    }));
+    seedAuthSession({ role: 'PARTICIPANTE' });
+
+    renderWithProviders(<CatalogRoutes />, { routerProps: { initialEntries: ['/catalogo'] } });
+
+    expect(await screen.findByRole('heading', { name: mockSoldOutEvent.titulo })).toBeInTheDocument();
+    expect(conCuposParam).toBeNull();
+  });
+
   it('debe resaltar eventos confirmados y permitir filtrarlos', async () => {
     server.use(
       http.get('*/api/v1/eventos', () => HttpResponse.json([mockEvent, mockOrganizerEvent])),

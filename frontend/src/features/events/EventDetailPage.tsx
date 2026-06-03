@@ -20,6 +20,17 @@ import { formatDate, formatDateTime, formatMoney, sanitizeText } from '../../sha
 import { Icon, Skeleton, StatusBadge } from '../../shared/ui';
 import { saveCheckoutSnapshot } from '../checkout/storage';
 
+const attendanceEligibleStates = ['CONFIRMADA', 'ASISTENCIA_REGISTRADA', 'CERTIFICADO_EMITIDO'];
+
+function canRegisterAttendance(record: AttendanceRecord) {
+  return attendanceEligibleStates.includes(record.estado);
+}
+
+function attendanceActionLabel(record: AttendanceRecord) {
+  if (!canRegisterAttendance(record)) return 'Pendiente de pago';
+  return record.asistio ? 'Confirmada' : 'Pendiente';
+}
+
 export function EventDetailPage() {
   const { eventoId } = useParams<{ eventoId: string }>();
   const navigate = useNavigate();
@@ -92,6 +103,11 @@ export function EventDetailPage() {
   const isTerminalEvent = event ? ['CANCELADO', 'FINALIZADO'].includes(event.estado) : false;
   const hasConfirmedInscription = ['CONFIRMADA', 'ASISTENCIA_REGISTRADA', 'CERTIFICADO_EMITIDO'].includes(currentInscription?.estado ?? '');
   const hasPendingPayment = currentInscription?.estado === 'PENDIENTE_PAGO';
+  const confirmedAttendanceRecords = attendanceRecords.filter(canRegisterAttendance);
+  const refreshEventAndAttendance = () => {
+    setRetryVersion((current) => current + 1);
+    setAttendanceVersion((current) => current + 1);
+  };
 
   useEffect(() => {
     if (!event || !canEditEvent) {
@@ -334,6 +350,15 @@ export function EventDetailPage() {
           <div className="capacity-meter" aria-hidden="true">
             <span style={{ width: `${seatsPercent}%` }} />
           </div>
+          <p className="capacity-band__hint">
+            Los cupos se reservan desde inscripción pendiente de pago y se liberan al cancelar o expirar.
+          </p>
+          {canEditEvent && (
+            <button className="button button--ghost capacity-band__refresh" type="button" onClick={refreshEventAndAttendance}>
+              <Icon name="refresh" />
+              Actualizar cupos
+            </button>
+          )}
         </div>
 
         {canEditEvent && (
@@ -343,7 +368,9 @@ export function EventDetailPage() {
                 <span className="eyebrow">Asistencia</span>
                 <h2 id="attendance-title">Registro de asistencia</h2>
               </div>
-              <span>{attendanceRecords.length} inscripciones confirmadas</span>
+              <span>
+                {attendanceRecords.length} inscripciones activas · {confirmedAttendanceRecords.length} confirmadas
+              </span>
             </div>
 
             {attendanceError && (
@@ -351,7 +378,7 @@ export function EventDetailPage() {
             )}
 
             {!attendanceError && attendanceRecords.length === 0 ? (
-              <p className="panel-copy">Aún no hay inscripciones confirmadas para marcar asistencia.</p>
+              <p className="panel-copy">Aún no hay inscripciones activas para este evento.</p>
             ) : (
               <div className="attendance-table-wrap">
                 <table className="attendance-table">
@@ -374,11 +401,13 @@ export function EventDetailPage() {
                             <input
                               type="checkbox"
                               checked={record.asistio}
-                              disabled={attendanceUpdatingId === record.inscripcionId}
+                              disabled={!canRegisterAttendance(record) || attendanceUpdatingId === record.inscripcionId}
                               onChange={(event) => handleMarkAttendance(record, event.target.checked)}
-                              aria-label={`Marcar asistencia de ${record.participante}`}
+                              aria-label={canRegisterAttendance(record)
+                                ? `Marcar asistencia de ${record.participante}`
+                                : `Inscripción pendiente de pago de ${record.participante}`}
                             />
-                            <span>{record.asistio ? 'Confirmada' : 'Pendiente'}</span>
+                            <span>{attendanceActionLabel(record)}</span>
                           </label>
                         </td>
                       </tr>
@@ -528,6 +557,12 @@ export function EventDetailPage() {
               <span>Total</span>
               <strong>{selectedTariff ? formatMoney(selectedTariff.monto, selectedTariff.moneda) : '-'}</strong>
             </div>
+            {event.cupoDisponible <= 0 && (
+              <div className="alert alert--warning">Este evento ya no tiene cupos disponibles.</div>
+            )}
+            {!event.aceptaInscripciones && (
+              <div className="alert alert--warning">Este evento no acepta inscripciones en este momento.</div>
+            )}
             {error && <ContextualError error={error} onRetry={handleCreateInscription} />}
             <button
               className="button button--primary button--wide"

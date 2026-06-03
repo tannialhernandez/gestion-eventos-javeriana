@@ -39,7 +39,7 @@ public class AsistenciaService {
 
         List<Inscripcion> inscripciones = inscripcionRepository.buscarPorEventoId(eventoId)
             .stream()
-            .filter(this::esInscripcionCertificable)
+            .filter(this::ocupaCupoVisibleParaGestion)
             .sorted(Comparator.comparing(Inscripcion::getFechaInscripcion))
             .toList();
 
@@ -107,6 +107,11 @@ public class AsistenciaService {
         return inscripcion.getEstado() == EstadoInscripcion.CONFIRMADA
             || inscripcion.getEstado() == EstadoInscripcion.ASISTENCIA_REGISTRADA
             || inscripcion.getEstado() == EstadoInscripcion.CERTIFICADO_EMITIDO;
+    }
+
+    private boolean ocupaCupoVisibleParaGestion(Inscripcion inscripcion) {
+        return inscripcion.getEstado() == EstadoInscripcion.PENDIENTE_PAGO
+            || esInscripcionCertificable(inscripcion);
     }
 
     private void autorizarGestor(UUID eventoId, JwtPrincipal solicitante) {

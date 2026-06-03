@@ -46,6 +46,26 @@ class AsistenciaServiceTest {
     }
 
     @Test
+    @DisplayName("Lista inscripciones pendientes y confirmadas que ocupan cupo para gestion")
+    void listarPorEvento_incluyePendientesYExcluyeLiberadas() {
+        JwtPrincipal admin = new JwtPrincipal(UUID.randomUUID(), List.of("ADMIN"),
+            "ana.admin@javeriana.edu.co", "Ana Admin");
+        Inscripcion pendiente = inscripcion(UUID.randomUUID(), UUID.randomUUID(), EstadoInscripcion.PENDIENTE_PAGO);
+        Inscripcion confirmada = inscripcion(UUID.randomUUID(), UUID.randomUUID(), EstadoInscripcion.CONFIRMADA);
+        Inscripcion expirada = inscripcion(UUID.randomUUID(), UUID.randomUUID(), EstadoInscripcion.EXPIRADA);
+
+        when(inscripcionRepository.buscarPorEventoId(eventoId))
+            .thenReturn(List.of(pendiente, confirmada, expirada));
+        when(asistenciaRepository.buscarPorInscripcionIds(any())).thenReturn(List.of());
+
+        List<AsistenciaService.InscripcionAsistencia> resultado = service.listarPorEvento(eventoId, admin);
+
+        assertThat(resultado)
+            .extracting(AsistenciaService.InscripcionAsistencia::estado)
+            .containsExactly("PENDIENTE_PAGO", "CONFIRMADA");
+    }
+
+    @Test
     @DisplayName("Organizador propietario puede marcar asistencia de inscripción confirmada")
     void registrar_asistenciaConfirmada_ok() {
         Inscripcion inscripcion = inscripcion(EstadoInscripcion.CONFIRMADA);
@@ -107,9 +127,13 @@ class AsistenciaServiceTest {
     }
 
     private Inscripcion inscripcion(EstadoInscripcion estado) {
+        return inscripcion(inscripcionId, participanteId, estado);
+    }
+
+    private Inscripcion inscripcion(UUID id, UUID usuarioId, EstadoInscripcion estado) {
         return new Inscripcion(
-            inscripcionId,
-            participanteId,
+            id,
+            usuarioId,
             eventoId,
             UUID.randomUUID(),
             estado,

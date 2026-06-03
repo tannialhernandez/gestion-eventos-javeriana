@@ -231,6 +231,42 @@ describe('EventDetailPage', () => {
     await waitFor(() => expect(attendanceCheckbox).toBeChecked());
   });
 
+  it('debe listar inscripciones pendientes que ocupan cupo sin permitir asistencia', async () => {
+    seedAuthSession({
+      role: 'ORGANIZADOR',
+      id: mockOrganizerEvent.organizadorId,
+      name: 'Carlos Organizador',
+    });
+    server.use(
+      http.get('*/api/v1/asistencias/eventos/:eventoId', () => HttpResponse.json([
+        {
+          ...mockAttendance,
+          eventoId: mockOrganizerEvent.id,
+          inscripcionId: 'insc-confirmada',
+          estado: 'CONFIRMADA',
+          asistio: false,
+        },
+        {
+          ...mockAttendance,
+          eventoId: mockOrganizerEvent.id,
+          inscripcionId: 'insc-pendiente',
+          usuarioId: 'user-pendiente-001',
+          participante: 'Participante pendiente',
+          estado: 'PENDIENTE_PAGO',
+          asistio: false,
+        },
+      ])),
+    );
+
+    renderWithProviders(<DetailRoutes />, {
+      routerProps: { initialEntries: [`/eventos/${mockOrganizerEvent.id}`] },
+    });
+
+    expect(await screen.findByText(/2 inscripciones activas · 1 confirmadas/i)).toBeInTheDocument();
+    expect(screen.getByText('Participante pendiente')).toBeInTheDocument();
+    expect(screen.getByLabelText(/inscripción pendiente de pago/i)).toBeDisabled();
+  });
+
   it('debe permitir que admin gestione evento de cualquier organizador', async () => {
     seedAuthSession({
       role: 'ADMIN',

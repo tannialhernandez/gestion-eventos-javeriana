@@ -7,6 +7,7 @@ type IconName =
   | 'edit'
   | 'log-out'
   | 'plus'
+  | 'refresh'
   | 'send'
   | 'shield'
   | 'ticket'
@@ -28,6 +29,7 @@ const paths: Record<IconName, string> = {
   edit: 'M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Zm13-13 3 3',
   'log-out': 'M10 17l5-5-5-5M15 12H3M21 4v16',
   plus: 'M12 5v14M5 12h14',
+  refresh: 'M21 12a9 9 0 0 1-15.4 6.4L3 16m0 0v5h5M3 12a9 9 0 0 1 15.4-6.4L21 8m0 0V3h-5',
   send: 'M22 2 11 13M22 2 15 22l-4-9-9-4 20-7Z',
   shield: 'M12 3 5 6v5c0 4 3 7 7 8 4-1 7-4 7-8V9l-7-6Z',
   ticket: 'M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V7Z',

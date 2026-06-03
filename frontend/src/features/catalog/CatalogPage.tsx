@@ -35,9 +35,8 @@ export function CatalogPage() {
   const accessMessage = (location.state as { accessMessage?: string } | null)?.accessMessage;
   const [events, setEvents] = useState<AcademicEvent[]>([]);
   const [myInscriptions, setMyInscriptions] = useState<Inscription[]>([]);
-  // Participantes ven solo eventos con cupos; gestores ven todos sus estados
   const [filters, setFilters] = useState<EventFilters>(() => ({
-    conCupos: isParticipantCatalog ? true : undefined,
+    conCupos: undefined,
   }));
   const [onlyConfirmed, setOnlyConfirmed] = useState(false);
   const [search, setSearch] = useState('');
@@ -181,14 +180,27 @@ export function CatalogPage() {
           </select>
         )}
         {isParticipantCatalog && (
-          <label className="filter-toggle">
-            <input
-              type="checkbox"
-              checked={onlyConfirmed}
-              onChange={(event) => setOnlyConfirmed(event.target.checked)}
-            />
-            <span>Mis confirmados</span>
-          </label>
+          <>
+            <label className="filter-toggle">
+              <input
+                type="checkbox"
+                checked={Boolean(filters.conCupos)}
+                onChange={(event) => setFilters((current) => ({
+                  ...current,
+                  conCupos: event.target.checked ? true : undefined,
+                }))}
+              />
+              <span>Solo con cupos</span>
+            </label>
+            <label className="filter-toggle">
+              <input
+                type="checkbox"
+                checked={onlyConfirmed}
+                onChange={(event) => setOnlyConfirmed(event.target.checked)}
+              />
+              <span>Mis confirmados</span>
+            </label>
+          </>
         )}
       </div>
 
