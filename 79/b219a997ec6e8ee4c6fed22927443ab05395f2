@@ -1,0 +1,19 @@
+docs/presentacion/plataforma-eventos-javeriana.html
+  s_ffdf5e4b299f5d::t_a61bf7dae10801 1-1009
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "79b219a997ec6e8ee4c6fed22927443ab05395f2",
+  "prompts": {},
+  "sessions": {
+    "s_ffdf5e4b299f5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea4f5644-72be-42f5-b8a9-74779555a6a3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
