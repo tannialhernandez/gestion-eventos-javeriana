@@ -1,0 +1,32 @@
+scripts/smoke-multi-rol-aws.sh
+  s_e975fa25d919d9::t_3f6d5e1e6e97df 67-71
+  s_e975fa25d919d9::t_3255c23c388632 1-66,72-265
+infra/terraform/user_data.sh
+  s_e975fa25d919d9::t_3fe9f21573d2c8 57-61,89-93
+docs/evidencia-autenticacion-completa.md
+  s_e975fa25d919d9::t_8dd53aceffa9cb 89-103,107-109,113-119,121
+  s_e975fa25d919d9::t_51ab82db0f9448 104-106,110-112,120
+TECH_DEBT.md
+  s_e975fa25d919d9::t_84f8d281a8b45b 13,17,19,357
+  s_e975fa25d919d9::t_4c566cee3f0bff 334-335,370
+  s_e975fa25d919d9::t_6f496fe80e7856 14,25,29-36,38,138
+frontend/scripts/capture-aws-multi-role.mjs
+  s_e975fa25d919d9::t_29d89b917b3d86 1-25,28-67
+  s_e975fa25d919d9::t_f892e54b869326 26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "8a85519dc30ca5a59ea53d352b826b1422158354",
+  "prompts": {},
+  "sessions": {
+    "s_e975fa25d919d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7060-2b38-7100-839a-eb05028f243f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
