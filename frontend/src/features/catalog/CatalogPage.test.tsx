@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
+import { seedAuthSession } from '../../test/auth-session';
 import { renderWithProviders, screen, userEvent, waitForElementToBeRemoved } from '../../test/test-utils';
 import { server } from '../../test/mocks/server';
 import { mockEvent, mockSoldOutEvent } from '../../test/mocks/handlers';
@@ -27,6 +28,22 @@ describe('CatalogPage', () => {
 
     expect(await screen.findByRole('heading', { name: mockEvent.titulo })).toBeInTheDocument();
     expect(screen.getByText(`${mockEvent.cupoDisponible}/${mockEvent.cupoMaximo}`)).toBeInTheDocument();
+  });
+
+  it('debe mostrar banner contextual para participante', async () => {
+    seedAuthSession({ role: 'PARTICIPANTE' });
+    renderWithProviders(<CatalogRoutes />, { routerProps: { initialEntries: ['/catalogo'] } });
+
+    expect(screen.getByRole('status')).toHaveTextContent('Participante');
+    expect(screen.getByRole('status')).toHaveTextContent('Explora eventos académicos y completa tu inscripción');
+  });
+
+  it('debe mostrar banner contextual para administrador', async () => {
+    seedAuthSession({ role: 'ADMIN' });
+    renderWithProviders(<CatalogRoutes />, { routerProps: { initialEntries: ['/catalogo'] } });
+
+    expect(screen.getByRole('status')).toHaveTextContent('Administrador');
+    expect(screen.getByRole('status')).toHaveTextContent('Vista de Administración — Gestión disponible en Fase 2');
   });
 
   it('debe mostrar mensaje vacio si no hay eventos', async () => {

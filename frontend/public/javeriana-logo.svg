@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 96" role="img" aria-labelledby="title desc">
   <title id="title">Pontificia Universidad Javeriana</title>
   <desc id="desc">Logo placeholder institucional para la plataforma academica.</desc>
-  <rect width="240" height="96" rx="10" fill="#003DA5"/>
+  <rect width="240" height="96" rx="10" fill="#003c71"/>
   <path d="M47 18h34l-17 20z" fill="#FFC72C"/>
   <path d="M64 38l19 40H45z" fill="#FFC72C"/>
-  <path d="M64 44l9 22H55z" fill="#003DA5"/>
+  <path d="M64 44l9 22H55z" fill="#003c71"/>
   <text x="102" y="40" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700">Pontificia</text>
   <text x="102" y="59" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700">Universidad</text>
   <text x="102" y="78" fill="#FFC72C" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700">Javeriana</text>

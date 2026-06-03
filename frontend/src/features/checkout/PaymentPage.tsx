@@ -58,6 +58,14 @@ export function PaymentPage() {
 
       <section className="checkout-panel" aria-label="Resumen de pago">
         <h2>Resumen</h2>
+        <div className="simulation-notice" role="note" aria-label="Modo simulación académica">
+          <span className="simulation-badge">Modo simulación académica</span>
+          <p>Pago procesado por simulador. Integración Mercado Pago disponible en Fase 2.</p>
+          <div className="mercado-pago-mark" aria-label="Mercado Pago deshabilitado">
+            <span aria-hidden="true">MP</span>
+            <strong>Mercado Pago</strong>
+          </div>
+        </div>
         <div className="price-line">
           <span>Total</span>
           <strong>{formatMoney(snapshot.amount, snapshot.currency)}</strong>

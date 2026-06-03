@@ -1,4 +1,4 @@
-export type UserRole = 'PARTICIPANTE' | 'ORGANIZADOR' | 'ADMIN';
+export type UserRole = 'PARTICIPANTE' | 'ORGANIZADOR' | 'ADMIN' | 'SERVICE';
 
 export type AuthUser = {
   id: string;

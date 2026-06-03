@@ -19,7 +19,8 @@ describe('LoginPage', () => {
     expect(screen.getByRole('img', { name: /pontificia universidad javeriana/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /plataforma de gestión de eventos académicos/i })).toBeInTheDocument();
     expect(screen.getByText('Pontificia Universidad Javeriana')).toBeInTheDocument();
-    expect(screen.getByText(/© 2026 Pontificia Universidad Javeriana/i)).toBeInTheDocument();
+    expect(screen.getByText(/los usuarios provienen de azure ad javeriana/i)).toBeInTheDocument();
+    expect(screen.getByText(/© 2026 Pontificia Universidad Javeriana - Sede Bogotá/i)).toBeInTheDocument();
   });
 
   it('debe validar campos obligatorios', () => {

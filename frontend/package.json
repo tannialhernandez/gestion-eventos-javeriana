@@ -12,6 +12,7 @@
     "smoke:e2e": "node scripts/smoke-e2e.mjs",
     "screenshots:e2e": "node scripts/capture-e2e-screenshots.mjs",
     "screenshots:full": "node scripts/capture-full-frontend.mjs",
+    "screenshots:branding": "node scripts/capture-branding-final.mjs",
     "check:links": "node scripts/check-broken-links.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

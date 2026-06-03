@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContextualError } from '../../components';
 import type { AcademicEvent } from '../../entities/event';
+import { useAuth } from '../auth';
+import { getRolePresentation } from '../auth/rolePresentation';
 import { listEvents, type EventFilters } from '../../services/eventService';
 import { type AppError, normalizeAppError } from '../../lib/errors';
 import { formatDate, sanitizeText } from '../../shared/lib';
@@ -12,6 +14,8 @@ const modalidades = ['', 'PRESENCIAL', 'VIRTUAL', 'HIBRIDO'];
 
 export function CatalogPage() {
   const navigate = useNavigate();
+  const { roles } = useAuth();
+  const role = getRolePresentation(roles);
   const [events, setEvents] = useState<AcademicEvent[]>([]);
   const [filters, setFilters] = useState<EventFilters>({ conCupos: true });
   const [search, setSearch] = useState('');
@@ -58,6 +62,11 @@ export function CatalogPage() {
           <span>Redis cache</span>
           <span>JWT activo</span>
         </div>
+      </div>
+
+      <div className={`role-context-banner role-context-banner--${role.tone}`} role="status">
+        <strong>{role.label}</strong>
+        <span>{role.catalogMessage}</span>
       </div>
 
       <div className="toolbar">

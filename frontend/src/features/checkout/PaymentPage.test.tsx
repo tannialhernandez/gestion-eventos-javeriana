@@ -35,6 +35,8 @@ describe('PaymentPage', () => {
     renderWithProviders(<PaymentRoutes />, { routerProps: { initialEntries: ['/inscripciones/insc-test-uuid/pago'] } });
 
     expect(screen.getByRole('heading', { name: /congreso de arquitectura 2026/i })).toBeInTheDocument();
+    expect(screen.getByText(/modo simulación académica/i)).toBeInTheDocument();
+    expect(screen.getByText(/integración mercado pago disponible en fase 2/i)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /confirmar pago aprobado/i }));
 
     await waitFor(() => expect(screen.getByRole('heading', { name: /confirmacion/i })).toBeInTheDocument());
