@@ -1,0 +1,28 @@
+docs/presentacion/plataforma-eventos-javeriana.html
+  s_ffdf5e4b299f5d::t_33c8a3def3f45a 1665,1668-1671
+  s_ffdf5e4b299f5d::t_7da3e7f08954ba 1317-1423
+  s_ffdf5e4b299f5d::t_089a503b7ce282 749
+  s_ffdf5e4b299f5d::t_53588c046ccc7b 833-837,839,841,844-846,849-851,854,856,859,861,864,866,868-876,878,880,883-885,888,890,893,895-905
+  s_ffdf5e4b299f5d::t_4390111f2d0101 198-214,216,220-226
+  s_ffdf5e4b299f5d::t_5d6e6901d97db4 583,585
+  s_ffdf5e4b299f5d::t_ebad6581fcd488 1097,1099-1107,1109-1161
+  s_ffdf5e4b299f5d::t_514d74c0ab75ea 631-747
+  s_ffdf5e4b299f5d::t_122c6d9cdd65f1 966
+  s_ffdf5e4b299f5d::t_3ba81f9a99de92 912
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ef9aeba2f7a1ac2ffe3889c76d684f451954031c",
+  "prompts": {},
+  "sessions": {
+    "s_ffdf5e4b299f5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea4f5644-72be-42f5-b8a9-74779555a6a3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
