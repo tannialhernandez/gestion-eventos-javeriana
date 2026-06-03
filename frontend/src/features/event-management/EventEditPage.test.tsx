@@ -36,7 +36,7 @@ describe('EventEditPage', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: /detalle actualizado/i })).toBeInTheDocument());
   });
 
-  it('elimina evento tras confirmacion y vuelve al catalogo', async () => {
+  it('cancela evento tras confirmacion y vuelve al detalle', async () => {
     seedAuthSession({
       role: 'ORGANIZADOR',
       id: mockOrganizerEvent.organizadorId,
@@ -47,9 +47,9 @@ describe('EventEditPage', () => {
     renderWithProviders(<EditRoutes />, { routerProps: { initialEntries: [`/eventos/${mockOrganizerEvent.id}/editar`] } });
 
     expect(await screen.findByRole('heading', { name: /editar evento/i })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /eliminar/i }));
+    await user.click(screen.getByRole('button', { name: /cancelar evento/i }));
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: /catálogo/i })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: /detalle actualizado/i })).toBeInTheDocument());
     confirm.mockRestore();
   });
 

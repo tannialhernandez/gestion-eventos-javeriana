@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import type { AcademicEvent, Tariff } from '../../entities/event';
-import type { Inscription } from '../../entities/inscription';
+import type { AttendanceRecord, Inscription } from '../../entities/inscription';
 
 export const mockJwt =
   'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWRlbW8tMDAxIiwiZW1haWwiOiJkaWVnby5wYXJ0aWNpcGFudGVAamF2ZXJpYW5hLmVkdS5jbyIsIm5hbWUiOiJEaWVnbyBQYXJ0aWNpcGFudGUiLCJyb2xlcyI6WyJQQVJUSUNJUEFOVEUiXSwiZXhwIjoxOTk5OTk5OTk5fQ.mock-signature';
@@ -51,6 +51,18 @@ export const mockInscription: Inscription = {
   fechaExpiracionPago: '2026-05-31T12:15:00Z',
   checkoutUrl: 'https://wiremock.local/checkout',
   expiraEnSegundos: 900,
+};
+
+export const mockAttendance: AttendanceRecord = {
+  inscripcionId: 'insc-test-uuid',
+  eventoId: mockEvent.id,
+  usuarioId: 'user-demo-001',
+  participante: 'Participante user-dem',
+  estado: 'CONFIRMADA',
+  asistio: false,
+  fechaRegistro: null,
+  registradoPor: null,
+  observaciones: null,
 };
 
 export const handlers = [
@@ -118,6 +130,29 @@ export const handlers = [
     fechaExpiracionPago: null,
     expiraEnSegundos: 0,
   })),
+
+  http.get('*/api/v1/asistencias/eventos/:eventoId', ({ params }) => HttpResponse.json([{
+    ...mockAttendance,
+    eventoId: String(params.eventoId),
+  }])),
+
+  http.post('*/api/v1/asistencias/eventos/:eventoId', async ({ request, params }) => {
+    const body = await request.json() as { inscripcionId: string; asistio: boolean };
+    return HttpResponse.json({
+      ...mockAttendance,
+      eventoId: String(params.eventoId),
+      inscripcionId: body.inscripcionId,
+      asistio: body.asistio,
+      fechaRegistro: '2026-06-03T10:00:00Z',
+      registradoPor: 'organizador@javeriana.edu.co',
+    });
+  }),
+
+  http.get('*/api/v1/asistencias/mia', () => HttpResponse.json(mockAttendance)),
+
+  http.get('*/api/v1/certificados/:inscripcionId', () => new HttpResponse(new Blob(['%PDF-1.4 certificado'], {
+    type: 'application/pdf',
+  }))),
 
   http.post('*/api/v1/pagos/simulador/:inscripcionId/aprobar', () => HttpResponse.json({ resultado: 'CONFIRMADO' })),
 

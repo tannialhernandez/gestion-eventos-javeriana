@@ -2,7 +2,7 @@ import { env } from '../shared/config/env';
 import { createHttpClient } from '../shared/api';
 import type { AcademicEvent, EventMode, EventStatus, EventType, Tariff } from '../entities/event';
 import { withRetry } from '../lib/retry';
-import { isAppError } from '../lib/errors';
+import { BusinessRuleError, isAppError } from '../lib/errors';
 
 const eventHttp = createHttpClient(env.eventApiUrl, 'event-service');
 
@@ -142,16 +142,26 @@ export async function createEvent(input: EventMutationInput): Promise<AcademicEv
 }
 
 export async function updateEvent(eventId: string, input: EventMutationInput): Promise<AcademicEvent> {
-  const response = await eventHttp.put<AcademicEvent>(`/eventos/${eventId}`, toBackendPayload(input));
-  if (input.tarifaId) {
-    await updateTariff(input.tarifaId, input);
-  } else {
-    await createTariff(eventId, input);
+  try {
+    const response = await eventHttp.put<AcademicEvent>(`/eventos/${eventId}`, toBackendPayload(input));
+    if (input.tarifaId) {
+      await updateTariff(input.tarifaId, input);
+    } else {
+      await createTariff(eventId, input);
+    }
+    if ((input.estado === 'PENDIENTE_PUBLICACION' || input.estado === 'PUBLICADO') && response.data.estado !== 'PUBLICADO') {
+      return sendEventToReview(eventId);
+    }
+    return response.data;
+  } catch (error) {
+    if (isAppError(error) && (error.status === 401 || error.status === 403)) {
+      throw new BusinessRuleError(
+        'La API productiva rechazó la edición del evento. Tu sesión sigue activa; falta revisar permisos o configuración del event-service.',
+        { status: error.status, code: 'event_update_rejected', serviceName: error.serviceName, cause: error },
+      );
+    }
+    throw error;
   }
-  if ((input.estado === 'PENDIENTE_PUBLICACION' || input.estado === 'PUBLICADO') && response.data.estado !== 'PUBLICADO') {
-    return sendEventToReview(eventId);
-  }
-  return response.data;
 }
 
 export async function cancelEvent(eventId: string, motivo = 'Cancelado desde gestión de eventos'): Promise<void> {

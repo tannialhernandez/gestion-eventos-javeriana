@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { seedAuthSession } from '../../test/auth-session';
 import { renderWithProviders, screen, userEvent, waitFor } from '../../test/test-utils';
 import { server } from '../../test/mocks/server';
-import { mockEvent, mockInscription, mockOrganizerEvent, mockSoldOutEvent } from '../../test/mocks/handlers';
+import { mockAttendance, mockEvent, mockInscription, mockOrganizerEvent, mockSoldOutEvent } from '../../test/mocks/handlers';
 import { EventDetailPage } from './EventDetailPage';
 
 function DetailRoutes() {
@@ -67,6 +67,26 @@ describe('EventDetailPage', () => {
     expect(await screen.findByText(/ya estás inscrito/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /ver confirmación/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^inscribirme$/i })).not.toBeInTheDocument();
+  });
+
+  it('debe mostrar descarga de certificado cuando la asistencia esta confirmada', async () => {
+    seedAuthSession({ role: 'PARTICIPANTE' });
+    server.use(
+      http.get('*/api/v1/inscripciones/mia', () => HttpResponse.json({
+        ...mockInscription,
+        estado: 'CONFIRMADA',
+        checkoutUrl: null,
+        fechaExpiracionPago: null,
+        expiraEnSegundos: 0,
+      })),
+      http.get('*/api/v1/asistencias/mia', () => HttpResponse.json({
+        ...mockAttendance,
+        asistio: true,
+      })),
+    );
+    renderWithProviders(<DetailRoutes />, { routerProps: { initialEntries: [`/eventos/${mockEvent.id}`] } });
+
+    expect(await screen.findByRole('button', { name: /descargar certificado/i })).toBeInTheDocument();
   });
 
   it('debe mostrar continuar pago si el participante tiene inscripcion pendiente', async () => {
@@ -183,6 +203,32 @@ describe('EventDetailPage', () => {
     expect(screen.getByRole('button', { name: /^editar$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cancelar evento/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /inscribirme/i })).not.toBeInTheDocument();
+  });
+
+  it('debe permitir al organizador marcar asistencia', async () => {
+    seedAuthSession({
+      role: 'ORGANIZADOR',
+      id: mockOrganizerEvent.organizadorId,
+      name: 'Carlos Organizador',
+    });
+    const user = userEvent.setup();
+    server.use(
+      http.get('*/api/v1/asistencias/eventos/:eventoId', () => HttpResponse.json([{
+        ...mockAttendance,
+        eventoId: mockOrganizerEvent.id,
+        asistio: false,
+      }])),
+    );
+
+    renderWithProviders(<DetailRoutes />, {
+      routerProps: { initialEntries: [`/eventos/${mockOrganizerEvent.id}`] },
+    });
+
+    expect(await screen.findByRole('heading', { name: /registro de asistencia/i })).toBeInTheDocument();
+    const attendanceCheckbox = await screen.findByRole('checkbox', { name: /marcar asistencia/i });
+    await user.click(attendanceCheckbox);
+
+    await waitFor(() => expect(attendanceCheckbox).toBeChecked());
   });
 
   it('debe permitir que admin gestione evento de cualquier organizador', async () => {

@@ -84,7 +84,7 @@ Resultado esperado para mostrar:
 
 ```text
 Laura: HTTP 201 en Xms estado=PENDIENTE_PAGO
-Sofia: HTTP 409 en Xms estado=sin_cupos_disponibles
+Diego: HTTP 409 en Xms estado=sin_cupos_disponibles
 cupoDespuesReserva: 0
 pagoSimulado: CONFIRMADO
 cancelacion: CANCELADA
@@ -92,6 +92,11 @@ cupoDespuesCancelacion: 1
 ```
 
 Si los participantes se invierten, tambien es correcto. Lo importante es que haya `1` exito, `1` rechazo por cupo, cupo en `0` tras reservar y cupo en `1` tras cancelar.
+
+Evidencia AWS validada:
+
+- JSON de corrida final: `docs/evidence/performance-concurrencia/aws-concurrencia-dos-usuarios-2026-06-03.json`
+- Resultado observado con Laura/Diego: Laura `201` en `PENDIENTE_PAGO`, Diego `409` por cupo, pago simulado `CONFIRMADO`, cupo `0` tras reserva y cupo `1` tras cancelacion.
 
 ## 4. Orden sugerido de diapositivas
 

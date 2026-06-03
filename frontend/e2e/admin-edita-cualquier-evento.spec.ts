@@ -24,7 +24,7 @@ test('admin edita evento de cualquier organizador', async ({ page }) => {
   await expect(page).toHaveURL(new RegExp(`/eventos/${eventId}`));
   await expect(page.getByRole('heading', { name: /congreso editado por admin/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /^editar$/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /eliminar/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /cancelar evento/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /inscribirme/i })).toHaveCount(0);
   await page.screenshot({ path: `${evidenceDir}/admin-edita-cualquier-evento.png`, fullPage: true });
 });

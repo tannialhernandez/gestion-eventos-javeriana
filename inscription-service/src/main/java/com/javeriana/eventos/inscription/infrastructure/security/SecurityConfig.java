@@ -56,6 +56,14 @@ public class SecurityConfig {
                 // Inscripciones — cualquier rol autenticado puede inscribirse
                 .requestMatchers(HttpMethod.POST, "/api/v1/inscripciones")
                     .hasAnyRole("PARTICIPANTE", "ORGANIZADOR", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/asistencias/mia")
+                    .hasRole("PARTICIPANTE")
+                .requestMatchers(HttpMethod.GET, "/api/v1/asistencias/eventos/*")
+                    .hasAnyRole("ADMIN", "ORGANIZADOR")
+                .requestMatchers(HttpMethod.POST, "/api/v1/asistencias/eventos/*")
+                    .hasAnyRole("ADMIN", "ORGANIZADOR")
+                .requestMatchers(HttpMethod.GET, "/api/v1/certificados/*")
+                    .hasRole("PARTICIPANTE")
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter,

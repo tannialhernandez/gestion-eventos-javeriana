@@ -1,6 +1,6 @@
 import { env } from '../shared/config/env';
 import { createHttpClient } from '../shared/api';
-import type { Inscription } from '../entities/inscription';
+import type { AttendanceRecord, Inscription } from '../entities/inscription';
 import { withRetry } from '../lib/retry';
 import { BusinessRuleError, isAppError } from '../lib/errors';
 
@@ -50,5 +50,43 @@ export async function listMyInscriptions(): Promise<Inscription[]> {
 
 export async function cancelInscription(inscripcionId: string): Promise<Inscription> {
   const response = await inscriptionHttp.post<Inscription>(`/inscripciones/${inscripcionId}/cancelar`);
+  return response.data;
+}
+
+export async function listEventAttendance(eventoId: string): Promise<AttendanceRecord[]> {
+  const response = await inscriptionHttp.get<AttendanceRecord[]>(`/asistencias/eventos/${eventoId}`);
+  return response.data;
+}
+
+export async function markAttendance(
+  eventoId: string,
+  inscripcionId: string,
+  asistio: boolean,
+): Promise<AttendanceRecord> {
+  const response = await inscriptionHttp.post<AttendanceRecord>(`/asistencias/eventos/${eventoId}`, {
+    inscripcionId,
+    asistio,
+  });
+  return response.data;
+}
+
+export async function getMyAttendance(eventoId: string): Promise<AttendanceRecord | null> {
+  try {
+    const response = await inscriptionHttp.get<AttendanceRecord>('/asistencias/mia', {
+      params: { eventoId },
+    });
+    return response.data;
+  } catch (error) {
+    if (isAppError(error) && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function downloadCertificate(inscripcionId: string): Promise<Blob> {
+  const response = await inscriptionHttp.get<Blob>(`/certificados/${inscripcionId}`, {
+    responseType: 'blob',
+  });
   return response.data;
 }

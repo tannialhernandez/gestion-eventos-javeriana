@@ -4,7 +4,9 @@ import com.javeriana.eventos.inscription.infrastructure.persistence.entity.Event
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -25,4 +27,13 @@ interface SpringDataEventoCupoRepository extends JpaRepository<EventoCupoEntity,
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM EventoCupoEntity e WHERE e.eventoId = :eventoId")
     Optional<EventoCupoEntity> findByEventoIdWithLock(UUID eventoId);
+
+    @Modifying
+    @Query(value = """
+        INSERT INTO evento_cupo (evento_id, cupo_disponible, cupo_maximo, version)
+        VALUES (:eventoId, :cupoDisponibleInicial, :cupoDisponibleInicial, 0)
+        ON CONFLICT (evento_id) DO NOTHING
+        """, nativeQuery = true)
+    int insertIfAbsent(@Param("eventoId") UUID eventoId,
+                       @Param("cupoDisponibleInicial") int cupoDisponibleInicial);
 }

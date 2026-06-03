@@ -182,7 +182,7 @@ export async function mockBackend(page: Page) {
     await json(route, { message: 'Metodo no soportado' }, 405);
   });
 
-  await page.route(/.*\/event-api\/api\/v1\/eventos\/([^/?]+)$/, async (route) => {
+  await page.route(/.*\/event-api\/api\/v1\/eventos\/[^/?]+(\?.*)?$/, async (route) => {
     const method = route.request().method();
     const eventoId = new URL(route.request().url()).pathname.split('/').pop();
     const index = events.findIndex((candidate) => candidate.id === eventoId);
@@ -226,8 +226,33 @@ export async function mockBackend(page: Page) {
     await route.fulfill({ status: 204, body: '' });
   });
 
+  await page.route('**/event-api/api/v1/eventos/*/enviar-revision', async (route) => {
+    const eventoId = new URL(route.request().url()).pathname.split('/eventos/')[1]?.split('/')[0];
+    const index = events.findIndex((candidate) => candidate.id === eventoId);
+    const updated = {
+      ...(index >= 0 ? events[index] : event),
+      id: eventoId ?? eventId,
+      estado: 'PENDIENTE_PUBLICACION',
+      aceptaInscripciones: false,
+    };
+    if (index >= 0) {
+      events[index] = updated;
+    } else {
+      events.push(updated);
+    }
+    await json(route, updated);
+  });
+
   await page.route('**/event-api/api/v1/eventos/*/cancelar', async (route) => {
     await route.fulfill({ status: 204, body: '' });
+  });
+
+  await page.route('**/inscription-api/api/v1/inscripciones/mias', async (route) => {
+    await json(route, []);
+  });
+
+  await page.route('**/inscription-api/api/v1/asistencias/eventos/**', async (route) => {
+    await json(route, []);
   });
 
   await page.route('**/inscription-api/api/v1/inscripciones', async (route) => {

@@ -22,8 +22,8 @@ test('organizador crea evento desde el formulario administrativo', async ({ page
   await page.getByLabel(/lugar/i).fill('Auditorio Javeriana');
   await page.getByLabel(/capacidad/i).fill('80');
   await page.getByLabel(/tarifa monto/i).fill('120000');
-  await page.getByLabel(/estado/i).selectOption('PUBLICADO');
-  await page.getByRole('button', { name: /publicar evento/i }).click();
+  await page.getByLabel(/estado/i).selectOption('PENDIENTE_PUBLICACION');
+  await page.getByRole('button', { name: /guardar evento/i }).click();
 
   await expect(page).toHaveURL(/\/eventos\/00000000-0000-0000-0000-000000000901/);
   await expect(page.getByRole('heading', { name: /foro e2e de patrones/i })).toBeVisible();

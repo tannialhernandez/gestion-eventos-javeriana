@@ -1,6 +1,7 @@
 package com.javeriana.eventos.inscription.domain.port.out;
 
 import java.util.UUID;
+import java.time.LocalDate;
 
 /**
  * Port de salida hacia event-service (Feign client).
@@ -35,8 +36,16 @@ public interface EventoServicePort {
         String titulo,
         String estado,
         int cupoDisponible,
-        boolean aceptaInscripciones
-    ) {}
+        boolean aceptaInscripciones,
+        UUID organizadorId,
+        String modalidad,
+        LocalDate fechaInicio
+    ) {
+        public EventoInfo(UUID id, String titulo, String estado,
+                          int cupoDisponible, boolean aceptaInscripciones) {
+            this(id, titulo, estado, cupoDisponible, aceptaInscripciones, null, null, null);
+        }
+    }
 
     record TarifaInfo(
         UUID id,

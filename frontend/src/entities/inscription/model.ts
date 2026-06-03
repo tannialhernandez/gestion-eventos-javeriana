@@ -9,6 +9,18 @@ export type Inscription = {
   expiraEnSegundos: number;
 };
 
+export type AttendanceRecord = {
+  inscripcionId: string;
+  eventoId: string;
+  usuarioId: string;
+  participante: string;
+  estado: string;
+  asistio: boolean;
+  fechaRegistro: string | null;
+  registradoPor: string | null;
+  observaciones: string | null;
+};
+
 export type CheckoutSnapshot = {
   eventTitle: string;
   eventId: string;

@@ -2,10 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ContextualError } from '../../components';
 import type { AcademicEvent, Tariff } from '../../entities/event';
-import type { Inscription } from '../../entities/inscription';
+import type { AttendanceRecord, Inscription } from '../../entities/inscription';
 import { useAuth } from '../auth';
 import { canManageEvent, canManageEvents } from '../auth/rolePresentation';
-import { cancelInscription, createInscription, getMyInscriptionForEvent } from '../../services/inscriptionService';
+import {
+  cancelInscription,
+  createInscription,
+  downloadCertificate,
+  getMyAttendance,
+  getMyInscriptionForEvent,
+  listEventAttendance,
+  markAttendance,
+} from '../../services/inscriptionService';
 import { approveEvent, cancelEvent, getEvent, listTariffs, rejectEvent, sendEventToReview } from '../../services/eventService';
 import { BusinessRuleError, type AppError, normalizeAppError } from '../../lib/errors';
 import { formatDate, formatDateTime, formatMoney, sanitizeText } from '../../shared/lib';
@@ -19,11 +27,16 @@ export function EventDetailPage() {
   const [event, setEvent] = useState<AcademicEvent | null>(null);
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
   const [currentInscription, setCurrentInscription] = useState<Inscription | null>(null);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [currentAttendance, setCurrentAttendance] = useState<AttendanceRecord | null>(null);
   const [selectedTariffId, setSelectedTariffId] = useState<string>('');
   const [isLoading, setLoading] = useState(true);
   const [isSubmitting, setSubmitting] = useState(false);
+  const [attendanceUpdatingId, setAttendanceUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<AppError | null>(null);
+  const [attendanceError, setAttendanceError] = useState<AppError | null>(null);
   const [retryVersion, setRetryVersion] = useState(0);
+  const [attendanceVersion, setAttendanceVersion] = useState(0);
   const isManagerRole = canManageEvents(roles);
   const isParticipantRole = roles.includes('PARTICIPANTE') && !isManagerRole;
 
@@ -79,6 +92,47 @@ export function EventDetailPage() {
   const isTerminalEvent = event ? ['CANCELADO', 'FINALIZADO'].includes(event.estado) : false;
   const hasConfirmedInscription = ['CONFIRMADA', 'ASISTENCIA_REGISTRADA', 'CERTIFICADO_EMITIDO'].includes(currentInscription?.estado ?? '');
   const hasPendingPayment = currentInscription?.estado === 'PENDIENTE_PAGO';
+
+  useEffect(() => {
+    if (!event || !canEditEvent) {
+      setAttendanceRecords([]);
+      return;
+    }
+
+    let mounted = true;
+    setAttendanceError(null);
+    listEventAttendance(event.id)
+      .then((records) => {
+        if (mounted) setAttendanceRecords(records);
+      })
+      .catch((err) => {
+        if (mounted) setAttendanceError(normalizeAppError(err));
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [event, canEditEvent, attendanceVersion]);
+
+  useEffect(() => {
+    if (!event || !isParticipantRole || !hasConfirmedInscription) {
+      setCurrentAttendance(null);
+      return;
+    }
+
+    let mounted = true;
+    getMyAttendance(event.id)
+      .then((attendance) => {
+        if (mounted) setCurrentAttendance(attendance);
+      })
+      .catch((err) => {
+        if (mounted) setAttendanceError(normalizeAppError(err));
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [event, isParticipantRole, hasConfirmedInscription, currentInscription?.inscripcionId, attendanceVersion]);
 
   const handleCreateInscription = async () => {
     if (!event || !selectedTariff) return;
@@ -187,6 +241,43 @@ export function EventDetailPage() {
     }
   };
 
+  const handleMarkAttendance = async (record: AttendanceRecord, asistio: boolean) => {
+    if (!event) return;
+    setAttendanceUpdatingId(record.inscripcionId);
+    setAttendanceError(null);
+    try {
+      const updated = await markAttendance(event.id, record.inscripcionId, asistio);
+      setAttendanceRecords((records) => records.map((item) => (
+        item.inscripcionId === updated.inscripcionId ? updated : item
+      )));
+    } catch (err) {
+      setAttendanceError(normalizeAppError(err));
+    } finally {
+      setAttendanceUpdatingId(null);
+    }
+  };
+
+  const handleDownloadCertificate = async () => {
+    if (!currentInscription) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const blob = await downloadCertificate(currentInscription.inscripcionId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificado-${currentInscription.inscripcionId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(normalizeAppError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (isLoading) return <Skeleton rows={2} />;
 
   if (error && !event) {
@@ -244,6 +335,60 @@ export function EventDetailPage() {
             <span style={{ width: `${seatsPercent}%` }} />
           </div>
         </div>
+
+        {canEditEvent && (
+          <section className="attendance-section" aria-labelledby="attendance-title">
+            <div className="attendance-section__header">
+              <div>
+                <span className="eyebrow">Asistencia</span>
+                <h2 id="attendance-title">Registro de asistencia</h2>
+              </div>
+              <span>{attendanceRecords.length} inscripciones confirmadas</span>
+            </div>
+
+            {attendanceError && (
+              <ContextualError error={attendanceError} onRetry={() => setAttendanceVersion((value) => value + 1)} />
+            )}
+
+            {!attendanceError && attendanceRecords.length === 0 ? (
+              <p className="panel-copy">Aún no hay inscripciones confirmadas para marcar asistencia.</p>
+            ) : (
+              <div className="attendance-table-wrap">
+                <table className="attendance-table">
+                  <thead>
+                    <tr>
+                      <th>Participante</th>
+                      <th>Inscripción</th>
+                      <th>Estado</th>
+                      <th>Asistió</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceRecords.map((record) => (
+                      <tr key={record.inscripcionId}>
+                        <td>{sanitizeText(record.participante)}</td>
+                        <td><code>{record.inscripcionId.slice(0, 8)}</code></td>
+                        <td><StatusBadge value={record.estado} /></td>
+                        <td>
+                          <label className="attendance-check">
+                            <input
+                              type="checkbox"
+                              checked={record.asistio}
+                              disabled={attendanceUpdatingId === record.inscripcionId}
+                              onChange={(event) => handleMarkAttendance(record, event.target.checked)}
+                              aria-label={`Marcar asistencia de ${record.participante}`}
+                            />
+                            <span>{record.asistio ? 'Confirmada' : 'Pendiente'}</span>
+                          </label>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       <section className="checkout-panel" aria-label={isManagerRole ? 'Gestión del evento' : 'Inscripción'}>
@@ -328,6 +473,14 @@ export function EventDetailPage() {
               <Icon name="check" />
               Ver confirmación
             </button>
+            {currentAttendance?.asistio ? (
+              <button className="button button--primary button--wide" type="button" onClick={handleDownloadCertificate} disabled={isSubmitting}>
+                <Icon name="download" />
+                {isSubmitting ? 'Generando certificado' : 'Descargar certificado'}
+              </button>
+            ) : (
+              <div className="alert alert--info">Certificado disponible cuando se confirme asistencia.</div>
+            )}
             <button className="button button--danger button--wide" type="button" onClick={handleCancelInscription} disabled={isSubmitting}>
               <Icon name="trash" />
               {isSubmitting ? 'Cancelando inscripción' : 'Darme de baja'}

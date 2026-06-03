@@ -18,8 +18,14 @@ import java.util.UUID;
  */
 public record JwtPrincipal(
     UUID userId,
-    List<String> roles
+    List<String> roles,
+    String email,
+    String name
 ) {
+    public JwtPrincipal(UUID userId, List<String> roles) {
+        this(userId, roles, null, null);
+    }
+
     public boolean esParticipante() { return roles.contains("PARTICIPANTE"); }
     public boolean esOrganizador()  { return roles.contains("ORGANIZADOR"); }
     public boolean esAdmin()        { return roles.contains("ADMIN"); }

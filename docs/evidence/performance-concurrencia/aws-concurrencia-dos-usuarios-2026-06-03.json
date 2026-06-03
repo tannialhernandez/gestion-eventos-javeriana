@@ -1,0 +1,30 @@
+{
+  "fecha": "2026-06-03",
+  "ambiente": "AWS productivo",
+  "baseUrl": "https://d1xvny1kolb55e.cloudfront.net",
+  "eventoId": "58ead5d6-e298-4180-b50c-8c5cc588666c",
+  "tarifaId": "3c431e55-6cda-4c3d-ab89-dcedec3f4da0",
+  "cupoInicial": 1,
+  "concurrencia": [
+    {
+      "participante": "Laura",
+      "http": 201,
+      "ms": 391,
+      "estado": "PENDIENTE_PAGO",
+      "inscripcionId": "0f375771-5d5d-40b3-bb27-e4c748cb5124"
+    },
+    {
+      "participante": "Diego",
+      "http": 409,
+      "ms": 391,
+      "estado": "sin_cupos_disponibles"
+    }
+  ],
+  "pagoSimulado": {
+    "resultado": "CONFIRMADO"
+  },
+  "cupoDespuesReserva": 0,
+  "cancelacion": "CANCELADA",
+  "cupoDespuesCancelacion": 1,
+  "cleanupEvento": 204
+}

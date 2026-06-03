@@ -137,7 +137,7 @@ resource "aws_lb_listener_rule" "inscription" {
 
   condition {
     path_pattern {
-      values = ["/inscriptions/*", "/api/v1/inscripciones*"]
+      values = ["/inscriptions/*", "/api/v1/inscripciones*", "/api/v1/asistencias*", "/api/v1/certificados*"]
     }
   }
 }

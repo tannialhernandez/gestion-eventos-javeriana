@@ -3,6 +3,7 @@ type IconName =
   | 'calendar'
   | 'check'
   | 'credit-card'
+  | 'download'
   | 'edit'
   | 'log-out'
   | 'plus'
@@ -23,6 +24,7 @@ const paths: Record<IconName, string> = {
   calendar: 'M7 3v4M17 3v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z',
   check: 'm5 12 4 4L19 6',
   'credit-card': 'M3 7h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm0 3h18',
+  download: 'M12 3v12m0 0 5-5m-5 5-5-5M5 21h14',
   edit: 'M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Zm13-13 3 3',
   'log-out': 'M10 17l5-5-5-5M15 12H3M21 4v16',
   plus: 'M12 5v14M5 12h14',

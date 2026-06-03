@@ -94,9 +94,7 @@ public class JpaInscripcionRepository implements InscripcionRepository {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void reservarCupo(UUID eventoId, int cupoDisponibleInicial) {
-        EventoCupoEntity cupo = eventoCupoRepo
-            .findByEventoIdWithLock(eventoId)
-            .orElseGet(() -> crearCupoInicial(eventoId, cupoDisponibleInicial));
+        EventoCupoEntity cupo = obtenerCupoConLock(eventoId, cupoDisponibleInicial);
 
         if (cupo.getCupoDisponible() <= 0) {
             throw new SinCuposDisponiblesException(eventoId);
@@ -117,13 +115,12 @@ public class JpaInscripcionRepository implements InscripcionRepository {
         });
     }
 
-    private EventoCupoEntity crearCupoInicial(UUID eventoId, int cupoDisponibleInicial) {
+    private EventoCupoEntity obtenerCupoConLock(UUID eventoId, int cupoDisponibleInicial) {
         int cupoDisponible = Math.max(cupoDisponibleInicial, 0);
-        EventoCupoEntity cupo = new EventoCupoEntity();
-        cupo.setEventoId(eventoId);
-        cupo.setCupoDisponible(cupoDisponible);
-        cupo.setCupoMaximo(cupoDisponible);
-        return eventoCupoRepo.saveAndFlush(cupo);
+        eventoCupoRepo.insertIfAbsent(eventoId, cupoDisponible);
+        return eventoCupoRepo.findByEventoIdWithLock(eventoId)
+            .orElseThrow(() -> new IllegalStateException(
+                "No fue posible inicializar cupos para evento " + eventoId));
     }
 
     @Override
