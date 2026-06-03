@@ -8,7 +8,7 @@ import { formatDate, sanitizeText } from '../../shared/lib';
 import { Icon, Skeleton, StatusBadge } from '../../shared/ui';
 
 const tipos = ['', 'CONGRESO', 'SIMPOSIO', 'SEMINARIO', 'TALLER'];
-const modalidades = ['', 'PRESENCIAL', 'VIRTUAL', 'HIBRIDA'];
+const modalidades = ['', 'PRESENCIAL', 'VIRTUAL', 'HIBRIDO'];
 
 export function CatalogPage() {
   const navigate = useNavigate();

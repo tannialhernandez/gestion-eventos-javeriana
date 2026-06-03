@@ -89,7 +89,7 @@ const event = {
   titulo: 'Congreso de Arquitectura 2026',
   descripcion: 'Encuentro academico sobre arquitectura de software.',
   tipo: 'CONGRESO',
-  modalidad: 'HIBRIDA',
+  modalidad: 'HIBRIDO',
   fechaInicio: '2026-08-15T09:00:00Z',
   fechaFin: '2026-08-16T17:00:00Z',
   fechaLimiteInscripcion: '2026-08-01T23:59:59Z',
