@@ -30,7 +30,8 @@ public class DefaultPasarelaPagoFactory implements PasarelaPagoFactory {
     public DefaultPasarelaPagoFactory(
             @Value("${payment.gateway.provider:simulador}") String provider,
             @Value("${mercadopago.access-token:}") String mpAccessToken,
-            @Value("${mercadopago.webhook-url:http://localhost:8084/api/v1/webhooks/pagos}") String webhookUrl) {
+            @Value("${mercadopago.webhook-url:http://localhost:8084/api/v1/webhooks/pagos}") String webhookUrl,
+            @Value("${payment.gateway.simulator-public-base-url:http://localhost:8084}") String simulatorPublicBaseUrl) {
 
         this.pasarela = switch (provider.toLowerCase()) {
             case "mercadopago" -> {
@@ -40,7 +41,7 @@ public class DefaultPasarelaPagoFactory implements PasarelaPagoFactory {
             }
             default -> {
                 log.info("[PasarelaPagoFactory] Usando SimuladorPasarelaAdapter (demo/test).");
-                yield new SimuladorPasarelaAdapter();
+                yield new SimuladorPasarelaAdapter(simulatorPublicBaseUrl);
             }
         };
     }

@@ -12,11 +12,11 @@ export function ConfirmationPage() {
         <Icon name="check" size={36} />
       </div>
       <span className="eyebrow">Confirmación recibida</span>
-      <h1>Inscripción en proceso de confirmación</h1>
+      <h1>Inscripción confirmada</h1>
       <p>
         {snapshot
-          ? `El pago para ${snapshot.eventTitle} fue notificado al payment-service.`
-          : 'El pago fue notificado al payment-service.'}
+          ? `Tu cupo para ${snapshot.eventTitle} quedó reservado y el pago fue confirmado.`
+          : 'Tu cupo quedó reservado y el pago fue confirmado.'}
       </p>
       <code>{inscripcionId}</code>
       <Link className="button button--secondary" to="/catalogo">

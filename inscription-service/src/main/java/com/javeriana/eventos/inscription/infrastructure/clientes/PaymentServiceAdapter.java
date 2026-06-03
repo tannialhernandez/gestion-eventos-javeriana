@@ -47,16 +47,26 @@ public class PaymentServiceAdapter implements PaymentServicePort {
                 inscripcionId, monto, moneda, usuarioId));
     }
 
+    @Override
+    public ReembolsoPago reembolsar(UUID inscripcionId) {
+        try {
+            return feignClient.reembolsar(inscripcionId);
+        } catch (Exception ex) {
+            log.error("[payment] no fue posible reembolsar inscripcion={}: {}", inscripcionId, ex.getMessage());
+            throw new ServicioExternoNoDisponibleException("payment-service", ex);
+        }
+    }
+
     // ─── Fallback ─────────────────────────────────────────────────────────────
 
     /**
      * Package-private para permitir tests unitarios directos sin Spring AOP.
      */
-    ServicioExternoNoDisponibleException crearPreferenciaFallback(UUID inscripcionId,
-                                                                   BigDecimal monto,
-                                                                   String moneda,
-                                                                   UUID usuarioId,
-                                                                   Exception ex) {
+    PreferenciaPago crearPreferenciaFallback(UUID inscripcionId,
+                                             BigDecimal monto,
+                                             String moneda,
+                                             UUID usuarioId,
+                                             Throwable ex) {
         log.error("[circuit-breaker] payment-service no disponible al crear preferencia " +
                   "para inscripcion={}: {}", inscripcionId, ex.getMessage());
         throw new ServicioExternoNoDisponibleException("payment-service", ex);

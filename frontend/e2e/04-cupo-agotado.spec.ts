@@ -18,7 +18,7 @@ test('cupo agotado muestra mensaje contextual', async ({ page }) => {
   await page.goto(`/eventos/${eventId}`);
   await expect(page.getByRole('heading', { name: /congreso de arquitectura 2026/i })).toBeVisible();
 
-  await page.getByRole('button', { name: /inscribirme y pagar/i }).click();
+  await page.getByRole('button', { name: /^inscribirme$/i }).click();
 
   await expect(page.getByRole('alert')).toContainText(/cupo agotado/i);
   await page.screenshot({ path: `${evidenceDir}/04-cupo-agotado.png`, fullPage: true });

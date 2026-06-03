@@ -19,7 +19,11 @@ import java.util.UUID;
  *
  * Máquina de estados (ver docs/modelo-datos-conceptual.md §4.1):
  *   BORRADOR → PENDIENTE_PUBLICACION → PUBLICADO → FINALIZADO
- *                                    ↘ CANCELADO (desde cualquier estado no terminal)
+ *                  ↓
+ *              RECHAZADO
+ *                  ↑
+ *             (corrección)
+ *   CANCELADO se permite desde estados no terminales según RBAC de aplicación.
  */
 public class Evento extends AggregateRoot {
 
@@ -90,13 +94,13 @@ public class Evento extends AggregateRoot {
     // ─── Comportamiento de dominio ─────────────────────────────────────────────
 
     /**
-     * RN: Envía el evento a revisión. Solo BORRADOR puede transicionar.
+     * RN: Envía el evento a revisión. Solo BORRADOR o RECHAZADO puede transicionar.
      */
     public void enviarARevision() {
-        if (this.estado != EstadoEvento.BORRADOR) {
+        if (this.estado != EstadoEvento.BORRADOR && this.estado != EstadoEvento.RECHAZADO) {
             throw new BusinessRuleViolationException(
                 "RN-EVENTO-01",
-                "Solo un evento en BORRADOR puede enviarse a revisión. Estado actual: " + this.estado
+                "Solo un evento en BORRADOR o RECHAZADO puede enviarse a revisión. Estado actual: " + this.estado
             );
         }
         this.estado = EstadoEvento.PENDIENTE_PUBLICACION;
@@ -125,6 +129,56 @@ public class Evento extends AggregateRoot {
     }
 
     /**
+     * RN: Aprueba un evento enviado a revisión administrativa.
+     */
+    public void aprobar() {
+        if (this.estado != EstadoEvento.PENDIENTE_PUBLICACION) {
+            throw new BusinessRuleViolationException(
+                "RN-EVENTO-11",
+                "Solo un evento en PENDIENTE_PUBLICACION puede aprobarse. Estado actual: " + this.estado
+            );
+        }
+        publicar();
+    }
+
+    /**
+     * RN: Rechaza un evento en revisión. El motivo se valida en dominio, pero
+     * no se persiste porque el modelo de datos actual no tiene ese campo.
+     */
+    public void rechazar(String motivo) {
+        if (this.estado != EstadoEvento.PENDIENTE_PUBLICACION) {
+            throw new BusinessRuleViolationException(
+                "RN-EVENTO-12",
+                "Solo un evento en PENDIENTE_PUBLICACION puede rechazarse. Estado actual: " + this.estado
+            );
+        }
+        if (motivo == null || motivo.isBlank()) {
+            throw new BusinessRuleViolationException(
+                "RN-EVENTO-13",
+                "El motivo de rechazo es obligatorio"
+            );
+        }
+        this.estado = EstadoEvento.RECHAZADO;
+    }
+
+    /**
+     * RN: Devuelve un evento editable a borrador. Útil cuando el organizador
+     * necesita retirar una publicación o corregir un evento en revisión.
+     */
+    public void volverABorrador() {
+        if (this.estado == EstadoEvento.BORRADOR) {
+            return;
+        }
+        if (this.estado.esTerminal()) {
+            throw new BusinessRuleViolationException(
+                "RN-EVENTO-15",
+                "No se puede volver a borrador un evento en estado terminal: " + this.estado
+            );
+        }
+        this.estado = EstadoEvento.BORRADOR;
+    }
+
+    /**
      * RN: Cancela el evento. No se puede cancelar si ya está finalizado o cancelado.
      */
     public void cancelar(String motivo) {
@@ -149,6 +203,40 @@ public class Evento extends AggregateRoot {
             );
         }
         this.estado = EstadoEvento.FINALIZADO;
+    }
+
+    /**
+     * Actualiza los datos editoriales del evento manteniendo los cupos ya reservados.
+     */
+    public void actualizarDatos(String titulo, String descripcion, TipoEvento tipo,
+                                ModalidadEvento modalidad, LocalDate fechaInicio, LocalDate fechaFin,
+                                LocalDateTime fechaLimiteInscripcion, int cupoMaximo) {
+        if (this.estado.esTerminal()) {
+            throw new BusinessRuleViolationException(
+                "RN-EVENTO-09",
+                "No se puede editar un evento en estado terminal: " + this.estado
+            );
+        }
+        validarFechas(fechaInicio, fechaFin, fechaLimiteInscripcion);
+        validarCupo(cupoMaximo);
+
+        int cuposReservados = this.cupoMaximo - this.cupoDisponible;
+        if (cupoMaximo < cuposReservados) {
+            throw new BusinessRuleViolationException(
+                "RN-EVENTO-10",
+                "La capacidad no puede ser menor que los cupos ya reservados"
+            );
+        }
+
+        this.titulo = titulo;
+        this.descripcion = descripcion;
+        this.tipo = tipo;
+        this.modalidad = modalidad;
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+        this.fechaLimiteInscripcion = fechaLimiteInscripcion;
+        this.cupoMaximo = cupoMaximo;
+        this.cupoDisponible = cupoMaximo - cuposReservados;
     }
 
     /**

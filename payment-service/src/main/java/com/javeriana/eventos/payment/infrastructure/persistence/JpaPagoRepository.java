@@ -35,7 +35,7 @@ public class JpaPagoRepository implements PagoRepository {
 
     @Override
     public Optional<Pago> buscarPorInscripcionId(UUID inscripcionId) {
-        return springDataRepo.findByInscripcionId(inscripcionId).map(this::toDomain);
+        return springDataRepo.findFirstByInscripcionIdOrderByFechaCreacionDesc(inscripcionId).map(this::toDomain);
     }
 
     @Override

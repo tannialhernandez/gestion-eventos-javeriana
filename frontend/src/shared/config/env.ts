@@ -8,5 +8,5 @@ export const env = {
   eventApiUrl: import.meta.env.VITE_EVENT_API_URL ?? defaultEventApi,
   inscriptionApiUrl: import.meta.env.VITE_INSCRIPTION_API_URL ?? defaultInscriptionApi,
   paymentApiUrl: import.meta.env.VITE_PAYMENT_API_URL ?? defaultPaymentApi,
-  paymentWebhookSecret: import.meta.env.VITE_PAYMENT_WEBHOOK_SECRET ?? 'local-demo-secret',
+  paymentWebhookSecret: import.meta.env.VITE_PAYMENT_WEBHOOK_SECRET ?? 'change-me-before-production',
 };

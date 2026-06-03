@@ -51,6 +51,7 @@ server:
 payment:
   gateway:
     provider: ${PAYMENT_GATEWAY_PROVIDER:simulador}
+    simulator-public-base-url: ${PAYMENT_SIMULATOR_PUBLIC_BASE_URL:http://localhost:8084}
     # C-01 (Prompt 18/19): secret HMAC-SHA256 para validar firmas de webhooks.
     # Si está vacío → validación omitida (solo aceptable con SimuladorPasarelaAdapter).
     # En prod: ${PAYMENT_WEBHOOK_SECRET} inyectado por AWS Secrets Manager.

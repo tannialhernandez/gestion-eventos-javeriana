@@ -14,6 +14,10 @@ public interface InscripcionRepository {
 
     Optional<Inscripcion> buscarPorIdempotencyKey(UUID idempotencyKey);
 
+    Optional<Inscripcion> buscarPorUsuarioIdYEventoId(UUID usuarioId, UUID eventoId);
+
+    List<Inscripcion> buscarPorUsuarioId(UUID usuarioId);
+
     /**
      * RN-01, ADR-07: Bloqueo pesimista (SELECT FOR UPDATE) sobre el evento
      * para reservar el cupo de forma atómica.
@@ -26,7 +30,11 @@ public interface InscripcionRepository {
      *
      * Lanza SinCuposDisponiblesException si cupo_disponible == 0.
      */
-    Inscripcion guardarConReservaDeCupo(Inscripcion inscripcion);
+    Inscripcion guardarConReservaDeCupo(Inscripcion inscripcion, int cupoDisponibleInicial);
+
+    void reservarCupo(UUID eventoId, int cupoDisponibleInicial);
+
+    void liberarCupo(UUID eventoId);
 
     /**
      * Retorna inscripciones PENDIENTE_PAGO cuya fecha de expiración ya pasó.

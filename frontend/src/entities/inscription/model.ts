@@ -1,6 +1,7 @@
 export type Inscription = {
   inscripcionId: string;
   eventoId: string;
+  tarifaId?: string;
   estado: 'PENDIENTE_PAGO' | 'CONFIRMADA' | 'CANCELADA' | 'EXPIRADA' | string;
   fechaInscripcion: string;
   fechaExpiracionPago: string | null;

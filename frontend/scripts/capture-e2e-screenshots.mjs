@@ -266,7 +266,7 @@ try {
   await waitForExpression(client, "location.pathname.startsWith('/eventos/') && document.querySelector('.checkout-panel')", 20000)
   await screenshot(client, '03-detalle-evento.png')
 
-  await clickByText(client, 'button', 'Inscribirme y pagar')
+  await clickByText(client, 'button', 'Inscribirme')
   await waitForExpression(client, "location.pathname.includes('/pago') && document.querySelector('.payment-layout')", 30000)
   await screenshot(client, '04-pago.png')
 
@@ -279,7 +279,7 @@ try {
   await client.send('Page.navigate', { url: `${appBaseUrl}/eventos/${visualEventId}` })
   await waitForExpression(client, "location.pathname.startsWith('/eventos/') && document.querySelector('.checkout-panel')", 20000)
   await interceptInscriptionUnavailable(client)
-  await clickByText(client, 'button', 'Inscribirme y pagar')
+  await clickByText(client, 'button', 'Inscribirme')
   await waitForExpression(
     client,
     "document.querySelector('.contextual-error') && document.querySelector('.resilience-banner--degraded')",

@@ -58,6 +58,15 @@ public class EventoServiceAdapter implements EventoServicePort {
     }
 
     @Override
+    public void reservarCupo(UUID eventoId) {
+        try {
+            circuitBreaker.executeRunnable(() -> feignClient.reservarCupo(eventoId));
+        } catch (Exception ex) {
+            throw obtenerEventoFallback(eventoId, ex);
+        }
+    }
+
+    @Override
     public void liberarCupo(UUID eventoId) {
         try {
             circuitBreaker.executeRunnable(() -> feignClient.liberarCupo(eventoId));

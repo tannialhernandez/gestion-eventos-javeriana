@@ -32,6 +32,9 @@ public interface EventoServiceFeignClient {
     @PostMapping("/api/v1/eventos/{eventoId}/cupos/liberar")
     void liberarCupo(@PathVariable("eventoId") UUID eventoId);
 
+    @PostMapping("/api/v1/eventos/{eventoId}/cupos/reservar")
+    void reservarCupo(@PathVariable("eventoId") UUID eventoId);
+
     /**
      * Obtiene los datos de precio de una tarifa (M-03: elimina monto hardcodeado).
      * La tarifa pertenece a un evento y define el precio en una moneda específica.

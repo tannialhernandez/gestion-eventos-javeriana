@@ -5,7 +5,8 @@ package com.javeriana.eventos.event.domain.model;
  *
  * Transiciones permitidas:
  *   BORRADOR → PENDIENTE_PUBLICACION, CANCELADO
- *   PENDIENTE_PUBLICACION → PUBLICADO, BORRADOR, CANCELADO
+ *   PENDIENTE_PUBLICACION → PUBLICADO, RECHAZADO, CANCELADO
+ *   RECHAZADO → PENDIENTE_PUBLICACION, CANCELADO
  *   PUBLICADO → FINALIZADO (automático), CANCELADO
  *   FINALIZADO → (terminal)
  *   CANCELADO → (terminal)
@@ -13,6 +14,7 @@ package com.javeriana.eventos.event.domain.model;
 public enum EstadoEvento {
     BORRADOR,
     PENDIENTE_PUBLICACION,
+    RECHAZADO,
     PUBLICADO,
     FINALIZADO,
     CANCELADO;

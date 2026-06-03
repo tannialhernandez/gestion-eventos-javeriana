@@ -21,35 +21,35 @@ type JwtClaims = {
   roles?: UserRole[];
 };
 
-const authHttp = createHttpClient(env.authApiUrl, 'auth-service-stub');
+const authHttp = createHttpClient(env.authApiUrl, 'auth-service');
 
 export const demoCredentials: DemoCredential[] = [
   {
-    name: 'Laura Participante',
+    name: 'Laura García',
     email: 'laura.participante@javeriana.edu.co',
     password: 'demo123',
     role: 'PARTICIPANTE',
   },
   {
-    name: 'Diego Participante',
+    name: 'Diego Rodríguez',
     email: 'diego.participante@javeriana.edu.co',
     password: 'demo123',
     role: 'PARTICIPANTE',
   },
   {
-    name: 'Carlos Organizador',
+    name: 'Dr. Carlos Mejía',
     email: 'carlos.organizador@javeriana.edu.co',
     password: 'demo123',
     role: 'ORGANIZADOR',
   },
   {
-    name: 'Ana Administradora',
+    name: 'Ana María Torres',
     email: 'ana.admin@javeriana.edu.co',
     password: 'demo123',
     role: 'ADMIN',
   },
   {
-    name: 'Sofia Mesa de Ayuda',
+    name: 'Sofía Vargas',
     email: 'sofia.soporte@javeriana.edu.co',
     password: 'demo123',
     role: 'PARTICIPANTE',

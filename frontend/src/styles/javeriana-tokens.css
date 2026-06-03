@@ -1,0 +1,35 @@
+/* ============================================================
+   Pontificia Universidad Javeriana — Design Tokens Oficiales
+   Colores Pantone institucionales + sistema de diseño
+   ============================================================ */
+:root {
+  /* ── Colores institucionales ─────────────────────────────── */
+  --puj-azul-principal: #003c71;   /* Pantone 2756 C */
+  --puj-azul-oscuro:    #002850;
+  --puj-azul-claro:     #2563a8;
+  --puj-amarillo:       #ffd100;   /* Pantone 109 C */
+  --puj-dorado:         #b8860b;
+  --puj-gris-oscuro:    #333333;
+  --puj-gris-medio:     #6c757d;
+  --puj-gris-claro:     #f5f5f5;
+  --puj-blanco:         #ffffff;
+  --puj-rojo-alerta:    #c0392b;
+  --puj-verde-exito:    #27ae60;
+
+  /* ── Roles ───────────────────────────────────────────────── */
+  --rol-admin-bg:              #fee2e2;
+  --rol-admin-text:            #991b1b;
+  --rol-organizador-bg:        #dbeafe;
+  --rol-organizador-text:      var(--puj-azul-principal);
+  --rol-participante-bg:       #d1fae5;
+  --rol-participante-text:     #065f46;
+
+  /* ── Tipografía ──────────────────────────────────────────── */
+  --puj-font-primary: 'PT Sans', 'Open Sans', -apple-system, sans-serif;
+  --puj-font-serif:   'PT Serif', 'Georgia', serif;
+
+  /* ── Espaciado / Elevación ───────────────────────────────── */
+  --puj-radius:    8px;
+  --puj-shadow:    0 2px 8px  rgba(0, 60, 113, 0.08);
+  --puj-shadow-lg: 0 8px 24px rgba(0, 60, 113, 0.12);
+}

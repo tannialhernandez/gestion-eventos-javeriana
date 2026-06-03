@@ -14,9 +14,13 @@ public interface PaymentServicePort {
     PreferenciaPago crearPreferencia(UUID inscripcionId, BigDecimal monto,
                                      String moneda, UUID usuarioId);
 
+    ReembolsoPago reembolsar(UUID inscripcionId);
+
     record PreferenciaPago(
         UUID pagoId,
         String checkoutUrl,
         String preferenciaExternaId
     ) {}
+
+    record ReembolsoPago(String resultado) {}
 }

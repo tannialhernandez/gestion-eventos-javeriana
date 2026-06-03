@@ -2,6 +2,9 @@ package com.javeriana.eventos.inscription.infrastructure.web;
 
 import com.javeriana.eventos.inscription.domain.exceptions.ServicioExternoNoDisponibleException;
 import com.javeriana.eventos.inscription.domain.port.in.CrearInscripcionUseCase;
+import com.javeriana.eventos.inscription.domain.port.out.EventoServicePort;
+import com.javeriana.eventos.inscription.domain.port.out.InscripcionRepository;
+import com.javeriana.eventos.inscription.domain.port.out.PaymentServicePort;
 import com.javeriana.eventos.inscription.infrastructure.security.JwtPrincipal;
 import com.javeriana.eventos.inscription.infrastructure.web.dto.CrearInscripcionRequest;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -24,13 +27,27 @@ class InscripcionControllerTest {
     @Mock
     private CrearInscripcionUseCase crearInscripcion;
 
+    @Mock
+    private InscripcionRepository inscripcionRepository;
+
+    @Mock
+    private EventoServicePort eventoService;
+
+    @Mock
+    private PaymentServicePort paymentService;
+
     private CircuitBreakerRegistry circuitBreakerRegistry;
     private InscripcionController controller;
 
     @BeforeEach
     void setUp() {
         circuitBreakerRegistry = CircuitBreakerRegistry.ofDefaults();
-        controller = new InscripcionController(crearInscripcion, circuitBreakerRegistry);
+        controller = new InscripcionController(
+            crearInscripcion,
+            inscripcionRepository,
+            eventoService,
+            paymentService,
+            circuitBreakerRegistry);
     }
 
     @Test

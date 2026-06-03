@@ -63,7 +63,7 @@ test.describe('Auditoría WCAG 2.1 AA automatizada', () => {
   test('pago simulado no tiene violaciones axe', async ({ page }) => {
     await login(page);
     await page.goto(`/eventos/${eventId}`);
-    await page.getByRole('button', { name: /inscribirme y pagar/i }).click();
+    await page.getByRole('button', { name: /^inscribirme$/i }).click();
     await expect(page).toHaveURL(/\/pago/);
     await expect(page.getByRole('heading', { name: /resumen/i })).toBeVisible();
 

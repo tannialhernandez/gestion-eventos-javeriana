@@ -46,7 +46,7 @@ export function PaymentPage() {
         <h1>{sanitizeText(snapshot.eventTitle)}</h1>
         <dl className="detail-facts">
           <div>
-            <dt>Inscripción</dt>
+            <dt>Referencia</dt>
             <dd>{inscripcionId}</dd>
           </div>
           <div>
@@ -57,28 +57,20 @@ export function PaymentPage() {
       </div>
 
       <section className="checkout-panel" aria-label="Resumen de pago">
-        <h2>Resumen</h2>
-        <div className="simulation-notice" role="note" aria-label="Modo simulación académica">
-          <span className="simulation-badge">Modo simulación académica</span>
-          <p>Pago procesado por simulador. Integración Mercado Pago disponible en Fase 2.</p>
-          <div className="mercado-pago-mark" aria-label="Mercado Pago deshabilitado">
-            <span aria-hidden="true">MP</span>
-            <strong>Mercado Pago</strong>
-          </div>
-        </div>
+        <h2>Resumen del pago</h2>
         <div className="price-line">
-          <span>Total</span>
+          <span>Total a pagar</span>
           <strong>{formatMoney(snapshot.amount, snapshot.currency)}</strong>
         </div>
-        {snapshot.checkoutUrl && (
-          <a className="external-link" href={snapshot.checkoutUrl} target="_blank" rel="noreferrer">
-            Abrir checkout simulado
-          </a>
-        )}
         {error && <ContextualError error={error} onRetry={handleApprove} />}
-        <button className="button button--primary button--wide" type="button" onClick={handleApprove} disabled={isSubmitting}>
+        <button
+          className="button button--primary button--wide"
+          type="button"
+          onClick={handleApprove}
+          disabled={isSubmitting}
+        >
           <Icon name="check" />
-          {isSubmitting ? 'Confirmando pago' : 'Confirmar pago aprobado'}
+          {isSubmitting ? 'Procesando pago…' : 'Confirmar y pagar'}
         </button>
       </section>
     </section>

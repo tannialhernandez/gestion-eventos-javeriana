@@ -81,6 +81,7 @@ export function createMockJwt(user: DemoUser = demoUsers[1], exp = 1_999_999_999
 export const mockJwt = createMockJwt();
 
 export const eventId = '00000000-0000-0000-0000-000000000001';
+export const organizerEventId = '00000000-0000-0000-0000-000000000777';
 export const tariffId = '00000000-0000-0000-0001-000000000001';
 export const inscriptionId = 'insc-e2e-uuid';
 
@@ -98,6 +99,14 @@ const event = {
   estado: 'PUBLICADO',
   organizadorId: 'organizador-001',
   aceptaInscripciones: true,
+};
+
+const organizerEvent = {
+  ...event,
+  id: organizerEventId,
+  titulo: 'Seminario propio de Carlos',
+  descripcion: 'Evento administrado por el organizador demo.',
+  organizadorId: '33333333-3333-3333-3333-333333333333',
 };
 
 const tariff = {
@@ -122,6 +131,9 @@ async function json(route: Route, body: unknown, status = 200, headers: Record<s
 }
 
 export async function mockBackend(page: Page) {
+  const events = [event, organizerEvent].map((item) => ({ ...item }));
+  let createdSequence = 900;
+
   await page.route('**/auth-api/api/v1/auth/login', async (route) => {
     const body = route.request().postDataJSON() as { email?: string; password?: string };
     const user = demoUsers.find((candidate) => candidate.email === body.email && candidate.password === body.password);
@@ -144,15 +156,78 @@ export async function mockBackend(page: Page) {
   });
 
   await page.route(/.*\/event-api\/api\/v1\/eventos(\?.*)?$/, async (route) => {
-    await json(route, [event]);
+    const method = route.request().method();
+    if (method === 'GET') {
+      await json(route, events);
+      return;
+    }
+
+    if (method === 'POST') {
+      const body = route.request().postDataJSON() as Partial<typeof event>;
+      createdSequence += 1;
+      const created = {
+        ...event,
+        ...body,
+        id: `00000000-0000-0000-0000-000000000${createdSequence}`,
+        cupoDisponible: body.cupoMaximo ?? event.cupoMaximo,
+        estado: 'BORRADOR',
+        organizadorId: '33333333-3333-3333-3333-333333333333',
+        aceptaInscripciones: false,
+      };
+      events.push(created);
+      await json(route, created, 201);
+      return;
+    }
+
+    await json(route, { message: 'Metodo no soportado' }, 405);
   });
 
-  await page.route(`**/event-api/api/v1/eventos/${eventId}`, async (route) => {
-    await json(route, event);
+  await page.route(/.*\/event-api\/api\/v1\/eventos\/([^/?]+)$/, async (route) => {
+    const method = route.request().method();
+    const eventoId = new URL(route.request().url()).pathname.split('/').pop();
+    const index = events.findIndex((candidate) => candidate.id === eventoId);
+
+    if (method === 'GET') {
+      await json(route, index >= 0 ? events[index] : event);
+      return;
+    }
+
+    if (method === 'PUT') {
+      const body = route.request().postDataJSON() as Partial<typeof event>;
+      const updated = {
+        ...(index >= 0 ? events[index] : event),
+        ...body,
+        id: eventoId ?? eventId,
+        cupoDisponible: body.cupoMaximo ?? (index >= 0 ? events[index].cupoDisponible : event.cupoDisponible),
+      };
+      if (index >= 0) {
+        events[index] = updated;
+      } else {
+        events.push(updated);
+      }
+      await json(route, updated);
+      return;
+    }
+
+    if (method === 'DELETE') {
+      if (index >= 0) events.splice(index, 1);
+      await route.fulfill({ status: 204, body: '' });
+      return;
+    }
+
+    await json(route, { message: 'Metodo no soportado' }, 405);
   });
 
   await page.route('**/event-api/api/v1/tarifas**', async (route) => {
     await json(route, [tariff]);
+  });
+
+  await page.route('**/event-api/api/v1/eventos/*/publicar', async (route) => {
+    await route.fulfill({ status: 204, body: '' });
+  });
+
+  await page.route('**/event-api/api/v1/eventos/*/cancelar', async (route) => {
+    await route.fulfill({ status: 204, body: '' });
   });
 
   await page.route('**/inscription-api/api/v1/inscripciones', async (route) => {

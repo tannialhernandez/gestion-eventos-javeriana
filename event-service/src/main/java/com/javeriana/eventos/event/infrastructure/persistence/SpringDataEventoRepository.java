@@ -14,4 +14,6 @@ import java.util.UUID;
 interface SpringDataEventoRepository extends JpaRepository<EventoEntity, UUID> {
 
     List<EventoEntity> findByEstado(EstadoEvento estado);
+
+    List<EventoEntity> findByOrganizadorId(UUID organizadorId);
 }

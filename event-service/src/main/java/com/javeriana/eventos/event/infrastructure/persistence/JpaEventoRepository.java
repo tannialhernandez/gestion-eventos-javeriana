@@ -43,6 +43,20 @@ public class JpaEventoRepository implements EventoRepository {
     }
 
     @Override
+    public List<Evento> buscarTodos() {
+        return springDataRepo.findAll().stream()
+            .map(mapper::toDomain)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Evento> buscarPorOrganizadorId(UUID organizadorId) {
+        return springDataRepo.findByOrganizadorId(organizadorId).stream()
+            .map(mapper::toDomain)
+            .collect(Collectors.toList());
+    }
+
+    @Override
     public List<Evento> buscarPorEstado(EstadoEvento estado) {
         return springDataRepo.findByEstado(estado).stream()
             .map(mapper::toDomain)

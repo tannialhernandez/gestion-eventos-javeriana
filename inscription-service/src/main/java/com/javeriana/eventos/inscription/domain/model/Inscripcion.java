@@ -110,6 +110,63 @@ public class Inscripcion extends AggregateRoot {
         registerEvent(new InscripcionExpiradaEvent(this.id, this.usuarioId, this.eventoId));
     }
 
+    public void renovarVentanaPago() {
+        if (this.estado != EstadoInscripcion.PENDIENTE_PAGO) {
+            throw new BusinessRuleViolationException(
+                "RN-INSCRIPCION-04",
+                "Solo una inscripción PENDIENTE_PAGO puede renovar pago. Estado actual: " + this.estado
+            );
+        }
+        this.fechaInscripcion = Instant.now();
+        this.fechaExpiracionPago = this.fechaInscripcion.plusSeconds(MINUTOS_EXPIRACION * 60L);
+    }
+
+    public void reabrirParaPago(UUID tarifaId) {
+        if (this.estado != EstadoInscripcion.EXPIRADA) {
+            throw new BusinessRuleViolationException(
+                "RN-INSCRIPCION-04",
+                "Solo una inscripción EXPIRADA puede reabrirse para pago. Estado actual: " + this.estado
+            );
+        }
+        this.tarifaId = tarifaId;
+        this.estado = EstadoInscripcion.PENDIENTE_PAGO;
+        this.codigoQr = null;
+        renovarVentanaPago();
+    }
+
+    public void reabrirDesdeCancelacion(UUID tarifaId, UUID idempotencyKey) {
+        if (this.estado != EstadoInscripcion.CANCELADA) {
+            throw new BusinessRuleViolationException(
+                "RN-INSCRIPCION-04",
+                "Solo una inscripción CANCELADA puede reabrirse para pago. Estado actual: " + this.estado
+            );
+        }
+        this.tarifaId = tarifaId;
+        this.idempotencyKey = idempotencyKey;
+        this.estado = EstadoInscripcion.PENDIENTE_PAGO;
+        this.codigoQr = null;
+        this.fechaInscripcion = Instant.now();
+        this.fechaExpiracionPago = this.fechaInscripcion.plusSeconds(MINUTOS_EXPIRACION * 60L);
+        registerEvent(new InscripcionCreadaEvent(
+            this.id, this.usuarioId, this.eventoId,
+            this.tarifaId, this.fechaExpiracionPago));
+    }
+
+    public void cancelar() {
+        if (this.estado == EstadoInscripcion.CANCELADA) {
+            return;
+        }
+        if (this.estado != EstadoInscripcion.CONFIRMADA
+            && this.estado != EstadoInscripcion.PENDIENTE_PAGO) {
+            throw new BusinessRuleViolationException(
+                "RN-INSCRIPCION-05",
+                "Solo una inscripción CONFIRMADA o PENDIENTE_PAGO puede cancelarse. Estado actual: " + this.estado
+            );
+        }
+        this.estado = EstadoInscripcion.CANCELADA;
+        this.fechaExpiracionPago = null;
+    }
+
     /**
      * Verifica si la inscripción ha superado el tiempo límite de pago.
      */

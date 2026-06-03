@@ -21,6 +21,11 @@ import java.util.UUID;
 public class SimuladorPasarelaAdapter implements PasarelaPagoPort {
 
     private static final Logger log = LoggerFactory.getLogger(SimuladorPasarelaAdapter.class);
+    private final String publicBaseUrl;
+
+    public SimuladorPasarelaAdapter(String publicBaseUrl) {
+        this.publicBaseUrl = normalizeBaseUrl(publicBaseUrl);
+    }
 
     @Override
     public PreferenciaPago crearPreferencia(UUID pagoId, UUID inscripcionId,
@@ -31,7 +36,7 @@ public class SimuladorPasarelaAdapter implements PasarelaPagoPort {
         String preferenciaId = "SIM-PREF-" + pagoId.toString().substring(0, 8).toUpperCase();
 
         // La "URL de checkout" apunta al endpoint de simulación del mismo servicio
-        String checkoutUrl = "http://localhost:8084/api/v1/simulador/pagos/" + pagoId + "/aprobar";
+        String checkoutUrl = publicBaseUrl + "/api/v1/pagos/simulador/" + inscripcionId + "/aprobar";
 
         log.info("[SIMULADOR] Preferencia creada: {} | Monto: {} {} | Checkout: {}",
             preferenciaId, monto, moneda, checkoutUrl);
@@ -44,5 +49,12 @@ public class SimuladorPasarelaAdapter implements PasarelaPagoPort {
         String reembolsoId = "SIM-REFUND-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         log.info("[SIMULADOR] Reembolso emitido: {} para referencia: {}", reembolsoId, referenciaExterna);
         return new ReembolsoResult(reembolsoId, true);
+    }
+
+    private String normalizeBaseUrl(String value) {
+        if (value == null || value.isBlank()) {
+            return "http://localhost:8084";
+        }
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }

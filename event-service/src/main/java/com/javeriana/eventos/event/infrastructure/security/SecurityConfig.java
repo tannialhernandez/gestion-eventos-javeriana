@@ -14,8 +14,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 // RBAC para event-service (Prompt 21):
 // GET  /api/v1/eventos*              - publico
 // GET  /api/v1/tarifas/**            - publico
-// POST /api/v1/eventos               - ORGANIZADOR | ADMIN
-// POST /api/v1/eventos/{id}/publicar - ORGANIZADOR | ADMIN
+// POST /api/v1/eventos               - ORGANIZADOR
+// PUT  /api/v1/eventos/{id}          - ORGANIZADOR | ADMIN
+// DEL  /api/v1/eventos/{id}          - ORGANIZADOR | ADMIN
+// POST /api/v1/eventos/{id}/publicar - ADMIN
+// POST /api/v1/eventos/{id}/aprobar  - ADMIN
+// POST /api/v1/eventos/{id}/rechazar - ADMIN
+// POST /api/v1/eventos/{id}/enviar-revision - ORGANIZADOR | ADMIN
 // POST /api/v1/eventos/{id}/cupos/** - SERVICE | ORGANIZADOR | ADMIN
 // otros                              - autenticado
 @Configuration
@@ -44,8 +49,22 @@ public class SecurityConfig {
                     "/actuator/prometheus").permitAll()
                 // Escritura: solo organizadores/admin
                 .requestMatchers(HttpMethod.POST, "/api/v1/eventos")
+                    .hasRole("ORGANIZADOR")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/eventos/*")
+                    .hasAnyRole("ORGANIZADOR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/eventos/*")
+                    .hasAnyRole("ORGANIZADOR", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/tarifas")
+                    .hasAnyRole("ORGANIZADOR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/tarifas/*")
                     .hasAnyRole("ORGANIZADOR", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/v1/eventos/*/publicar")
+                    .hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/eventos/*/aprobar")
+                    .hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/eventos/*/rechazar")
+                    .hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/eventos/*/enviar-revision")
                     .hasAnyRole("ORGANIZADOR", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/v1/eventos/*/cancelar")
                     .hasAnyRole("ORGANIZADOR", "ADMIN")

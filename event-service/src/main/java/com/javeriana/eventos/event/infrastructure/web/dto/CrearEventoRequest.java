@@ -28,5 +28,7 @@ public record CrearEventoRequest(
     LocalDateTime fechaLimiteInscripcion,
 
     @Positive
-    int cupoMaximo
+    int cupoMaximo,
+
+    String estado
 ) {}

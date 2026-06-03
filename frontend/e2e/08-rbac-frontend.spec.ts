@@ -21,7 +21,7 @@ test.describe('RBAC Frontend', () => {
     await loginAs(page, participante);
     await page.goto(`/eventos/${eventId}`);
 
-    const submit = page.getByRole('button', { name: /inscribirme y pagar/i });
+    const submit = page.getByRole('button', { name: /^inscribirme$/i });
     await expect(submit).toBeEnabled();
     await submit.click();
 

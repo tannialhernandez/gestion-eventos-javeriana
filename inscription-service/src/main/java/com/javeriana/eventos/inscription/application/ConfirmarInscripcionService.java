@@ -65,6 +65,12 @@ public class ConfirmarInscripcionService implements ConfirmarInscripcionUseCase 
             return;
         }
 
+        if (inscripcion.getEstado() == EstadoInscripcion.CANCELADA) {
+            log.warn("Pago recibido para inscripción CANCELADA {}. Ignorando confirmación tardía.",
+                inscripcionId);
+            return;
+        }
+
         MDC.put(MdcKeys.INSCRIPCION_ID, inscripcionId.toString());
         MDC.put(MdcKeys.EVENTO_ID,      inscripcion.getEventoId().toString());
 

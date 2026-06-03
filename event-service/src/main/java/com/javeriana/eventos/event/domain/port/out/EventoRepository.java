@@ -19,6 +19,10 @@ public interface EventoRepository {
 
     Optional<Evento> buscarPorId(UUID id);
 
+    List<Evento> buscarTodos();
+
+    List<Evento> buscarPorOrganizadorId(UUID organizadorId);
+
     List<Evento> buscarPorEstado(EstadoEvento estado);
 
     List<Evento> buscarPublicados();

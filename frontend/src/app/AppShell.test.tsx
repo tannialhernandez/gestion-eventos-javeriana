@@ -22,7 +22,7 @@ describe('AppShell', () => {
     renderWithProviders(<ShellRoutes />, { routerProps: { initialEntries: ['/catalogo'] } });
 
     expect(screen.getByRole('img', { name: /pontificia universidad javeriana/i })).toBeInTheDocument();
-    expect(screen.getByText('Pontificia Universidad Javeriana')).toBeInTheDocument();
+    expect(screen.getAllByText('Pontificia Universidad Javeriana').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Plataforma de Gestión de Eventos Académicos')).toBeInTheDocument();
     expect(screen.getByText('Diego Participante')).toBeInTheDocument();
   });

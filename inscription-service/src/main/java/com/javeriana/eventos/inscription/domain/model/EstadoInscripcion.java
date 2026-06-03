@@ -11,6 +11,7 @@ public enum EstadoInscripcion {
     CONFIRMADA,
     ASISTENCIA_REGISTRADA,
     CERTIFICADO_EMITIDO,
+    CANCELADA,
     EXPIRADA;
 
     public boolean aceptaPago() {

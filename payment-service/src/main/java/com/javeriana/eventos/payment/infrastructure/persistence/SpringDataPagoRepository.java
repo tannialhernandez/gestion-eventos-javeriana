@@ -8,7 +8,7 @@ import java.util.UUID;
 
 interface SpringDataPagoRepository extends JpaRepository<PagoEntity, UUID> {
 
-    Optional<PagoEntity> findByInscripcionId(UUID inscripcionId);
+    Optional<PagoEntity> findFirstByInscripcionIdOrderByFechaCreacionDesc(UUID inscripcionId);
 
     /**
      * Idempotencia de webhooks (RN-03, ADR-09):

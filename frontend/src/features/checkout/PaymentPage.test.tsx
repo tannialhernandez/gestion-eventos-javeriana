@@ -29,29 +29,41 @@ function seedCheckout() {
 }
 
 describe('PaymentPage', () => {
-  it('debe mostrar resumen y confirmar pago aprobado', async () => {
+  it('debe mostrar resumen y confirmar y pagar', async () => {
     seedCheckout();
     const user = userEvent.setup();
     renderWithProviders(<PaymentRoutes />, { routerProps: { initialEntries: ['/inscripciones/insc-test-uuid/pago'] } });
 
     expect(screen.getByRole('heading', { name: /congreso de arquitectura 2026/i })).toBeInTheDocument();
-    expect(screen.getByText(/modo simulación académica/i)).toBeInTheDocument();
-    expect(screen.getByText(/integración mercado pago disponible en fase 2/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /confirmar pago aprobado/i }));
+    expect(screen.getByText(/total a pagar/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /confirmar y pagar/i }));
 
     await waitFor(() => expect(screen.getByRole('heading', { name: /confirmacion/i })).toBeInTheDocument());
   });
 
   it('debe mostrar error contextual si falla la confirmacion', async () => {
     seedCheckout();
-    server.use(http.post('*/api/v1/webhooks/pagos', () => HttpResponse.json({ message: 'Pago rechazado' }, { status: 500 })));
+    server.use(http.post('*/api/v1/pagos/simulador/:inscripcionId/aprobar', () => HttpResponse.json({ message: 'Pago rechazado' }, { status: 500 })));
     const user = userEvent.setup();
     renderWithProviders(<PaymentRoutes />, { routerProps: { initialEntries: ['/inscripciones/insc-test-uuid/pago'] } });
 
-    await user.click(screen.getByRole('button', { name: /confirmar pago aprobado/i }));
+    await user.click(screen.getByRole('button', { name: /confirmar y pagar/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/pago rechazado|solicitud/i);
     expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+  });
+
+  it('muestra error de pago cuando payment-service rechaza con 401', async () => {
+    seedCheckout();
+    server.use(http.post('*/api/v1/pagos/simulador/:inscripcionId/aprobar', () => new HttpResponse(null, { status: 401 })));
+    const user = userEvent.setup();
+    renderWithProviders(<PaymentRoutes />, { routerProps: { initialEntries: ['/inscripciones/insc-test-uuid/pago'] } });
+
+    await user.click(screen.getByRole('button', { name: /confirmar y pagar/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/simulador de pago productivo rechazó/i);
+    expect(alert).not.toHaveTextContent(/sesión expirada/i);
   });
 
   it('debe ofrecer volver al catalogo si no hay checkout activo', () => {

@@ -1,13 +1,14 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { DegradedServiceBanner, NetworkOfflineBanner } from '../components';
 import { useAuth } from '../features/auth';
-import { getRolePresentation } from '../features/auth/rolePresentation';
+import { canCreateEvents, getRolePresentation } from '../features/auth/rolePresentation';
 import { Icon } from '../shared/ui';
 
 export function AppShell() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
   const role = getRolePresentation(session?.user.roles);
+  const canCreate = canCreateEvents(session?.user.roles);
 
   const handleLogout = () => {
     logout();
@@ -18,7 +19,7 @@ export function AppShell() {
     <div className="app-shell">
       <header className="topbar">
         <div className="brand">
-          <img src="/javeriana-logo.svg" alt="Pontificia Universidad Javeriana" className="brand__mark" />
+          <img src="/javeriana_logo.png" alt="Pontificia Universidad Javeriana" className="brand__mark" />
           <div className="brand__text">
             <strong>Pontificia Universidad Javeriana</strong>
             <span>Plataforma de Gestión de Eventos Académicos</span>
@@ -27,6 +28,7 @@ export function AppShell() {
 
         <nav className="topbar__nav" aria-label="Navegacion principal">
           <NavLink to="/catalogo">Catálogo</NavLink>
+          {canCreate && <NavLink to="/eventos/nuevo">Crear evento</NavLink>}
         </nav>
 
         <div className="topbar__session">
@@ -48,13 +50,20 @@ export function AppShell() {
         <Outlet />
       </main>
       <footer className="institutional-footer" aria-label="Información institucional">
-        <img src="/javeriana-logo.svg" alt="" className="institutional-footer__mark" aria-hidden="true" />
-        <p>© 2026 Pontificia Universidad Javeriana - Sede Bogotá</p>
+        <div className="institutional-footer__brand">
+          <img src="/javeriana_logo.png" alt="" className="institutional-footer__mark" aria-hidden="true" />
+          <div className="institutional-footer__info">
+            <strong>Pontificia Universidad Javeriana</strong>
+            <p>Sede Bogotá · Cra. 7 No. 40-62 · Bogotá D.C., Colombia</p>
+            <p>Personería Jurídica - Resolución No. 73 del 12 de diciembre de 1933</p>
+          </div>
+        </div>
         <nav aria-label="Enlaces institucionales">
-          <a href="#terminos">Términos</a>
-          <a href="#privacidad">Privacidad (Ley 1581)</a>
-          <a href="mailto:ti@javeriana.edu.co">Contacto TI</a>
+          <a href="https://www.javeriana.edu.co/aviso-legal" target="_blank" rel="noopener noreferrer">Aviso legal</a>
+          <a href="https://www.javeriana.edu.co/proteccion-datos" target="_blank" rel="noopener noreferrer">Protección de datos (Ley 1581)</a>
+          <a href="mailto:soporte.eventos@javeriana.edu.co">Soporte técnico</a>
         </nav>
+        <p className="institutional-footer__copy">© 2026 Pontificia Universidad Javeriana. Todos los derechos reservados.</p>
       </footer>
     </div>
   );

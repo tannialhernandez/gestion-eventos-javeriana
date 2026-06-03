@@ -2,6 +2,7 @@ import type { UserRole } from '../features/auth/model';
 
 type SeedAuthSessionOptions = {
   role?: UserRole;
+  id?: string;
   name?: string;
   email?: string;
 };
@@ -27,6 +28,7 @@ export function createTestJwt(role: UserRole = 'PARTICIPANTE'): string {
 
 export function seedAuthSession({
   role = 'PARTICIPANTE',
+  id = `test-${role.toLowerCase()}`,
   name = `Usuario ${role}`,
   email = `${role.toLowerCase()}@javeriana.edu.co`,
 }: SeedAuthSessionOptions = {}): void {
@@ -35,7 +37,7 @@ export function seedAuthSession({
     expiresAt: '2033-05-31T12:00:00Z',
   }));
   sessionStorage.setItem('gea.user.v1', JSON.stringify({
-    id: `test-${role.toLowerCase()}`,
+    id,
     name,
     email,
     roles: [role],

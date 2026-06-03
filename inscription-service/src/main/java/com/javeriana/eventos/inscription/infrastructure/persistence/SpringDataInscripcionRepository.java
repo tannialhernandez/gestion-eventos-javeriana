@@ -14,6 +14,10 @@ interface SpringDataInscripcionRepository extends JpaRepository<InscripcionEntit
 
     Optional<InscripcionEntity> findByIdempotencyKey(UUID idempotencyKey);
 
+    Optional<InscripcionEntity> findByUsuarioIdAndEventoId(UUID usuarioId, UUID eventoId);
+
+    List<InscripcionEntity> findByUsuarioId(UUID usuarioId);
+
     List<InscripcionEntity> findByEventoId(UUID eventoId);
 
     /**

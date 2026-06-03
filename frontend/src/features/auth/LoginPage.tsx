@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import React, { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '../../shared/ui';
 import { demoCredentials, useAuth } from './AuthContext';
@@ -7,15 +7,7 @@ import type { DemoCredential } from './model';
 function LoginLogo() {
   return (
     <div className="login-logo-card" role="img" aria-label="Pontificia Universidad Javeriana">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 96" aria-hidden="true" focusable="false">
-        <rect width="240" height="96" rx="10" fill="#003c71" />
-        <path d="M47 18h34l-17 20z" fill="#FFC72C" />
-        <path d="M64 38l19 40H45z" fill="#FFC72C" />
-        <path d="M64 44l9 22H55z" fill="#003c71" />
-        <text x="102" y="40" fill="#FFFFFF" fontFamily="Arial, Helvetica, sans-serif" fontSize="16" fontWeight="700">Pontificia</text>
-        <text x="102" y="59" fill="#FFFFFF" fontFamily="Arial, Helvetica, sans-serif" fontSize="16" fontWeight="700">Universidad</text>
-        <text x="102" y="78" fill="#FFC72C" fontFamily="Arial, Helvetica, sans-serif" fontSize="16" fontWeight="700">Javeriana</text>
-      </svg>
+      <img src="/javeriana_logo.png" alt="" aria-hidden="true" />
     </div>
   );
 }
@@ -41,7 +33,7 @@ export function LoginPage() {
     setError(null);
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
@@ -73,11 +65,11 @@ export function LoginPage() {
             </span>
             <div>
               <h2>Acceso institucional</h2>
-              <p>Los usuarios provienen de Azure AD Javeriana (Fase 2). Para demo, usar credenciales asignadas.</p>
+              <p>Use las credenciales institucionales que le fueron asignadas. La integración con Azure AD Javeriana está disponible en Fase 2.</p>
             </div>
           </div>
 
-          <div className="user-options" role="radiogroup" aria-label="Usuarios demo">
+          <div className="user-options" role="radiogroup" aria-label="Usuarios del sistema">
             {demoCredentials.map((credential) => (
               <button
                 className={`user-option ${selectedCredential.email === credential.email ? 'user-option--selected' : ''}`}
@@ -122,7 +114,7 @@ export function LoginPage() {
               />
             </label>
 
-            <p className="form-helper">Credenciales demo: cualquier usuario listado usa contraseña <strong>demo123</strong>.</p>
+            <p className="form-helper">Seleccione el usuario institucional e ingrese su contraseña.</p>
 
             {error && <div className="alert alert--error" role="alert">{error}</div>}
 
@@ -133,12 +125,12 @@ export function LoginPage() {
           </form>
 
           <footer className="login-footer">
-            <img src="/javeriana-logo.svg" alt="" aria-hidden="true" />
-            <span>© 2026 Pontificia Universidad Javeriana - Sede Bogotá</span>
+            <img src="/javeriana_logo.png" alt="" aria-hidden="true" />
+            <span>Pontificia Universidad Javeriana · Sede Bogotá</span>
             <nav aria-label="Enlaces institucionales de acceso">
-              <a href="#terminos">Términos</a>
-              <a href="#privacidad">Privacidad (Ley 1581)</a>
-              <a href="mailto:ti@javeriana.edu.co">Contacto TI</a>
+              <a href="https://www.javeriana.edu.co/aviso-legal" target="_blank" rel="noopener noreferrer">Aviso legal</a>
+              <a href="https://www.javeriana.edu.co/proteccion-datos" target="_blank" rel="noopener noreferrer">Protección de datos (Ley 1581)</a>
+              <a href="mailto:soporte.eventos@javeriana.edu.co">Soporte técnico</a>
             </nav>
           </footer>
         </div>

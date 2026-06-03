@@ -27,7 +27,7 @@ describe('ConfirmationPage', () => {
 
     renderWithProviders(<ConfirmationRoutes />, { routerProps: { initialEntries: ['/confirmacion/insc-test-uuid'] } });
 
-    expect(screen.getByRole('heading', { name: /inscripción en proceso de confirmación/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /inscripción confirmada/i })).toBeInTheDocument();
     expect(screen.getByText(/congreso de arquitectura 2026/i)).toBeInTheDocument();
     expect(screen.getByText('insc-test-uuid')).toBeInTheDocument();
   });
@@ -35,7 +35,7 @@ describe('ConfirmationPage', () => {
   it('debe mostrar confirmacion aunque no exista snapshot local', () => {
     renderWithProviders(<ConfirmationRoutes />, { routerProps: { initialEntries: ['/confirmacion/insc-test-uuid'] } });
 
-    expect(screen.getByText(/el pago fue notificado al payment-service/i)).toBeInTheDocument();
+    expect(screen.getByText(/tu cupo quedó reservado y el pago fue confirmado/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /volver al catálogo/i })).toBeInTheDocument();
   });
 });

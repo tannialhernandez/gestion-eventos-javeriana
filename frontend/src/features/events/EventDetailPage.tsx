@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ContextualError } from '../../components';
 import type { AcademicEvent, Tariff } from '../../entities/event';
-import { createInscription } from '../../services/inscriptionService';
-import { getEvent, listTariffs } from '../../services/eventService';
+import type { Inscription } from '../../entities/inscription';
+import { useAuth } from '../auth';
+import { canManageEvent, canManageEvents } from '../auth/rolePresentation';
+import { cancelInscription, createInscription, getMyInscriptionForEvent } from '../../services/inscriptionService';
+import { approveEvent, cancelEvent, getEvent, listTariffs, rejectEvent, sendEventToReview } from '../../services/eventService';
 import { BusinessRuleError, type AppError, normalizeAppError } from '../../lib/errors';
 import { formatDate, formatDateTime, formatMoney, sanitizeText } from '../../shared/lib';
 import { Icon, Skeleton, StatusBadge } from '../../shared/ui';
@@ -12,13 +15,17 @@ import { saveCheckoutSnapshot } from '../checkout/storage';
 export function EventDetailPage() {
   const { eventoId } = useParams<{ eventoId: string }>();
   const navigate = useNavigate();
+  const { roles, user } = useAuth();
   const [event, setEvent] = useState<AcademicEvent | null>(null);
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
+  const [currentInscription, setCurrentInscription] = useState<Inscription | null>(null);
   const [selectedTariffId, setSelectedTariffId] = useState<string>('');
   const [isLoading, setLoading] = useState(true);
   const [isSubmitting, setSubmitting] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
   const [retryVersion, setRetryVersion] = useState(0);
+  const isManagerRole = canManageEvents(roles);
+  const isParticipantRole = roles.includes('PARTICIPANTE') && !isManagerRole;
 
   useEffect(() => {
     if (!eventoId) return;
@@ -26,12 +33,17 @@ export function EventDetailPage() {
     setLoading(true);
     setError(null);
 
-    Promise.all([getEvent(eventoId), listTariffs(eventoId)])
-      .then(([eventResponse, tariffResponse]) => {
+    Promise.all([
+      getEvent(eventoId),
+      listTariffs(eventoId),
+      isParticipantRole ? getMyInscriptionForEvent(eventoId) : Promise.resolve(null),
+    ])
+      .then(([eventResponse, tariffResponse, inscriptionResponse]) => {
         if (!mounted) return;
         setEvent(eventResponse);
         setTariffs(tariffResponse);
-        setSelectedTariffId(tariffResponse[0]?.id ?? '');
+        setCurrentInscription(inscriptionResponse);
+        setSelectedTariffId(inscriptionResponse?.tarifaId ?? tariffResponse[0]?.id ?? '');
       })
       .catch((err) => {
         if (mounted) setError(normalizeAppError(err));
@@ -43,11 +55,30 @@ export function EventDetailPage() {
     return () => {
       mounted = false;
     };
-  }, [eventoId, retryVersion]);
+  }, [eventoId, retryVersion, isParticipantRole]);
+
+  useEffect(() => {
+    const refresh = () => setRetryVersion((current) => current + 1);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, []);
 
   const selectedTariff = useMemo(() => tariffs.find((tariff) => tariff.id === selectedTariffId) ?? null, [tariffs, selectedTariffId]);
   const usedSeats = event ? event.cupoMaximo - event.cupoDisponible : 0;
   const seatsPercent = event ? Math.min(100, Math.round((usedSeats / event.cupoMaximo) * 100)) : 0;
+  const isAdmin = roles.includes('ADMIN');
+  const canEditEvent = event ? canManageEvent(roles, user?.id, event.organizadorId) : false;
+  const isOrganizerOwner = Boolean(roles.includes('ORGANIZADOR') && user?.id === event?.organizadorId);
+  const isTerminalEvent = event ? ['CANCELADO', 'FINALIZADO'].includes(event.estado) : false;
+  const hasConfirmedInscription = ['CONFIRMADA', 'ASISTENCIA_REGISTRADA', 'CERTIFICADO_EMITIDO'].includes(currentInscription?.estado ?? '');
+  const hasPendingPayment = currentInscription?.estado === 'PENDIENTE_PAGO';
 
   const handleCreateInscription = async () => {
     if (!event || !selectedTariff) return;
@@ -55,6 +86,7 @@ export function EventDetailPage() {
     setError(null);
     try {
       const inscription = await createInscription(event.id, selectedTariff.id);
+      setCurrentInscription(inscription);
       saveCheckoutSnapshot(inscription.inscripcionId, {
         eventTitle: event.titulo,
         eventId: event.id,
@@ -64,7 +96,11 @@ export function EventDetailPage() {
         checkoutUrl: inscription.checkoutUrl,
         expiresAt: inscription.fechaExpiracionPago,
       });
-      navigate(`/inscripciones/${inscription.inscripcionId}/pago`);
+      if (inscription.estado === 'CONFIRMADA') {
+        navigate(`/confirmacion/${inscription.inscripcionId}`);
+      } else {
+        navigate(`/inscripciones/${inscription.inscripcionId}/pago`);
+      }
     } catch (err) {
       const apiError = normalizeAppError(err);
       setError(
@@ -72,6 +108,80 @@ export function EventDetailPage() {
           ? new BusinessRuleError('El evento ya no tiene cupos disponibles.', { status: 409, code: 'sin_cupos_disponibles' })
           : apiError,
       );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancelEvent = async () => {
+    if (!event || !window.confirm('¿Cancelar este evento?')) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await cancelEvent(event.id, 'Cancelado desde detalle de gestión');
+      const updated = await getEvent(event.id);
+      setEvent(updated);
+    } catch (err) {
+      setError(normalizeAppError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEnviarRevision = async () => {
+    if (!event) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const updated = await sendEventToReview(event.id);
+      setEvent(updated);
+    } catch (err) {
+      setError(normalizeAppError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAprobar = async () => {
+    if (!event || !window.confirm('¿Aprobar la publicación de este evento?')) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const updated = await approveEvent(event.id);
+      setEvent(updated);
+    } catch (err) {
+      setError(normalizeAppError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRechazar = async () => {
+    if (!event) return;
+    const motivo = window.prompt('Motivo del rechazo (obligatorio):');
+    if (!motivo?.trim()) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const updated = await rejectEvent(event.id, motivo.trim());
+      setEvent(updated);
+    } catch (err) {
+      setError(normalizeAppError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancelInscription = async () => {
+    if (!currentInscription || !window.confirm('¿Darte de baja de este evento?')) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const canceled = await cancelInscription(currentInscription.inscripcionId);
+      setCurrentInscription(canceled);
+      setRetryVersion((current) => current + 1);
+    } catch (err) {
+      setError(normalizeAppError(err));
     } finally {
       setSubmitting(false);
     }
@@ -99,7 +209,10 @@ export function EventDetailPage() {
             <span className="eyebrow">{event.tipo}</span>
             <h1>{sanitizeText(event.titulo)}</h1>
           </div>
-          <StatusBadge value={event.estado} />
+          <div className="detail-heading__actions">
+            <StatusBadge value={event.estado} />
+            {isAdmin && <span className="management-badge management-badge--admin">Admin</span>}
+          </div>
         </div>
         <p className="detail-description">{sanitizeText(event.descripcion)}</p>
 
@@ -133,10 +246,121 @@ export function EventDetailPage() {
         </div>
       </div>
 
-      <section className="checkout-panel" aria-label="Inscripción">
-        <h2>Inscripción</h2>
-        {tariffs.length > 0 ? (
+      <section className="checkout-panel" aria-label={isManagerRole ? 'Gestión del evento' : 'Inscripción'}>
+        {/* Guard: participante que navega directo a URL de borrador */}
+        {isParticipantRole && event.estado !== 'PUBLICADO' ? (
+          <div className="alert alert--warning">Este evento no está disponible para inscripciones.</div>
+        ) : isManagerRole ? (
           <>
+            <h2>Gestión</h2>
+            {canEditEvent ? (
+              <>
+                {/* ── Acciones de workflow según estado ────────────── */}
+                {event.estado === 'BORRADOR' && isOrganizerOwner && (
+                  <p className="panel-copy">Borrador. Envíalo a aprobación para que un administrador lo publique.</p>
+                )}
+                {event.estado === 'BORRADOR' && !isOrganizerOwner && (
+                  <p className="panel-copy">Borrador del organizador. El administrador puede editarlo o cancelarlo, pero la solicitud de publicación la inicia el organizador.</p>
+                )}
+                {event.estado === 'BORRADOR' && isOrganizerOwner && (
+                  <button className="button button--primary button--wide" type="button" onClick={handleEnviarRevision} disabled={isSubmitting}>
+                    <Icon name="send" />
+                    {isSubmitting ? 'Enviando' : 'Enviar a aprobación'}
+                  </button>
+                )}
+                {event.estado === 'PENDIENTE_PUBLICACION' && !isAdmin && (
+                  <p className="panel-copy">En revisión — un administrador aprobará o rechazará este evento pronto.</p>
+                )}
+                {event.estado === 'PENDIENTE_PUBLICACION' && isAdmin && (
+                  <>
+                    <p className="panel-copy">Pendiente de aprobación. Revisa el evento y decide.</p>
+                    <button className="button button--primary button--wide" type="button" onClick={handleAprobar} disabled={isSubmitting}>
+                      <Icon name="check" />
+                      {isSubmitting ? 'Aprobando…' : 'Aprobar publicación'}
+                    </button>
+                    <button className="button button--danger button--wide" type="button" onClick={handleRechazar} disabled={isSubmitting}>
+                      <Icon name="x" />
+                      Rechazar
+                    </button>
+                  </>
+                )}
+                {event.estado === 'RECHAZADO' && isOrganizerOwner && (
+                  <>
+                    <div className="alert alert--error">Evento rechazado. Corrígelo y re-envíalo a revisión.</div>
+                    <button className="button button--primary button--wide" type="button" onClick={handleEnviarRevision} disabled={isSubmitting}>
+                      <Icon name="send" />
+                      {isSubmitting ? 'Enviando' : 'Re-enviar a aprobación'}
+                    </button>
+                  </>
+                )}
+                {event.estado === 'RECHAZADO' && !isOrganizerOwner && (
+                  <div className="alert alert--error">Evento rechazado. El organizador debe corregirlo y enviarlo nuevamente a aprobación.</div>
+                )}
+                {event.estado === 'PUBLICADO' && (
+                  <p className="panel-copy">Publicado. Para retirarlo del catálogo público, edítalo y selecciona guardar como borrador.</p>
+                )}
+                {event.estado === 'CANCELADO' && (
+                  <div className="alert alert--error">Evento cancelado. Este estado es terminal y no acepta nuevas acciones.</div>
+                )}
+
+                {/* ── Acciones base (siempre disponibles para canEditEvent) ── */}
+                <button className="button button--secondary button--wide" type="button" onClick={() => navigate(`/eventos/${event.id}/editar`)} disabled={isTerminalEvent}>
+                  <Icon name="edit" />
+                  Editar
+                </button>
+                <button className="button button--danger button--wide" type="button" onClick={handleCancelEvent} disabled={isSubmitting || isTerminalEvent}>
+                  <Icon name="trash" />
+                  Cancelar evento
+                </button>
+
+                {error && <ContextualError error={error} onRetry={() => setRetryVersion((v) => v + 1)} />}
+              </>
+            ) : (
+              <div className="alert alert--warning">Este evento pertenece a otro organizador. Solo ADMIN puede gestionarlo.</div>
+            )}
+          </>
+        ) : isParticipantRole && hasConfirmedInscription ? (
+          <>
+            <h2>Inscripción</h2>
+            <StatusBadge value="CONFIRMADA" />
+            <p className="panel-copy">Ya estás inscrito en este evento. Tu cupo está reservado.</p>
+            <button className="button button--secondary button--wide" type="button" onClick={() => navigate(`/confirmacion/${currentInscription?.inscripcionId}`)}>
+              <Icon name="check" />
+              Ver confirmación
+            </button>
+            <button className="button button--danger button--wide" type="button" onClick={handleCancelInscription} disabled={isSubmitting}>
+              <Icon name="trash" />
+              {isSubmitting ? 'Cancelando inscripción' : 'Darme de baja'}
+            </button>
+            {error && <ContextualError error={error} onRetry={handleCancelInscription} />}
+          </>
+        ) : isParticipantRole && hasPendingPayment && selectedTariff ? (
+          <>
+            <h2>Inscripción</h2>
+            <StatusBadge value="PENDIENTE_PAGO" />
+            <p className="panel-copy">Tienes una inscripción pendiente. Completa el pago para confirmar tu cupo.</p>
+            <div className="price-line">
+              <span>Total pendiente</span>
+              <strong>{formatMoney(selectedTariff.monto, selectedTariff.moneda)}</strong>
+            </div>
+            {error && <ContextualError error={error} onRetry={handleCreateInscription} />}
+            <button
+              className="button button--primary button--wide"
+              type="button"
+              onClick={handleCreateInscription}
+              disabled={isSubmitting}
+            >
+              <Icon name="credit-card" />
+              {isSubmitting ? 'Preparando pago' : 'Continuar pago'}
+            </button>
+            <button className="button button--danger button--wide" type="button" onClick={handleCancelInscription} disabled={isSubmitting}>
+              <Icon name="trash" />
+              {isSubmitting ? 'Cancelando inscripción' : 'Darme de baja'}
+            </button>
+          </>
+        ) : isParticipantRole && tariffs.length > 0 ? (
+          <>
+            <h2>Inscripción</h2>
             <label className="field">
               <span>Tarifa</span>
               <select className="select" value={selectedTariffId} onChange={(event) => setSelectedTariffId(event.target.value)}>
@@ -159,11 +383,19 @@ export function EventDetailPage() {
               disabled={!event.aceptaInscripciones || event.cupoDisponible <= 0 || isSubmitting}
             >
               <Icon name="credit-card" />
-              {isSubmitting ? 'Reservando cupo' : 'Inscribirme y pagar'}
+              {isSubmitting ? 'Reservando cupo' : 'Inscribirme'}
             </button>
           </>
+        ) : isParticipantRole ? (
+          <>
+            <h2>Inscripción</h2>
+            <div className="alert alert--warning">No hay tarifas activas para este evento.</div>
+          </>
         ) : (
-          <div className="alert alert--warning">No hay tarifas activas para este evento.</div>
+          <>
+            <h2>Evento</h2>
+            <div className="alert alert--warning">Tu rol actual no habilita acciones sobre este evento.</div>
+          </>
         )}
       </section>
     </section>

@@ -42,7 +42,8 @@ public class JpaTarifaRepository implements TarifaRepository {
     private Tarifa toDomain(TarifaEntity e) {
         return new Tarifa(
             e.getId(), e.getEventoId(), e.getNombre(), e.getPrecio(),
-            e.getAplicaA(), e.getFechaInicioVigencia(), e.getFechaFinVigencia()
+            e.getMoneda(), e.getAplicaA(), e.getFechaInicioVigencia(),
+            e.getFechaFinVigencia(), e.isActiva()
         );
     }
 

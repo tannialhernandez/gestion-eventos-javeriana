@@ -1,6 +1,6 @@
-export type EventType = 'CONGRESO' | 'SIMPOSIO' | 'SEMINARIO' | 'TALLER';
+export type EventType = 'CONGRESO' | 'SIMPOSIO' | 'SEMINARIO' | 'TALLER' | 'OTRO';
 export type EventMode = 'PRESENCIAL' | 'VIRTUAL' | 'HIBRIDA' | 'HIBRIDO';
-export type EventStatus = 'BORRADOR' | 'PENDIENTE_PUBLICACION' | 'PUBLICADO' | 'FINALIZADO' | 'CANCELADO';
+export type EventStatus = 'BORRADOR' | 'PENDIENTE_PUBLICACION' | 'RECHAZADO' | 'PUBLICADO' | 'FINALIZADO' | 'CANCELADO';
 
 export type AcademicEvent = {
   id: string;

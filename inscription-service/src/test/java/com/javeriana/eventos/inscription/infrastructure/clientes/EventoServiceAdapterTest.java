@@ -150,6 +150,22 @@ class EventoServiceAdapterTest {
     // ─── liberarCupo ─────────────────────────────────────────────────────────
 
     @Nested
+    @DisplayName("reservarCupo — delegación al FeignClient")
+    class ReservarCupo {
+
+        @Test
+        @DisplayName("Feign exitoso: delega la llamada y retorna sin excepción")
+        void cuandoFeignExitoso_debeReservarSinExcepcion() {
+            doNothing().when(feignClient).reservarCupo(EVENTO_ID);
+
+            assertThatNoException()
+                .isThrownBy(() -> adapter.reservarCupo(EVENTO_ID));
+
+            verify(feignClient).reservarCupo(EVENTO_ID);
+        }
+    }
+
+    @Nested
     @DisplayName("liberarCupo — delegación al FeignClient")
     class LiberarCupo {
 

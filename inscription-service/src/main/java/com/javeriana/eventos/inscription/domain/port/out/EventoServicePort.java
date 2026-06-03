@@ -7,15 +7,17 @@ import java.util.UUID;
  *
  * Inscription-service llama a event-service para:
  * - Verificar que el evento existe y acepta inscripciones
- * - Liberar el cupo cuando una inscripción expira o se cancela
+ * - Reservar/liberar el cupo visible en event-service
  *
- * El bloqueo pesimista para la RESERVA inicial de cupo ocurre dentro
- * de inscription-service (en su propia BD), no vía HTTP a event-service,
- * para mantener atomicidad transaccional.
+ * El bloqueo pesimista para la reserva inicial de cupo ocurre dentro
+ * de inscription-service. Luego se sincroniza event-service para que
+ * catálogo y detalle muestren la ocupación actualizada.
  */
 public interface EventoServicePort {
 
     EventoInfo obtenerEvento(UUID eventoId);
+
+    void reservarCupo(UUID eventoId);
 
     void liberarCupo(UUID eventoId);
 

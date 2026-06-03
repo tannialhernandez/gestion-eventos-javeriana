@@ -49,6 +49,19 @@ public class JpaInscripcionRepository implements InscripcionRepository {
         return inscripcionRepo.findByIdempotencyKey(idempotencyKey).map(this::toDomain);
     }
 
+    @Override
+    public Optional<Inscripcion> buscarPorUsuarioIdYEventoId(UUID usuarioId, UUID eventoId) {
+        return inscripcionRepo.findByUsuarioIdAndEventoId(usuarioId, eventoId).map(this::toDomain);
+    }
+
+    @Override
+    public List<Inscripcion> buscarPorUsuarioId(UUID usuarioId) {
+        return inscripcionRepo.findByUsuarioId(usuarioId)
+            .stream()
+            .map(this::toDomain)
+            .collect(Collectors.toList());
+    }
+
     /**
      * ADR-07: Bloqueo pesimista para reserva de cupo.
      *
@@ -70,25 +83,47 @@ public class JpaInscripcionRepository implements InscripcionRepository {
      */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public Inscripcion guardarConReservaDeCupo(Inscripcion inscripcion) {
-        // Paso 1: SELECT FOR UPDATE — bloqueo pesimista
-        EventoCupoEntity cupo = eventoCupoRepo
-            .findByEventoIdWithLock(inscripcion.getEventoId())
-            .orElseThrow(() -> new IllegalStateException(
-                "Evento no encontrado en tabla de cupos: " + inscripcion.getEventoId()));
-
-        // Paso 2: Verificar invariante RN-08
-        if (cupo.getCupoDisponible() <= 0) {
-            throw new SinCuposDisponiblesException(inscripcion.getEventoId());
-        }
-
-        // Paso 3: Decrementar cupo
-        cupo.setCupoDisponible(cupo.getCupoDisponible() - 1);
-        eventoCupoRepo.save(cupo);
+    public Inscripcion guardarConReservaDeCupo(Inscripcion inscripcion, int cupoDisponibleInicial) {
+        reservarCupo(inscripcion.getEventoId(), cupoDisponibleInicial);
 
         // Paso 4: Insertar inscripción
         InscripcionEntity entity = toEntity(inscripcion);
         return toDomain(inscripcionRepo.save(entity));
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void reservarCupo(UUID eventoId, int cupoDisponibleInicial) {
+        EventoCupoEntity cupo = eventoCupoRepo
+            .findByEventoIdWithLock(eventoId)
+            .orElseGet(() -> crearCupoInicial(eventoId, cupoDisponibleInicial));
+
+        if (cupo.getCupoDisponible() <= 0) {
+            throw new SinCuposDisponiblesException(eventoId);
+        }
+
+        cupo.setCupoDisponible(cupo.getCupoDisponible() - 1);
+        eventoCupoRepo.save(cupo);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void liberarCupo(UUID eventoId) {
+        eventoCupoRepo.findByEventoIdWithLock(eventoId).ifPresent((cupo) -> {
+            if (cupo.getCupoDisponible() < cupo.getCupoMaximo()) {
+                cupo.setCupoDisponible(cupo.getCupoDisponible() + 1);
+                eventoCupoRepo.save(cupo);
+            }
+        });
+    }
+
+    private EventoCupoEntity crearCupoInicial(UUID eventoId, int cupoDisponibleInicial) {
+        int cupoDisponible = Math.max(cupoDisponibleInicial, 0);
+        EventoCupoEntity cupo = new EventoCupoEntity();
+        cupo.setEventoId(eventoId);
+        cupo.setCupoDisponible(cupoDisponible);
+        cupo.setCupoMaximo(cupoDisponible);
+        return eventoCupoRepo.saveAndFlush(cupo);
     }
 
     @Override
