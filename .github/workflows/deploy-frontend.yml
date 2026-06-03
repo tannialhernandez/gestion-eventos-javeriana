@@ -1,0 +1,76 @@
+name: Deploy Frontend
+
+on:
+  workflow_run:
+    workflows: ["CI Frontend"]
+    types: [completed]
+
+concurrency:
+  group: deploy-frontend-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and publish SPA
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    defaults:
+      run:
+        working-directory: frontend
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout pushed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configure npm registry mirror
+        run: |
+          echo "registry=https://registry.yarnpkg.com/" > .npmrc
+          echo "@playwright:registry=https://registry.yarnpkg.com/" >> .npmrc
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps --registry=https://registry.yarnpkg.com/
+
+      - name: Build production SPA
+        run: npm run build
+        env:
+          VITE_AUTH_API_URL: /api/v1
+          VITE_EVENT_API_URL: /api/v1
+          VITE_INSCRIPTION_API_URL: /api/v1
+          VITE_PAYMENT_API_URL: /api/v1
+
+      - name: Validate deployment configuration
+        run: |
+          test -n "${{ vars.FRONTEND_S3_BUCKET }}" || (echo "Missing repository variable FRONTEND_S3_BUCKET" && exit 1)
+          test -n "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" || (echo "Missing repository variable CLOUDFRONT_DISTRIBUTION_ID" && exit 1)
+          test -n "${{ secrets.AWS_ACCESS_KEY_ID }}" || (echo "Missing secret AWS_ACCESS_KEY_ID" && exit 1)
+          test -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" || (echo "Missing secret AWS_SECRET_ACCESS_KEY" && exit 1)
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Upload SPA to S3
+        run: aws s3 sync dist/ "s3://${{ vars.FRONTEND_S3_BUCKET }}/" --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
