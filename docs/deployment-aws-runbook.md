@@ -87,11 +87,13 @@ Confirmar con `yes`.
 | EC2 t3.small | USD 15 |
 | RDS db.t4g.micro | USD 13 |
 | ElastiCache cache.t3.micro | USD 13 |
-| Amazon MQ mq.t3.micro | USD 15 |
+| Amazon MQ mq.m7g.medium | Recalcular en AWS Pricing Calculator |
 | Application Load Balancer | USD 16 |
 | NAT Gateway + trafico bajo | USD 32-40 |
 | CloudFront + S3 | USD 2 |
-| Total | USD 106-114 |
+| Total | Recalcular con `mq.m7g.medium` |
+
+Nota: AWS no soporta `mq.t3.micro` para RabbitMQ en `us-east-1`. Terraform usa `mq.m7g.medium`, que fue el menor tipo disponible reportado por `aws mq describe-broker-instance-options`.
 
 ## Limpieza obligatoria
 

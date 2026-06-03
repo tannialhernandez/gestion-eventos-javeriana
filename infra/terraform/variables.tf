@@ -55,7 +55,7 @@ variable "redis_engine_version" {
 variable "mq_instance_type" {
   description = "Tipo de instancia Amazon MQ RabbitMQ."
   type        = string
-  default     = "mq.t3.micro"
+  default     = "mq.m7g.medium"
 }
 
 variable "rabbitmq_engine_version" {

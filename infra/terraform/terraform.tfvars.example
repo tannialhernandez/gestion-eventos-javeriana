@@ -7,7 +7,7 @@ rds_instance_class    = "db.t4g.micro"
 postgres_engine_version = "15.18"
 elasticache_node_type = "cache.t3.micro"
 redis_engine_version  = "7.0"
-mq_instance_type      = "mq.t3.micro"
+mq_instance_type      = "mq.m7g.medium"
 rabbitmq_engine_version = "3.13"
 
 # Reemplazar antes de terraform apply real.

@@ -50,7 +50,7 @@ RDS y Amazon MQ pueden tardar 15-20 minutos en quedar disponibles.
 | `postgres_engine_version` | `15.18` | Version RDS soportada en `us-east-1` al 2026-06-02. |
 | `elasticache_node_type` | `cache.t3.micro` | Redis 7. |
 | `redis_engine_version` | `7.0` | Version Redis soportada en ElastiCache. |
-| `mq_instance_type` | `mq.t3.micro` | Amazon MQ RabbitMQ. |
+| `mq_instance_type` | `mq.m7g.medium` | Menor tipo listado por AWS para Amazon MQ RabbitMQ en `us-east-1`. |
 | `rabbitmq_engine_version` | `3.13` | Version Amazon MQ RabbitMQ soportada en `us-east-1` al 2026-06-02. |
 | `container_images` | `ghcr.io/tannialhernandez/*:latest` | Imagenes publicadas por GitHub Actions. |
 
@@ -61,13 +61,13 @@ RDS y Amazon MQ pueden tardar 15-20 minutos en quedar disponibles.
 | EC2 t3.small | USD 15 |
 | RDS db.t4g.micro | USD 13 |
 | ElastiCache cache.t3.micro | USD 13 |
-| Amazon MQ mq.t3.micro | USD 15 |
+| Amazon MQ mq.m7g.medium | Recalcular en AWS Pricing Calculator |
 | Application Load Balancer | USD 16 |
 | NAT Gateway + trafico bajo | USD 32-40 |
 | S3 + CloudFront | USD 2 |
-| Total estimado | USD 106-114 |
+| Total estimado | Recalcular con `mq.m7g.medium` |
 
-La estimacion queda por debajo del limite FinOps declarado de USD 200/mes. Para demos cortas, ejecutar `terraform destroy` inmediatamente despues de la sustentacion.
+La estimacion anterior basada en `mq.t3.micro` no aplica porque AWS no soporta ese tipo para RabbitMQ en `us-east-1`. Antes de dejar el stack encendido por mas de una demo corta, recalcular Amazon MQ `mq.m7g.medium` en AWS Pricing Calculator y validar el limite FinOps declarado de USD 200/mes. Para demos cortas, ejecutar `terraform destroy` inmediatamente despues de la sustentacion.
 
 ## Notas operativas
 
