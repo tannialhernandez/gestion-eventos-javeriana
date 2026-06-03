@@ -1,12 +1,13 @@
 name: Deploy Frontend
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["CI Frontend"]
     types: [completed]
 
 concurrency:
-  group: deploy-frontend-${{ github.event.workflow_run.head_branch }}
+  group: deploy-frontend-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -19,9 +20,12 @@ jobs:
     name: Build and publish SPA
     runs-on: ubuntu-latest
     if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'main'
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
     defaults:
       run:
         working-directory: frontend
@@ -32,7 +36,7 @@ jobs:
       - name: Checkout pushed commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
