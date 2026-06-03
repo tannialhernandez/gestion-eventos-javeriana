@@ -1,0 +1,19 @@
+.github/workflows/deploy-frontend.yml
+  s_e975fa25d919d9::t_c65736f141b24a 4,10,23-28,39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "6d05af1a8e979a2575dd2cbd9edb0e5273ab5403",
+  "prompts": {},
+  "sessions": {
+    "s_e975fa25d919d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7060-2b38-7100-839a-eb05028f243f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "tannialhernandez <202433521+tannialhernandez@users.noreply.github.com>"
+    }
+  }
+}
